@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using F3Wasm.Models
 @using F3Wasm.Data
+@inject HttpClient Http
 
 <PageTitle>F3 South Fork Importer</PageTitle>
 
@@ -37,7 +38,7 @@
                         <Check TValue="bool" Checked="@p.IsQ" CheckedChanged="@(isChecked => OnQSelected(p, (bool)isChecked))"></Check>
                     </TableRowCell>
                     <TableRowCell>
-                        <Check TValue="bool" @bind-Value="@p.IsFng" Disabled></Check>
+                        <Check TValue="bool" Disabled></Check>
                     </TableRowCell>
                 </TableRow>
             }

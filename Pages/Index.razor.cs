@@ -14,6 +14,7 @@ using F3Wasm;
 using Blazorise;
 using Blazorise.Components;
 using F3Wasm.Models;
+using F3Wasm.Data;
 
 namespace F3Wasm.Pages
 {
@@ -30,9 +31,9 @@ namespace F3Wasm.Pages
 
         private async Task OnCommentButtonClicked()
         {
-            // allNames = await GoogleSheetsService.GetAllPaxAsync();
-            // allNames = allNames.OrderBy(x => x).ToList();
-            // pax = PaxService.GetPaxFromComment(comment, allNames);
+            allNames = await LambdaHelper.GetPaxNamesAsync(Http);
+            allNames = allNames.OrderBy(x => x).ToList();
+            pax = PaxHelper.GetPaxFromComment(comment, allNames);
 
             // No need to show that we finished again, we're doing another aoo
             showCompleteAlert = false;
@@ -74,6 +75,7 @@ namespace F3Wasm.Pages
 
             try
             {
+                await LambdaHelper.UploadPaxAsync(Http, pax, ao, qDate.Value);
                 // await GoogleSheetsService.AddPaxToSheetAsync(pax, qDate.Value, ao);
                 showCompleteAlert = true;
 
@@ -85,7 +87,7 @@ namespace F3Wasm.Pages
             }
             catch (Exception ex)
             {
-                errorMessage = "There was an error uploading the data. Please try again.";
+                errorMessage = "There was an error uploading the data. Please try again." + ex.Message;
             }
         }
 

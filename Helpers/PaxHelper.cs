@@ -40,11 +40,11 @@ namespace F3Wasm.Data
                     x.StringEscaped()));
                 if (matchingPax != null)
                 {
-                    pax.Add(new Pax { Name = matchingPax, IsOfficial = true });
+                    pax.Add(new Pax { Name = matchingPax, UnknownName = "", IsOfficial = true });
                 }
                 else
                 {
-                    pax.Add(new Pax { UnknownName = paxName, IsOfficial = false });
+                    pax.Add(new Pax { UnknownName = paxName, Name = "", IsOfficial = false });
 
                 }
             }
