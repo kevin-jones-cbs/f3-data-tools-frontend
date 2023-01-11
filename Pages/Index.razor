@@ -1,9 +1,104 @@
 ﻿@page "/"
+@using F3Wasm.Models
+@using F3Wasm.Data
 
-<PageTitle>Index</PageTitle>
+<PageTitle>F3 South Fork Importer</PageTitle>
 
-<h1>Hello, world!</h1>
+<DatePicker TValue="DateTime?" Placeholder="Q Date" @bind-Date="@qDate" />
 
-Welcome to your new app.
+<RadioGroup TValue="string" Name="ao" Buttons @bind-CheckedValue="@ao">
+    @foreach (var ao in PaxHelper.AllAos.Where(x => x.DayOfWeek == qDate.Value.DayOfWeek).ToList())
+    {
+        <Radio Value="@(ao.Name)">@ao.Name (@ao.City)</Radio>
+    }
+</RadioGroup>
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+<MemoEdit Placeholder="Paste the Pax Comment from Band" @bind-Text="@comment"></MemoEdit>
+<Button Color="Color.Primary" Clicked="@OnCommentButtonClicked">Submit</Button>
+
+@if (pax.Count > 0)
+{
+    <Table Narrow>
+        <TableHeader>
+            <TableRow>
+                <TableHeaderCell>Name</TableHeaderCell>
+                <TableHeaderCell>Q?</TableHeaderCell>
+                <TableHeaderCell>FNG</TableHeaderCell>
+            </TableRow>
+        </TableHeader>
+        <TableBody>
+            @foreach (var p in pax.Where(x => x.IsOfficial).ToList())
+            {
+                <TableRow Color="@(p.IsQ ? Color.Primary : Color.Default)">
+                    <TableRowCell>
+                        @p.Name
+                    </TableRowCell>
+                    <TableRowCell>
+                        <Check TValue="bool" Checked="@p.IsQ" CheckedChanged="@(isChecked => OnQSelected(p, (bool)isChecked))"></Check>
+                    </TableRowCell>
+                    <TableRowCell>
+                        <Check TValue="bool" @bind-Value="@p.IsFng" Disabled></Check>
+                    </TableRowCell>
+                </TableRow>
+            }
+
+            @foreach (var p in pax.Where(x => !x.IsOfficial).ToList())
+            {
+                <TableRow Color="@(string.IsNullOrEmpty(p.Name) ? Color.Danger : p.IsFng ? Color.Success : Color.Default)">
+                    <TableRowCell>
+                        @p.Name
+
+                        @if (p.IsFng)
+                        {
+                            <TextEdit @bind-Text="@p.Name"></TextEdit>
+                        }
+                        else
+                        {
+                            <Autocomplete TItem="String"
+                                  TValue="string"
+                                  Data="@allNames"
+                                  TextField="@(( item ) => item)"
+                                  ValueField="@(( item ) => item)"
+                                  @bind-SelectedValue="@p.Name"
+                                  @bind-SelectedText="@p.UnknownName"
+                                  Placeholder="Search..."
+                                  Filter="AutocompleteFilter.StartsWith"
+                                  FreeTyping
+                                  CustomFilter="@(( item, searchValue ) => item.IndexOf( searchValue, 0, StringComparison.CurrentCultureIgnoreCase ) >= 0 )">
+                                <NotFoundContent> Sorry... @context was not found! :( </NotFoundContent>
+                            </Autocomplete>
+                        }
+                    </TableRowCell>
+                    <TableRowCell>
+                        <Check TValue="bool" Checked="@p.IsQ" CheckedChanged="@(isChecked => OnQSelected(p, (bool)isChecked))"></Check>
+                    </TableRowCell>
+                    <TableRowCell>
+                        <Check TValue="bool" Checked="@p.IsFng" CheckedChanged="@(isChecked => OnFngSelected(p, (bool)isChecked))"></Check>
+                    </TableRowCell>
+                </TableRow>
+            }
+        </TableBody>
+    </Table>
+
+    <Button Color="Color.Primary" Clicked="@OnUploadButtonClicked">Upload</Button>
+    <span>@pax.Count PAX</span> 
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <Alert Color="Color.Danger" Visible>
+            <AlertDescription>@errorMessage</AlertDescription>
+        </Alert>
+    }   
+}
+
+<Alert Color="Color.Success" @bind-Visible="@showCompleteAlert">
+    <AlertMessage>
+        Done!
+    </AlertMessage>
+    <AlertDescription>
+        Data has been uploaded to Sheets
+    </AlertDescription>    
+    <CloseButton />
+</Alert>
+
+
