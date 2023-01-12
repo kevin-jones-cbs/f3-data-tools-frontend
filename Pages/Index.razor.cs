@@ -28,6 +28,7 @@ namespace F3Wasm.Pages
 
         public string errorMessage { get; set; }
         public bool showCompleteAlert { get; set; }
+        public bool isLoading { get; set; }
 
         private async Task OnCommentButtonClicked()
         {
@@ -75,8 +76,8 @@ namespace F3Wasm.Pages
 
             try
             {
+                isLoading = true;
                 await LambdaHelper.UploadPaxAsync(Http, pax, ao, qDate.Value);
-                // await GoogleSheetsService.AddPaxToSheetAsync(pax, qDate.Value, ao);
                 showCompleteAlert = true;
 
                 // Reset everything
@@ -84,6 +85,7 @@ namespace F3Wasm.Pages
                 pax = new List<Pax>();
                 qDate = DateTime.Now;
                 ao = string.Empty;
+                isLoading = false;
             }
             catch (Exception ex)
             {

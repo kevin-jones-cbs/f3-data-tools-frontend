@@ -6,7 +6,6 @@
 <PageTitle>F3 South Fork Importer</PageTitle>
 
 <DatePicker TValue="DateTime?" Placeholder="Q Date" @bind-Date="@qDate" />
-
 <RadioGroup TValue="string" Name="ao" Buttons @bind-CheckedValue="@ao">
     @foreach (var ao in PaxHelper.AllAos.Where(x => x.DayOfWeek == qDate.Value.DayOfWeek).ToList())
     {
@@ -81,8 +80,8 @@
         </TableBody>
     </Table>
 
-    <Button Color="Color.Primary" Clicked="@OnUploadButtonClicked">Upload</Button>
-    <span>@pax.Count PAX</span> 
+    <Button Color="Color.Primary" Clicked="@OnUploadButtonClicked" @bind-Disabled="@isLoading">Upload</Button>
+    <span>@pax.Count PAX</span>        
 
     @if (!string.IsNullOrEmpty(errorMessage))
     {
