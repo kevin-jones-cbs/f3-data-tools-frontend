@@ -9,7 +9,7 @@ frontend:
         - ./dotnet6/dotnet --version
     build:
       commands:
-        - ./dotnet6/dotnet publish -c Release -o F3Wasm/release
+        - ./dotnet6/dotnet publish F3Wasm/F3Wasm.csproj -c Release -o F3Wasm/release
   artifacts:
     baseDirectory: /F3Wasm/release/wwwroot
     files:
