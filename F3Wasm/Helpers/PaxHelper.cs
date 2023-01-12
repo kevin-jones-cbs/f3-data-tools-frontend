@@ -22,6 +22,13 @@ namespace F3Wasm.Data
             new Ao { Name = "The Grid", City = "Shingle Springs", DayOfWeek = DayOfWeek.Saturday }
         };
 
+        // Create a mapping of names
+        public static Dictionary<string, string> NameMapping = new Dictionary<string, string>
+        {
+            { "manipedi", "Manny Pedi" },
+            { "roxburymikec", "Roxbury" }
+        };     
+
         public static List<Pax> GetPaxFromComment(string comment, List<string> allPax)
         {
             // Remove all spaces, commas and new lines.
@@ -41,6 +48,10 @@ namespace F3Wasm.Data
                 if (matchingPax != null)
                 {
                     pax.Add(new Pax { Name = matchingPax, IsOfficial = true });
+                }
+                else if (NameMapping.ContainsKey(paxName))
+                {
+                    pax.Add(new Pax { Name = NameMapping[paxName], IsOfficial = true });
                 }
                 else
                 {
