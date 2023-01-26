@@ -447,7 +447,11 @@ namespace F3Wasm.Tests
             "Twinkle Toes",
             "Floppy Disk",
             "Etsy",
-            "Bonnet"
+            "Bonnet",
+            "Shipwreck",
+            "Switch",
+            "Brady Bunch",
+            "Richard Simmons",
         };
     }
 }
