@@ -85,12 +85,14 @@ namespace F3Wasm.Data
                 p.UnknownName = string.Empty;
             }
 
-            var regexHotwordPattern = @"\b(VQ|Q|FNG|PAX|The Ditch|Stargate|Greyhound|The Linkz|Denali|Everest|The Cut|The S.A.K.|The Sak|The Public|Butcher's Block|The Claim}Powerhouse|The Grid|(\d*))\b";
+            var regexHotwordPattern = @"\b(VQ|Q|FNG|PAX List|PAX|The Ditch|Stargate|Greyhound|The Linkz|Denali|Everest|The Cut|The S.A.K.|The Sak|The Public|Butcher's Block|The Claim}Powerhouse|The Grid|(\d*))\b";
             // Trim the comment, remove any @'s, then string split on spaces, 
             comment = comment.Replace("@", string.Empty).Trim();
             var commentSplit = Regex.Replace(comment, regexHotwordPattern, string.Empty, RegexOptions.IgnoreCase)
+                .Replace("\r\n", string.Empty)
                 .Split(' ')
-                .Where(x => x.Length > 1 && x != "..")
+                .Where(x => x.Length > 1)
+                .Where(x => Regex.IsMatch(x, @"[a-zA-Z]")) // Ensure each item in commentSplit has at least one letter
                 .ToList();
 
             // consider each of these as a pax with an unknown name

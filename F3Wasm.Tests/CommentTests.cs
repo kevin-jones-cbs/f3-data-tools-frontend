@@ -11,11 +11,15 @@ namespace F3Wasm.Tests
         [InlineData("Denali 1.25.23 PAX: 15 @Herbie @Happy Tree @Doodles @Potts @Singe @Deuce @Putt Putt @Shipwreck @Clark @SofaKing @Deep Dish @Baskinz @Daffodil @Switch @ROXBURY mike c.", 15)]
         [InlineData("Q: @Peacock PAX: @Spread’em @Roblox @Shipwreck @Happy Tree @gumby @Herbie @Daffodil @Richard Simmons @SweatShop - Hernan C @S’mores", 11)]
         [InlineData("VQ Dead End Switch Happy Tree Daffodil Mr. Meaner Rollback Baskinz Jigglypuff Chalupa The View Singe One Tree Hill Shipwreck TraLaLa XPort Doodles Cage Free PiXAR Brady Bunch Gumby SofaKing Deep Dish Turf Toe SweatShop - Hernan C Putt Putt Peacock ROXBURY mike c. chippendale", 28)]
+        [InlineData(@"Denali 1.25.23
+                    PAX: 15
+                    @Herbie @Happy Tree @Doodles @Potts @Singe @Deuce @Putt Putt @Shipwreck @Clark @SofaKing @Deep Dish @Baskinz @Daffodil @Switch @ROXBURY mike c.", 15)]
         public void AllOfficialNames(string comment, int expectedCount)
         {
             var result = PaxHelper.GetPaxFromComment(comment, TestData.PaxNames);
 
             Assert.Equal(expectedCount, result.Where(x => x != null && x.IsOfficial).ToList().Count);
+            Assert.Equal(0, result.Where(x => x != null && !x.IsOfficial).ToList().Count);
         }
 
         [Theory]

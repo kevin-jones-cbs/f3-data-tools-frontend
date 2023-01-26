@@ -5,6 +5,12 @@
 
 <PageTitle>F3 South Fork Importer</PageTitle>
 
+<style>
+    .custom-link {
+        cursor: pointer;
+    }
+</style>
+
 <DatePicker TValue="DateTime?" Placeholder="Q Date" @bind-Date="@qDate" />
 <RadioGroup TValue="string" Name="ao" Buttons @bind-CheckedValue="@ao">
     @foreach (var ao in PaxHelper.AllAos.Where(x => x.DayOfWeek == qDate.Value.DayOfWeek).ToList())
@@ -24,6 +30,7 @@
                 <TableHeaderCell>Name</TableHeaderCell>
                 <TableHeaderCell>Q?</TableHeaderCell>
                 <TableHeaderCell>FNG</TableHeaderCell>
+                <TableHeaderCell></TableHeaderCell>
             </TableRow>
         </TableHeader>
         <TableBody>
@@ -39,6 +46,7 @@
                     <TableRowCell>
                         <Check TValue="bool" Disabled></Check>
                     </TableRowCell>
+                    <TableRowCell></TableRowCell>
                 </TableRow>
             }
 
@@ -74,6 +82,9 @@
                     </TableRowCell>
                     <TableRowCell>
                         <Check TValue="bool" Checked="@p.IsFng" CheckedChanged="@(isChecked => OnFngSelected(p, (bool)isChecked))"></Check>
+                    </TableRowCell>
+                    <TableRowCell>
+                        <Icon Name="IconName.Times" Clicked="@(e => OnRemovePax(p))" class="custom-link"/>
                     </TableRowCell>
                 </TableRow>
             }

@@ -121,5 +121,10 @@ namespace F3Wasm.Pages
                 member.IsFng = false;
             }
         }
+
+        void OnRemovePax(Pax member)
+        {
+            pax.Remove(member);
+        }
     }
 }
