@@ -11,11 +11,25 @@
     }
 </style>
 
+<Button Color="Color.Primary" Clicked="OnMissingAoButtonClicked">Check for Missing Data</Button>
+
+@if (missingAos.Count > 0)
+{
+    <ListGroup>
+        @foreach (var missing in missingAos)
+        {
+            <ListGroupItem class="custom-link" Clicked="@(x => OnMissingAoSelected(missing))">@missing.Name - @missing.DayOfWeek.ToString() @missing.Date.ToShortDateString()</ListGroupItem>            
+        }
+    </ListGroup>
+}
+
 <DatePicker TValue="DateTime?" Placeholder="Q Date" @bind-Date="@qDate" />
-<RadioGroup TValue="string" Name="ao" Buttons @bind-CheckedValue="@ao">
-    @foreach (var ao in PaxHelper.AllAos.Where(x => x.DayOfWeek == qDate.Value.DayOfWeek).ToList())
+<RadioGroup TValue="string" Name="ao" CheckedValue="@ao" CheckedValueChanged="@OnAoChanged" Buttons>
+    @foreach (var ao in PaxHelper.AllAos)
     {
-        <Radio Value="@(ao.Name)">@ao.Name (@ao.City)</Radio>
+        <div style="@ShowOrHideAo(ao)">
+            <Radio Value="@(ao.Name)" style="appearance:none">@ao.Name (@ao.City)</Radio>
+        </div>
     }
 </RadioGroup>
 
@@ -25,23 +39,24 @@
 @if (pax.Count > 0)
 {
     <Table Narrow>
-        <TableHeader>
-            <TableRow>
-                <TableHeaderCell>Name</TableHeaderCell>
-                <TableHeaderCell>Q?</TableHeaderCell>
-                <TableHeaderCell>FNG</TableHeaderCell>
-                <TableHeaderCell></TableHeaderCell>
-            </TableRow>
-        </TableHeader>
-        <TableBody>
-            @foreach (var p in pax.Where(x => x.IsOfficial).ToList())
+    <TableHeader>
+        <TableRow>
+            <TableHeaderCell>Name</TableHeaderCell>
+            <TableHeaderCell>Q?</TableHeaderCell>
+            <TableHeaderCell>FNG</TableHeaderCell>
+            <TableHeaderCell></TableHeaderCell>
+        </TableRow>
+    </TableHeader>
+    <TableBody>
+        @foreach (var p in pax.Where(x => x.IsOfficial).ToList())
             {
                 <TableRow Color="@(p.IsQ ? Color.Primary : Color.Default)">
                     <TableRowCell>
                         @p.Name
                     </TableRowCell>
                     <TableRowCell>
-                        <Check TValue="bool" Checked="@p.IsQ" CheckedChanged="@(isChecked => OnQSelected(p, (bool)isChecked))"></Check>
+                        <Check TValue="bool" Checked="@p.IsQ" CheckedChanged="@(isChecked => OnQSelected(p, (bool)isChecked))">
+                        </Check>
                     </TableRowCell>
                     <TableRowCell>
                         <Check TValue="bool" Disabled></Check>
@@ -62,29 +77,24 @@
                         }
                         else
                         {
-                            <Autocomplete TItem="String"
-                                  TValue="string"
-                                  Data="@allNames"
-                                  TextField="@(( item ) => item)"
-                                  ValueField="@(( item ) => item)"
-                                  @bind-SelectedValue="@p.Name"
-                                  @bind-SelectedText="@p.UnknownName"
-                                  Placeholder="Search..."
-                                  Filter="AutocompleteFilter.StartsWith"
-                                  FreeTyping
-                                  CustomFilter="@(( item, searchValue ) => item.IndexOf( searchValue, 0, StringComparison.CurrentCultureIgnoreCase ) >= 0 )">
-                                <NotFoundContent> Sorry... @context was not found! :( </NotFoundContent>
+                            <Autocomplete TItem="String" TValue="string" Data="@allNames" TextField="@(( item ) => item)"
+                                ValueField="@(( item ) => item)" @bind-SelectedValue="@p.Name" @bind-SelectedText="@p.UnknownName"
+                                Placeholder="Search..." Filter="AutocompleteFilter.StartsWith" FreeTyping
+                                CustomFilter="@(( item, searchValue ) => item.IndexOf( searchValue, 0, StringComparison.CurrentCultureIgnoreCase ) >= 0 )">
+                            <NotFoundContent> Sorry... @context was not found! :( </NotFoundContent>
                             </Autocomplete>
                         }
                     </TableRowCell>
                     <TableRowCell>
-                        <Check TValue="bool" Checked="@p.IsQ" CheckedChanged="@(isChecked => OnQSelected(p, (bool)isChecked))"></Check>
+                        <Check TValue="bool" Checked="@p.IsQ" CheckedChanged="@(isChecked => OnQSelected(p, (bool)isChecked))">
+                        </Check>
                     </TableRowCell>
                     <TableRowCell>
-                        <Check TValue="bool" Checked="@p.IsFng" CheckedChanged="@(isChecked => OnFngSelected(p, (bool)isChecked))"></Check>
+                        <Check TValue="bool" Checked="@p.IsFng"
+                    CheckedChanged="@(isChecked => OnFngSelected(p, (bool)isChecked))"></Check>
                     </TableRowCell>
                     <TableRowCell>
-                        <Icon Name="IconName.Times" Clicked="@(e => OnRemovePax(p))" class="custom-link"/>
+                        <Icon Name="IconName.Times" Clicked="@(e => OnRemovePax(p))" class="custom-link" />
                     </TableRowCell>
                 </TableRow>
             }
@@ -92,14 +102,14 @@
     </Table>
 
     <Button Color="Color.Primary" Clicked="@OnUploadButtonClicked" @bind-Disabled="@isLoading">Upload</Button>
-    <span>@pax.Count PAX</span>        
+    <span>@pax.Count PAX</span>
 
     @if (!string.IsNullOrEmpty(errorMessage))
     {
         <Alert Color="Color.Danger" Visible>
-            <AlertDescription>@errorMessage</AlertDescription>
-        </Alert>
-    }   
+        <AlertDescription>@errorMessage</AlertDescription>
+    </Alert>
+    }
 }
 
 <Alert Color="Color.Success" @bind-Visible="@showCompleteAlert">
@@ -108,7 +118,7 @@
     </AlertMessage>
     <AlertDescription>
         Data has been uploaded to Sheets
-    </AlertDescription>    
+    </AlertDescription>
     <CloseButton />
 </Alert>
 

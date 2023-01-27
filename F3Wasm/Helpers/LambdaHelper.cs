@@ -6,6 +6,14 @@ namespace F3Wasm.Data
 {
     public static class LambdaHelper
     {
+        // Get Missing Aos
+        public static async Task<List<Ao>> GetMissingAosAsync(HttpClient client)
+        {
+            var response = await CallF3LambdaAsync(client, new { Action = "GetMissingAos" });
+            var missingAos = JsonSerializer.Deserialize<List<Ao>>(response);
+            return missingAos;
+        }
+
         public static async Task<List<string>> GetPaxNamesAsync(HttpClient client)
         {
             var response = await CallF3LambdaAsync(client, new { Action = "GetPax"});

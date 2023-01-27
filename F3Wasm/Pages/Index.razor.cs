@@ -23,12 +23,41 @@ namespace F3Wasm.Pages
         private string comment = string.Empty;
         private List<string> allNames = new List<string>();
         private List<Pax> pax = new List<Pax>();
-        private DateTime? qDate = DateTime.Now;
+        public List<Ao> missingAos { get; set; } = new List<Ao>();
+        private static DateTime? qDate = DateTime.Now;
         public string ao { get; set; }
 
         public string errorMessage { get; set; }
         public bool showCompleteAlert { get; set; }
         public bool isLoading { get; set; }
+
+        private string ShowOrHideAo(Ao ao)
+        {
+            return IsValidAo(ao) ? "Display: none" : string.Empty;
+        }
+
+        private bool IsValidAo(Ao ao)
+        {
+            return ao.DayOfWeek != qDate.Value.DayOfWeek;
+        }
+
+        private async Task OnMissingAoButtonClicked()
+        {
+            missingAos = await LambdaHelper.GetMissingAosAsync(Http);
+        }        
+
+        private async Task OnMissingAoSelected(Ao missingAo)
+        {
+            qDate = missingAo.Date;
+            ao = missingAo.Name;
+
+            Console.WriteLine($"Selected {missingAo.Name} on {missingAo.Date}. ao is now {ao}");
+        }
+
+        private async Task OnAoChanged(string aoValue)
+        {
+            ao = aoValue;
+        }
 
         private async Task OnCommentButtonClicked()
         {
@@ -44,9 +73,9 @@ namespace F3Wasm.Pages
         {
             // Validate
             errorMessage = string.Empty;
-            if (string.IsNullOrEmpty(ao))
+            if (string.IsNullOrEmpty(ao) || !IsValidAo(PaxHelper.AllAos.FirstOrDefault(x => x.Name == ao)))
             {
-                errorMessage = "Please select an AO";
+                errorMessage = "Please select a valid AO";
                 return;
             }
 
