@@ -9,21 +9,44 @@
     .custom-link {
         cursor: pointer;
     }
+
+    .one-row {
+        display: flex;
+        flex-direction: row;
+    }
 </style>
 
-<Button Color="Color.Primary" Clicked="OnMissingAoButtonClicked">Check for Missing Data</Button>
+<div class="one-row" style="padding-bottom:12px">
+    <Button Color="Color.Primary" Clicked="OnMissingAoButtonClicked">Check for Missing Data</Button>
+    @if (isMissingDataLoading)
+    {
+        <SpinKit Type="SpinKitType.Bounce" />
+    }
+</div>
 
 @if (missingAos.Count > 0)
 {
-    <ListGroup>
-        @foreach (var missing in missingAos)
+    <ListGroup style="padding-bottom:12px">
+    @foreach (var missing in missingAos)
         {
-            <ListGroupItem class="custom-link" Clicked="@(x => OnMissingAoSelected(missing))">@missing.Name - @missing.DayOfWeek.ToString() @missing.Date.ToShortDateString()</ListGroupItem>            
+            <ListGroupItem class="custom-link" Clicked="@(x => OnMissingAoSelected(missing))">@missing.Name -
+                @missing.DayOfWeek.ToString() @missing.Date.ToShortDateString()</ListGroupItem>
         }
     </ListGroup>
 }
 
-<DatePicker TValue="DateTime?" Placeholder="Q Date" @bind-Date="@qDate" />
+
+@if (showNoMissingAoMessage)
+{
+    <Alert Color="Color.Success" ShowIcon Visible>
+    All up to date!
+        <CloseButton />
+    </Alert>
+}
+
+
+<DatePicker TValue="DateTime?" Placeholder="Q Date" Date="@qDate" DateChanged="@OnDateChanged"
+    style="margin-bottom:12px;" DisplayFormat="M/dd/yyy" />
 <RadioGroup TValue="string" Name="ao" CheckedValue="@ao" CheckedValueChanged="@OnAoChanged" Buttons>
     @foreach (var ao in PaxHelper.AllAos)
     {
@@ -33,7 +56,8 @@
     }
 </RadioGroup>
 
-<MemoEdit Placeholder="Paste the Pax Comment from Band" @bind-Text="@comment"></MemoEdit>
+<MemoEdit Rows="5" Placeholder="Paste the Pax Comment from Band" @bind-Text="@comment" style="margin-bottom:12px">
+</MemoEdit>
 <Button Color="Color.Primary" Clicked="@OnCommentButtonClicked">Submit</Button>
 
 @if (pax.Count > 0)
@@ -78,9 +102,9 @@
                         else
                         {
                             <Autocomplete TItem="String" TValue="string" Data="@allNames" TextField="@(( item ) => item)"
-                                ValueField="@(( item ) => item)" @bind-SelectedValue="@p.Name" @bind-SelectedText="@p.UnknownName"
-                                Placeholder="Search..." Filter="AutocompleteFilter.StartsWith" FreeTyping
-                                CustomFilter="@(( item, searchValue ) => item.IndexOf( searchValue, 0, StringComparison.CurrentCultureIgnoreCase ) >= 0 )">
+                    ValueField="@(( item ) => item)" @bind-SelectedValue="@p.Name" @bind-SelectedText="@p.UnknownName"
+                    Placeholder="Search..." Filter="AutocompleteFilter.StartsWith" FreeTyping
+                    CustomFilter="@(( item, searchValue ) => item.IndexOf( searchValue, 0, StringComparison.CurrentCultureIgnoreCase ) >= 0 )">
                             <NotFoundContent> Sorry... @context was not found! :( </NotFoundContent>
                             </Autocomplete>
                         }
@@ -101,8 +125,14 @@
         </TableBody>
     </Table>
 
-    <Button Color="Color.Primary" Clicked="@OnUploadButtonClicked" @bind-Disabled="@isLoading">Upload</Button>
-    <span>@pax.Count PAX</span>
+    <div class="one-row" style="padding-bottom:12px">
+        <Button Color="Color.Primary" Clicked="@OnUploadButtonClicked" @bind-Disabled="@isLoading">Upload</Button>
+        <span style="margin: auto 0px auto 12px;">@pax.Count PAX</span>
+        @if (isLoading)
+        {
+            <SpinKit Type="SpinKitType.Bounce" />
+        }
+    </div>
 
     @if (!string.IsNullOrEmpty(errorMessage))
     {

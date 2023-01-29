@@ -278,7 +278,7 @@ namespace F3Wasm.Tests
             "Final Destination",
             "Lost And Found",
             "Oven Mitt",
-            "Linguine",
+            "Linguini",
             "Chalupa",
             "M.I.C.",
             "Ranchero",

@@ -9,14 +9,14 @@ namespace F3Wasm.Data
         // Get Missing Aos
         public static async Task<List<Ao>> GetMissingAosAsync(HttpClient client)
         {
-            var response = await CallF3LambdaAsync(client, new { Action = "GetMissingAos" });
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetMissingAos" });
             var missingAos = JsonSerializer.Deserialize<List<Ao>>(response);
             return missingAos;
         }
 
         public static async Task<List<string>> GetPaxNamesAsync(HttpClient client)
         {
-            var response = await CallF3LambdaAsync(client, new { Action = "GetPax"});
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetPax"});
             var paxNames = JsonSerializer.Deserialize<List<string>>(response);
             return paxNames;
         }
@@ -24,7 +24,7 @@ namespace F3Wasm.Data
         // Upload Pax 
         public static async Task UploadPaxAsync(HttpClient client, List<Pax> pax, string ao, DateTime qDate)
         {
-            var input = new { Action = "AddPax", AoName = ao, QDate = qDate, Pax = pax };
+            var input = new FunctionInput { Action = "AddPax", AoName = ao, QDate = qDate, Pax = pax };
             var json = JsonSerializer.Serialize(input);
             var response = await CallF3LambdaAsync(client, input);
             

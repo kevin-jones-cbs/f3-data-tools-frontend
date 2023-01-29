@@ -29,6 +29,9 @@ namespace F3Wasm.Data
             { "Roxbury", "ROXBURY mike c" },
             { "SweatShop", "SweatShop - Hernan C" },
             { "Mr. Meanor", "Mr. Meaner" },
+            { "Linguini", "Linguine" },
+            { "Hillbilly", "Hill Billy" },
+            { "HeatCheck", "Heat Check" },
         };  
 
         public static List<Pax> GetPaxFromComment(string comment, List<string> allPax)

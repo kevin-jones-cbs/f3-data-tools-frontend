@@ -42,6 +42,9 @@ namespace F3Wasm.Tests
         [InlineData("@Mani Pedi", "Manny Pedi")]
         [InlineData("@ROXBURY mike c.", "Roxbury")]
         [InlineData("@Top40", "Top 40")]
+        [InlineData("@Hill Billy", "Hillbilly")]
+        [InlineData("Heat Check", "HeatCheck")]
+        [InlineData("Linguine", "Linguini")]
         public void SpecialNames(string comment, string expectedName)
         {
             var result = PaxHelper.GetPaxFromComment(comment, TestData.PaxNames);

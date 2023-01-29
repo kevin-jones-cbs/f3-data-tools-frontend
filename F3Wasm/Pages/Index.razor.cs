@@ -28,9 +28,11 @@ namespace F3Wasm.Pages
         public string ao { get; set; }
 
         public string errorMessage { get; set; }
+        public bool showNoMissingAoMessage { get; set; }
         public bool showCompleteAlert { get; set; }
         public bool isLoading { get; set; }
-
+        public bool isMissingDataLoading { get; set; }
+ 
         private string ShowOrHideAo(Ao ao)
         {
             return IsValidAo(ao) ? "Display: none" : string.Empty;
@@ -43,15 +45,29 @@ namespace F3Wasm.Pages
 
         private async Task OnMissingAoButtonClicked()
         {
+            isMissingDataLoading = true;
             missingAos = await LambdaHelper.GetMissingAosAsync(Http);
+            if (!missingAos.Any())
+            {
+                showNoMissingAoMessage = true;
+            }
+
+            isMissingDataLoading = false;
         }        
 
         private async Task OnMissingAoSelected(Ao missingAo)
         {
             qDate = missingAo.Date;
+            await Task.Delay(50);
             ao = missingAo.Name;
 
             Console.WriteLine($"Selected {missingAo.Name} on {missingAo.Date}. ao is now {ao}");
+        }
+
+        private async Task OnDateChanged(DateTime? date)
+        {
+            qDate = date;
+            ao = string.Empty;
         }
 
         private async Task OnAoChanged(string aoValue)
@@ -73,7 +89,7 @@ namespace F3Wasm.Pages
         {
             // Validate
             errorMessage = string.Empty;
-            if (string.IsNullOrEmpty(ao) || !IsValidAo(PaxHelper.AllAos.FirstOrDefault(x => x.Name == ao)))
+            if (string.IsNullOrEmpty(ao))
             {
                 errorMessage = "Please select a valid AO";
                 return;
@@ -108,6 +124,18 @@ namespace F3Wasm.Pages
                 isLoading = true;
                 await LambdaHelper.UploadPaxAsync(Http, pax, ao, qDate.Value);
                 showCompleteAlert = true;
+
+                // Remove from missing list if it's there if ao and date match
+                if (missingAos.Any(x => x.Name == ao && x.Date.Date == qDate.Value.Date))
+                {
+                    missingAos.Remove(missingAos.First(x => x.Name == ao && x.Date.Date == qDate.Value.Date));
+                    
+                    // If there are no more missing aos, show the message
+                    if (!missingAos.Any())
+                    {
+                        showNoMissingAoMessage = true;
+                    }
+                }
 
                 // Reset everything
                 comment = string.Empty;
