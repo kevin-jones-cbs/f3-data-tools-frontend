@@ -30,6 +30,18 @@ namespace F3Wasm.Data
             
         }
 
+        // Get All Data
+        public static async Task<AllData> GetAllDataAsync(HttpClient client)
+        {
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetAllPosts" });
+            var allData = JsonSerializer.Deserialize<AllData>(response, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            allData.Pax = allData.Pax.Where(p => p != null).ToList();
+            allData.Posts = allData.Posts.Where(p => p != null).ToList();
+
+            return allData;
+        }
+
         private static async Task<string> CallF3LambdaAsync(HttpClient client, object body)
         {
             var json = JsonSerializer.Serialize(body);

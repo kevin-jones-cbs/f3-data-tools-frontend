@@ -1,0 +1,39 @@
+@page "/data"
+@using F3Wasm.Models
+@using F3Wasm.Data
+@inject HttpClient Http
+
+<PageTitle>F3 South Fork Data</PageTitle>
+
+@if (allData == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <TextEdit Placeholder="PAX Search..." TextChanged="@OnPaxSearchChanged" />
+
+        
+    <Table Narrow>
+        <TableHeader>
+            <TableRow>
+                @foreach (var p in currentDisplay.Columns)
+                {
+                    <TableHeaderCell>@p</TableHeaderCell>
+                }               
+            </TableRow>
+        </TableHeader>
+        <TableBody>
+            @foreach (var p in currentDisplay.Rows)
+            {
+            <TableRow>
+                <TableRowCell>@p.PaxName</TableRowCell>
+                <TableRowCell>@p.PostCount</TableRowCell>
+                <TableRowCell>@p.FirstPost.GetValueOrDefault().ToShortDateString()</TableRowCell>
+                <TableRowCell>@p.PostPercent.ToString("0")%</TableRowCell>
+            </TableRow>
+
+            }     
+        </TableBody>
+    </Table>
+}

@@ -7,5 +7,6 @@ namespace F3Wasm.Models
         public bool IsOfficial { get; set; }
         public bool IsFng { get; set; }
         public bool IsQ { get; set; }
+        public string DateJoined { get; set; }
     }
 }
