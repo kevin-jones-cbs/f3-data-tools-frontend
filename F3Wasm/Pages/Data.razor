@@ -1,6 +1,7 @@
 @page "/data"
 @using F3Wasm.Models
 @using F3Wasm.Data
+@using System.Globalization
 @inject HttpClient Http
 
 <PageTitle>F3 South Fork Data</PageTitle>
@@ -11,29 +12,36 @@
 }
 else
 {
-    <TextEdit Placeholder="PAX Search..." TextChanged="@OnPaxSearchChanged" />
+    <DataGrid 
+        TItem="DisplayRow"
+        Data="@currentRows"
+        ShowPager
+        Filterable
+        FilterMethod="DataGridFilterMethod.Contains"
+        SortMode="DataGridSortMode.Single"
+        PageSize="25"
+        Narrow
+        ShowPageSizes
+        PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }"
+    >
+    <DataGridColumns>
+        <DataGridColumn Field="@nameof(DisplayRow.PaxName)" Caption="Name" SortField="@nameof(DisplayRow.PaxName)"/>
+        <DataGridColumn Field="@nameof(DisplayRow.PostCount)" Caption="Posts" Filterable="false" />
+        <DataGridColumn Field="@nameof(DisplayRow.QCount)" Caption="Q" Filterable="false" />
+        <DataGridColumn Field="@nameof(DisplayRow.FirstPost)" Caption="First Post" Filterable="false" DisplayFormat="{0:M/d/yyyy}" />
+        <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="Posted Percent" Filterable="false" DisplayFormat="{0:0}" />
+    </DataGridColumns>
+    <ButtonRowTemplate>
+        <Button Color="Color.Primary" Clicked="ShowAllTime">All Time</Button>
+        <Button Color="Color.Primary" Clicked="ShowPreviousYear">@DateTime.Now.AddYears(-1).ToString("yyyy", CultureInfo.InvariantCulture)</Button>
+        <Button Color="Color.Primary" Clicked="ShowCurrentYear">@DateTime.Now.ToString("yyyy", CultureInfo.InvariantCulture)</Button>
+        <Button Color="Color.Primary" Clicked="ShowPreviousMonth">@DateTime.Now.AddMonths(-1).ToString("MMM", CultureInfo.InvariantCulture)</Button>
+        <Button Color="Color.Primary" Clicked="ShowCurrentMonth">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture)</Button>
+        <Button Color="Color.Link">Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
+    </ButtonRowTemplate>
+    <LoadingTemplate>
+        <p>Loading...</p>
+    </LoadingTemplate>
 
-        
-    <Table Narrow>
-        <TableHeader>
-            <TableRow>
-                @foreach (var p in currentDisplay.Columns)
-                {
-                    <TableHeaderCell>@p</TableHeaderCell>
-                }               
-            </TableRow>
-        </TableHeader>
-        <TableBody>
-            @foreach (var p in currentDisplay.Rows)
-            {
-            <TableRow>
-                <TableRowCell>@p.PaxName</TableRowCell>
-                <TableRowCell>@p.PostCount</TableRowCell>
-                <TableRowCell>@p.FirstPost.GetValueOrDefault().ToShortDateString()</TableRowCell>
-                <TableRowCell>@p.PostPercent.ToString("0")%</TableRowCell>
-            </TableRow>
-
-            }     
-        </TableBody>
-    </Table>
+    </DataGrid>
 }

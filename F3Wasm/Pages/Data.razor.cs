@@ -21,24 +21,27 @@ namespace F3Wasm.Pages
     public partial class Data
     {
         public AllData allData { get; set; }
-        public CurrentDisplay currentDisplay { get; set; }
+        public List<DisplayRow> currentRows { get; set; }
+        public DateTime lastUpdatedDate { get; set; }
+
         protected override async Task OnInitializedAsync()
         {
             allData = await LambdaHelper.GetAllDataAsync(Http);
-
-            // Log how many pax and posts
-            if (allData == null)
-                Console.WriteLine("allData is null");
-            else
-                Console.WriteLine("allData is not null");
-
-            // Group the posts by pax name
-            var paxPosts = allData.Posts.GroupBy(p => p.P).ToDictionary(g => g.Key, g => g.Count());
-            currentDisplay = new CurrentDisplay
+            var lastUpdateItem = allData.Posts.FirstOrDefault(x => x.Site == "UPDATE");
+            if (lastUpdateItem != null)
             {
-                Columns = new List<string> { "Name", "PostCount", "FirstPost", "Percent" },
-                Rows = new List<DisplayRow>()
-            };
+                lastUpdatedDate = DateTime.Parse(lastUpdateItem.Pax.Split(" ")[1]);
+                allData.Posts.Remove(lastUpdateItem);
+            }
+
+            SetCurrentRows(allData.Posts);
+        }
+
+        public void SetCurrentRows(List<Post> posts)
+        {
+            // Group the posts by pax name
+            var paxPosts = posts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.Count());
+            currentRows = new List<DisplayRow>();
 
             // Add the pax to the display
             foreach (var pax in paxPosts)
@@ -49,38 +52,72 @@ namespace F3Wasm.Pages
                     PostCount = pax.Value
                 };
 
-                DateTime.TryParse(allData.Pax.FirstOrDefault(p => p.Name == pax.Key)?.DateJoined, out DateTime date);
-                if (date != DateTime.MinValue)
+                // DateTime.TryParse(allData.Pax.FirstOrDefault(p => p.Name == pax.Key)?.DateJoined, out DateTime date);
+                var firstDate = posts.Where(p => p.Pax == pax.Key).Min(p => p.Date);
+                if (firstDate != DateTime.MinValue)
                 {
-                    row.FirstPost = date;
-                    row.PostPercent = (((double)row.PostCount / (double)GetDaysSince(DateTime.Now, row.FirstPost.Value)) * 100);
-                }             
+                    row.FirstPost = firstDate;
+                    row.PostPercent = ((double)row.PostCount / (double)GetDaysSince(DateTime.Now, row.FirstPost.Value) * 100);
+                }
 
-                currentDisplay.Rows.Add(row);
+                // Get the Q count
+                row.QCount = posts.Where(p => p.Pax == pax.Key && p.IsQ).Count();
+
+                currentRows.Add(row);
             }
 
-            currentDisplay.Rows = currentDisplay.Rows.OrderByDescending(r => r.PostPercent).ToList();
-        }
-
-        Task OnPaxSearchChanged(string value)
-        {
-            // Search currentDisplay.Rows where value1 contains value case insensitive
-            currentDisplay.Rows = currentDisplay.Rows.Where(r => r.PaxName.ToString().ToLower().Contains(value.ToLower())).ToList();
-            return Task.CompletedTask;            
+            currentRows = currentRows.OrderByDescending(r => r.PostCount).ToList();
         }
 
         public static int GetDaysSince(DateTime today, DateTime date)
         {
-            if (date == null)
-                return -1;
+            try
+            {
+                if (date == null)
+                    return -1;
 
-            // Return the number of days since the date
-            var days = (today - date).Days + 1;            
-            
-            // Return the number of sundays since the date
-            var sundays = Enumerable.Range(0, days + 1).Count(d => date.AddDays(d).DayOfWeek == DayOfWeek.Sunday);            
+                // Return the number of days since the date
+                var days = (today - date).Days + 1;
 
-            return days - sundays;
+                // Return the number of sundays since the date
+                var sundays = Enumerable.Range(0, days + 1).Count(d => date.AddDays(d).DayOfWeek == DayOfWeek.Sunday);
+
+                return days - sundays;
+            }
+            catch (System.Exception ex)
+            {
+                Console.WriteLine("Error in GetDaysSince" + date.ToString() + " " + today.ToString());
+                throw;
+            }
+        }
+
+        private void ShowAllTime()
+        {
+            SetCurrentRows(allData.Posts);
+        }
+
+        private void ShowPreviousMonth()
+        {
+            var posts = allData.Posts.Where(p => p.Date.Month == DateTime.Now.AddMonths(-1).Month && p.Date.Year == DateTime.Now.AddMonths(-1).Year).ToList();
+            SetCurrentRows(posts);
+        }
+
+        private void ShowCurrentMonth()
+        {
+            var posts = allData.Posts.Where(p => p.Date.Month == DateTime.Now.Month && p.Date.Year == DateTime.Now.Year).ToList();
+            SetCurrentRows(posts);
+        }
+
+        private void ShowPreviousYear()
+        {
+            var posts = allData.Posts.Where(p => p.Date.Year == DateTime.Now.AddYears(-1).Year).ToList();
+            SetCurrentRows(posts);
+        }
+
+        private void ShowCurrentYear()
+        {
+            var posts = allData.Posts.Where(p => p.Date.Year == DateTime.Now.Year).ToList();
+            SetCurrentRows(posts);
         }
     }
 }

@@ -2,8 +2,9 @@ namespace F3Wasm.Models
 {
     public class Post
     {
-        public string D { get; set; }
-        public string S { get; set; }
-        public string P { get; set; }
+        public DateTime Date { get; set; }
+        public string Site { get; set; }
+        public string Pax { get; set; }
+        public bool IsQ { get; set; }
     }
 }
