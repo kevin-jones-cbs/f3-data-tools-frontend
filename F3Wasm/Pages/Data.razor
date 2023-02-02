@@ -28,8 +28,8 @@ else
         <DataGridColumn Field="@nameof(DisplayRow.PaxName)" Caption="Name" SortField="@nameof(DisplayRow.PaxName)"/>
         <DataGridColumn Field="@nameof(DisplayRow.PostCount)" Caption="Posts" Filterable="false" />
         <DataGridColumn Field="@nameof(DisplayRow.QCount)" Caption="Q" Filterable="false" />
-        <DataGridColumn Field="@nameof(DisplayRow.FirstPost)" Caption="First Post" Filterable="false" DisplayFormat="{0:M/d/yyyy}" />
-        <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="Posted Percent" Filterable="false" DisplayFormat="{0:0}" />
+        <DataGridColumn Field="@nameof(DisplayRow.FirstPost)" Caption="First Post" Filterable="false" DisplayFormat="{0:M/d/yy}" />
+        <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="Posted Percent" Filterable="false" DisplayFormat="{0:0}%" />
     </DataGridColumns>
     <ButtonRowTemplate>
         <Button Color="Color.Primary" Clicked="ShowAllTime">All Time</Button>
