@@ -26,6 +26,8 @@ namespace F3Wasm.Pages
         public List<Ao> missingAos { get; set; } = new List<Ao>();
         private static DateTime? qDate = DateTime.Now;
         public string ao { get; set; }
+        public static string AoOtherValue { get; } = "other";
+        public string otherAoName { get; set; }
 
         public string errorMessage { get; set; }
         public bool showNoMissingAoMessage { get; set; }
@@ -101,7 +103,8 @@ namespace F3Wasm.Pages
                 return;
             }
 
-            if (!pax.Any(x => x.IsQ))
+            // "Other" workouts don't need a Q
+            if (!pax.Any(x => x.IsQ) && ao != AoOtherValue)
             {
                 errorMessage = "Please select a Q";
                 return;
@@ -119,10 +122,16 @@ namespace F3Wasm.Pages
                 return;
             }
 
+            if (ao == AoOtherValue && string.IsNullOrEmpty(otherAoName))
+            {
+                errorMessage = "Please enter a name for the location";
+                return;
+            }
+
             try
             {
                 isLoading = true;
-                await LambdaHelper.UploadPaxAsync(Http, pax, ao, qDate.Value);
+                await LambdaHelper.UploadPaxAsync(Http, pax, ao == AoOtherValue ? otherAoName : ao, qDate.Value);
                 showCompleteAlert = true;
 
                 // Remove from missing list if it's there if ao and date match
@@ -142,7 +151,8 @@ namespace F3Wasm.Pages
                 pax = new List<Pax>();
                 qDate = DateTime.Now;
                 ao = string.Empty;
-                isLoading = false;
+                otherAoName = string.Empty;
+                isLoading = false;                
             }
             catch (Exception ex)
             {

@@ -40,10 +40,9 @@
 {
     <Alert Color="Color.Success" ShowIcon Visible>
     All up to date!
-        <CloseButton />
-    </Alert>
+    <CloseButton />
+</Alert>
 }
-
 
 <DatePicker TValue="DateTime?" Placeholder="Q Date" Date="@qDate" DateChanged="@OnDateChanged"
     style="margin-bottom:12px;" DisplayFormat="M/dd/yyy" />
@@ -54,7 +53,15 @@
             <Radio Value="@(ao.Name)" style="appearance:none">@ao.Name (@ao.City)</Radio>
         </div>
     }
+    <div style="">
+        <Radio Value="@AoOtherValue" style="appearance:none">Other</Radio>
+    </div>
 </RadioGroup>
+
+@if (ao == AoOtherValue)
+{
+    <TextEdit @bind-Text="@otherAoName" style="margin-bottom:12px;" Placeholder="Other Location Name (Feb Moon Ruck, etc.)"></TextEdit>
+}
 
 <MemoEdit Rows="5" Placeholder="Paste the Pax Comment from Band" @bind-Text="@comment" style="margin-bottom:12px">
 </MemoEdit>
