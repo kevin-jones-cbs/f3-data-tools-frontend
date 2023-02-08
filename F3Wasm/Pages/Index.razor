@@ -14,6 +14,12 @@
         display: flex;
         flex-direction: row;
     }
+
+    .radio-group-item {
+       margin-bottom: -8px;
+        display: inline-grid;
+        width: 100%;
+    }
 </style>
 
 <div class="one-row" style="padding-bottom:12px">
@@ -44,23 +50,22 @@
 </Alert>
 }
 
-<DatePicker TValue="DateTime?" Placeholder="Q Date" Date="@qDate" DateChanged="@OnDateChanged"
-    style="margin-bottom:12px;" DisplayFormat="M/dd/yyy" />
-<RadioGroup TValue="string" Name="ao" CheckedValue="@ao" CheckedValueChanged="@OnAoChanged" Buttons>
+<DatePicker TValue="DateTime?" Placeholder="Q Date" Date="@qDate" DateChanged="@OnDateChanged" DisplayFormat="M/d/yyy" />
+<RadioGroup TValue="string" Name="ao" CheckedValue="@ao" CheckedValueChanged="@OnAoChanged" Buttons Orientation="Orientation.Vertical" style="margin-top:12px;">
     @foreach (var ao in PaxHelper.AllAos)
     {
-        <div style="@ShowOrHideAo(ao)">
+        <div style="@ShowOrHideAo(ao)" class="radio-group-item">
             <Radio Value="@(ao.Name)" style="appearance:none">@ao.Name (@ao.City)</Radio>
         </div>
     }
-    <div style="">
+    <div style="margin-bottom:6px;" class="radio-group-item">
         <Radio Value="@AoOtherValue" style="appearance:none">Other</Radio>
     </div>
 </RadioGroup>
 
 @if (ao == AoOtherValue)
 {
-    <TextEdit @bind-Text="@otherAoName" style="margin-bottom:12px;" Placeholder="Other Location Name (Feb Moon Ruck, etc.)"></TextEdit>
+    <TextEdit @bind-Text="@otherAoName" style="margin-bottom:12px" Placeholder="Other Location Name (Feb Moon Ruck, etc.)"></TextEdit>
 }
 
 <MemoEdit Rows="5" Placeholder="Paste the Pax Comment from Band" @bind-Text="@comment" style="margin-bottom:12px">
