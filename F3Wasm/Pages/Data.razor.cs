@@ -21,8 +21,16 @@ namespace F3Wasm.Pages
     public partial class Data
     {
         public AllData allData { get; set; }
+        public OverallView currentView { get; set; }
         public List<DisplayRow> currentRows { get; set; }
         public DateTime lastUpdatedDate { get; set; }
+        public bool showPaxModal { get; set; }
+        public Pax selectedPax { get; set; }
+        public List<Post> selectedPaxPosts { get; set; }
+        public int selectedPax100Count { get; set; }
+        public IReadOnlyList<DateTime?> selectedPaxDates { get; set; }
+        public IReadOnlyList<DateTime?> disabledPaxQDates { get; set; }
+        public Dictionary<string, int> selectedPaxPostedWith { get; set; }
 
         protected override async Task OnInitializedAsync()
         {
@@ -52,12 +60,11 @@ namespace F3Wasm.Pages
                     PostCount = pax.Value
                 };
 
-                // DateTime.TryParse(allData.Pax.FirstOrDefault(p => p.Name == pax.Key)?.DateJoined, out DateTime date);
                 var firstDate = posts.Where(p => p.Pax == pax.Key).Min(p => p.Date);
                 if (firstDate != DateTime.MinValue)
                 {
                     row.FirstPost = firstDate;
-                    row.PostPercent = ((double)row.PostCount / (double)GetDaysSince(DateTime.Now, row.FirstPost.Value) * 100);
+                    row.PostPercent = (double)row.PostCount / (double)GetDaysSince(DateTime.Now, row.FirstPost.Value) * 100;
                 }
 
                 // Get the Q count
@@ -93,31 +100,142 @@ namespace F3Wasm.Pages
 
         private void ShowAllTime()
         {
+            currentView = OverallView.AllTime;
             SetCurrentRows(allData.Posts);
         }
 
         private void ShowPreviousMonth()
         {
+            currentView = OverallView.LastMonth;
             var posts = allData.Posts.Where(p => p.Date.Month == DateTime.Now.AddMonths(-1).Month && p.Date.Year == DateTime.Now.AddMonths(-1).Year).ToList();
             SetCurrentRows(posts);
         }
 
         private void ShowCurrentMonth()
         {
+            currentView = OverallView.ThisMonth;
             var posts = allData.Posts.Where(p => p.Date.Month == DateTime.Now.Month && p.Date.Year == DateTime.Now.Year).ToList();
             SetCurrentRows(posts);
         }
 
         private void ShowPreviousYear()
         {
+            currentView = OverallView.LastYear;
             var posts = allData.Posts.Where(p => p.Date.Year == DateTime.Now.AddYears(-1).Year).ToList();
             SetCurrentRows(posts);
         }
 
         private void ShowCurrentYear()
         {
+            currentView = OverallView.ThisYear;
             var posts = allData.Posts.Where(p => p.Date.Year == DateTime.Now.Year).ToList();
             SetCurrentRows(posts);
+        }
+
+        // Modals
+        private Task ShowModal()
+        {
+            showPaxModal = true;
+
+            return Task.CompletedTask;
+        }
+
+        private Task HideModal()
+        {
+            showPaxModal = false;
+
+            return Task.CompletedTask;
+        }
+
+        private Task SelectedRowChanged(DisplayRow row)
+        {
+            Console.WriteLine("SelectedRowChanged " + row.PaxName);
+
+            selectedPax = allData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
+            selectedPaxPosts = allData.Posts.Where(p => p.Pax == row.PaxName).ToList();
+            selectedPaxDates = selectedPaxPosts.Select(p => (DateTime?)p.Date).OrderByDescending(x => x).ToList();
+            disabledPaxQDates = selectedPaxPosts.Where(p => p.IsQ).Select(p => (DateTime?)p.Date).OrderByDescending(x => x).ToList();
+            selectedPaxPostedWith = new Dictionary<string, int>();
+            selectedPax100Count = selectedPaxPosts.Count / 100;
+            ShowModal();
+
+            Console.WriteLine(selectedPaxPosts.Count);
+            Console.WriteLine(selectedPaxPosts.Count / 100);
+
+            return Task.CompletedTask;
+        }
+
+        private Task OnDatesChanged(IReadOnlyList<DateTime?> date)
+        {
+            Console.WriteLine("OnDateChanged " + date.ToString());
+            return Task.CompletedTask;
+        }
+
+        private string GetPaxLocationColor(Ao location)
+        {
+            // Color white
+            string hex;
+            switch (location.DayOfWeek)
+            {
+                case DayOfWeek.Monday:
+                    hex = "#ff5b72";
+                    break;
+                case DayOfWeek.Tuesday:
+                    hex = "#9370f0";
+                    break;
+                case DayOfWeek.Wednesday:
+                    hex = "#32b0e5";
+                    break;
+                case DayOfWeek.Thursday:
+                    hex = "#fdb00d";
+                    break;
+                case DayOfWeek.Friday:
+                    hex = "#00b994";
+                    break;
+                case DayOfWeek.Saturday:
+                    hex = "#25b808";                    
+                    break;
+                default:
+                    hex = "#ffffff";
+                    break;
+            }
+
+            return $"background-color: {hex};";
+        }
+
+        private void GetAllTimePaxPostWith(string index)
+        {
+            List<Post> paxPosts = new List<Post>();
+            selectedPaxPostedWith = new Dictionary<string, int>();
+            var intIndex = int.Parse(index);
+
+            // All Time
+            if (index == "-1")
+            {
+                paxPosts = selectedPaxPosts.OrderByDescending(p => p.Date).ToList();
+            }
+            else 
+            {
+                paxPosts = selectedPaxPosts.OrderByDescending(p => p.Date).Skip(intIndex * 100).Take(intIndex + 1 * 100).ToList();
+            }
+
+            foreach (var paxPost in paxPosts)
+            {
+                var matched = allData.Posts.Where(p => p.Date == paxPost.Date && p.Site == paxPost.Site && p.Pax != paxPost.Pax).ToList();
+                foreach (var pax in matched)
+                {
+                    if (selectedPaxPostedWith.ContainsKey(pax.Pax))
+                    {
+                        selectedPaxPostedWith[pax.Pax]++;
+                    }
+                    else
+                    {
+                        selectedPaxPostedWith.Add(pax.Pax, 1);
+                    }
+                }
+            }
+
+            selectedPaxPostedWith = selectedPaxPostedWith.OrderByDescending(p => p.Value).Take(10).ToDictionary(p => p.Key, p => p.Value);
         }
     }
 }

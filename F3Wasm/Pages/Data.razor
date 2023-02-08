@@ -6,12 +6,59 @@
 
 <PageTitle>F3 South Fork Data</PageTitle>
 
+<style>
+    /* For the search text box */
+    .form-control:first-of-type {
+        display: block;
+    }
+    /* Hide the date picker box */
+    .form-control {
+        display: none;
+    }
+    /* Disabled Dates should have a different style */
+   .flatpickr-day.flatpickr-disabled {
+        background: green;
+        color: #fff;
+    }
+
+    /* Center the date picker */
+    .flatpickr-calendar{
+        margin: auto;
+    }
+
+    .dot {
+        height: 8px;
+        width: 8px;
+        background-color: #bbb;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+
+    .link {
+        color: #007bff;
+        text-decoration: none;
+        background-color: transparent;
+        cursor: pointer;
+    }
+</style>
+
 @if (allData == null)
 {
     <p>Loading...</p>
 }
 else
 {
+    <Row>
+        <Column>
+            <Button Color="currentView == OverallView.AllTime ? Color.Primary : Color.Light" Clicked="ShowAllTime">All Time</Button>
+            <Button Color="currentView == OverallView.LastYear ? Color.Primary : Color.Light" Clicked="ShowPreviousYear">@DateTime.Now.AddYears(-1).ToString("yyyy", CultureInfo.InvariantCulture)</Button>
+            <Button Color="currentView == OverallView.ThisYear ? Color.Primary : Color.Light" Clicked="ShowCurrentYear">@DateTime.Now.ToString("yyyy", CultureInfo.InvariantCulture)</Button>
+            <Button Color="currentView == OverallView.LastMonth ? Color.Primary : Color.Light" Clicked="ShowPreviousMonth">@DateTime.Now.AddMonths(-1).ToString("MMM", CultureInfo.InvariantCulture)</Button>
+            <Button Color="currentView == OverallView.ThisMonth ? Color.Primary : Color.Light" Clicked="ShowCurrentMonth">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture)</Button>
+            <Button Color="Color.Link">Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
+        </Column>
+    </Row>
     <DataGrid 
         TItem="DisplayRow"
         Data="@currentRows"
@@ -23,25 +70,128 @@ else
         Narrow
         ShowPageSizes
         PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }"
+        SelectedRowChanged="SelectedRowChanged"
     >
     <DataGridColumns>
         <DataGridColumn Field="@nameof(DisplayRow.PaxName)" Caption="Name" SortField="@nameof(DisplayRow.PaxName)"/>
         <DataGridColumn Field="@nameof(DisplayRow.PostCount)" Caption="Posts" Filterable="false" />
         <DataGridColumn Field="@nameof(DisplayRow.QCount)" Caption="Q" Filterable="false" />
         <DataGridColumn Field="@nameof(DisplayRow.FirstPost)" Caption="First Post" Filterable="false" DisplayFormat="{0:M/d/yy}" />
-        <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="Posted Percent" Filterable="false" DisplayFormat="{0:0}%" />
+        <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="Post Percent" Filterable="false" DisplayFormat="{0:0}%" />
     </DataGridColumns>
-    <ButtonRowTemplate>
-        <Button Color="Color.Primary" Clicked="ShowAllTime">All Time</Button>
-        <Button Color="Color.Primary" Clicked="ShowPreviousYear">@DateTime.Now.AddYears(-1).ToString("yyyy", CultureInfo.InvariantCulture)</Button>
-        <Button Color="Color.Primary" Clicked="ShowCurrentYear">@DateTime.Now.ToString("yyyy", CultureInfo.InvariantCulture)</Button>
-        <Button Color="Color.Primary" Clicked="ShowPreviousMonth">@DateTime.Now.AddMonths(-1).ToString("MMM", CultureInfo.InvariantCulture)</Button>
-        <Button Color="Color.Primary" Clicked="ShowCurrentMonth">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture)</Button>
-        <Button Color="Color.Link">Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
-    </ButtonRowTemplate>
     <LoadingTemplate>
         <p>Loading...</p>
     </LoadingTemplate>
 
     </DataGrid>
+
+    @if (selectedPax != null)
+    {
+        <Modal @bind-Visible="@showPaxModal">
+            <ModalContent Centered Size="ModalSize.ExtraLarge">
+                <ModalHeader>
+                    <ModalTitle>@selectedPax.Name</ModalTitle>
+                    <CloseButton />
+                </ModalHeader>
+                <ModalBody>
+                    <Row VerticalGutter="16">
+                        <Column>
+                            <Table Narrow Striped>
+                                <TableBody>
+                                    <TableRow>
+                                        <TableRowHeader>Posts</TableRowHeader>
+                                        <TableRowCell>@selectedPaxPosts.Count</TableRowCell>
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableRowHeader>Qs</TableRowHeader>
+                                        <TableRowCell>@selectedPaxPosts.Count(x => x.IsQ == true)</TableRowCell>
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableRowHeader>First Post</TableRowHeader>
+                                        <TableRowCell>@selectedPaxPosts.Min(x => x.Date).ToShortDateString()</TableRowCell>
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableRowHeader>Last Post</TableRowHeader>
+                                        <TableRowCell>@selectedPaxPosts.Max(x => x.Date).ToShortDateString()</TableRowCell>
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableRowHeader>Post Percent</TableRowHeader>
+                                        <TableRowCell>@(((double)selectedPaxPosts.Count / (double)GetDaysSince(DateTime.Now, selectedPaxPosts.Min(x => x.Date)) * 100).ToString("0.00"))%</TableRowCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+
+                            <DatePicker TValue="DateTime?" Inline SelectionMode="DateInputSelectionMode.Multiple" 
+                                Dates="@selectedPaxDates" DatesChanged="@OnDatesChanged" DisabledDates="@disabledPaxQDates" />
+                        </Column>
+                        
+                        <Column>
+                            <Table Narrow Bordered>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHeaderCell>Location</TableHeaderCell>
+                                        <TableHeaderCell>Post Count</TableHeaderCell>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    @foreach (var location in PaxHelper.AllAos)
+                                    {
+                                        <TableRow >
+                                            <TableRowCell><span class="dot" style="@GetPaxLocationColor(location)"></span>@location.Name</TableRowCell>
+                                            <TableRowCell>@selectedPaxPosts.Count(x => x.Site == location.Name)</TableRowCell>
+                                        </TableRow>
+                                    }
+                                    <TableRow>
+                                        <TableRowCell><span class="dot" style="background-color:white"></span> Other</TableRowCell>
+                                        <TableRowCell>@selectedPaxPosts.Count(x => !PaxHelper.AllAos.Select(x => x.Name).Contains(x.Site))</TableRowCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </Column>
+                    </Row>
+                    @* <Row>
+                        <Column ColumnSize="ColumnSize.Is4">
+                            <span>Most PAX Posted With</span>
+                            <ListGroup Mode="ListGroupMode.Selectable">
+                                <ListGroupItem Clicked="GetAllTimePaxPostWith(null)" class="link">All Time</ListGroupItem>
+                                @for (int i = 0; i < selectedPax100Count; i++)
+                                {
+                                    var local = i;
+                                    <ListGroupItem Clicked="@GetAllTimePaxPostWith(local.ToString())" class="link">@(local*100)-@((local+1)*100)</ListGroupItem>
+                                }
+                                @if (selectedPax100Count > 0)
+                                {
+                                    <ListGroupItem  class="link">@(selectedPax100Count*100)-@(selectedPaxPosts.Count)</ListGroupItem>
+                                }
+                            </ListGroup>
+
+                            @if (selectedPaxPostedWith != null && selectedPaxPostedWith.Count > 0)
+                            {
+                                <Table Narrow Bordered>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHeaderCell>Pax</TableHeaderCell>
+                                            <TableHeaderCell>Count</TableHeaderCell>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        @foreach (var paxPoster in selectedPaxPostedWith)
+                                        {
+                                            <TableRow>
+                                                <TableRowCell>@paxPoster.Key</TableRowCell>
+                                                <TableRowCell>@paxPoster.Value</TableRowCell>
+                                            </TableRow>
+                                        }
+                                    </TableBody>
+                                </Table>
+                            }
+                        </Column>
+                    </Row> *@
+                </ModalBody>
+                <ModalFooter>
+                    <Button Color="Color.Secondary" Clicked="@HideModal">Close</Button>
+                </ModalFooter>
+            </ModalContent>
+        </Modal>    
+    }
 }
