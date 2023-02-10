@@ -42,10 +42,10 @@ namespace F3Wasm.Pages
                 allData.Posts.Remove(lastUpdateItem);
             }
 
-            SetCurrentRows(allData.Posts);
+            ShowAllTime();
         }
 
-        public void SetCurrentRows(List<Post> posts)
+        public void SetCurrentRows(List<Post> posts, DateTime? firstDay, DateTime lastDay)
         {
             // Group the posts by pax name
             var paxPosts = posts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.Count());
@@ -60,11 +60,11 @@ namespace F3Wasm.Pages
                     PostCount = pax.Value
                 };
 
-                var firstDate = posts.Where(p => p.Pax == pax.Key).Min(p => p.Date);
-                if (firstDate != DateTime.MinValue)
+                var paxFirstDate = posts.Where(p => p.Pax == pax.Key).Min(p => p.Date);
+                if (paxFirstDate != DateTime.MinValue)
                 {
-                    row.FirstPost = firstDate;
-                    row.PostPercent = (double)row.PostCount / (double)GetDaysSince(DateTime.Now, row.FirstPost.Value) * 100;
+                    row.FirstPost = paxFirstDate;
+                    row.PostPercent = (double)row.PostCount / (double)GetDaysSince(lastDay, firstDay ?? paxFirstDate) * 100;
                 }
 
                 // Get the Q count
@@ -101,35 +101,47 @@ namespace F3Wasm.Pages
         private void ShowAllTime()
         {
             currentView = OverallView.AllTime;
-            SetCurrentRows(allData.Posts);
+            SetCurrentRows(allData.Posts, null, DateTime.Now);
         }
 
         private void ShowPreviousMonth()
         {
             currentView = OverallView.LastMonth;
             var posts = allData.Posts.Where(p => p.Date.Month == DateTime.Now.AddMonths(-1).Month && p.Date.Year == DateTime.Now.AddMonths(-1).Year).ToList();
-            SetCurrentRows(posts);
+
+            var firstDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month - 1, 1);
+            var lastDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddDays(-1);
+            SetCurrentRows(posts, firstDay, lastDay);
         }
 
         private void ShowCurrentMonth()
         {
             currentView = OverallView.ThisMonth;
             var posts = allData.Posts.Where(p => p.Date.Month == DateTime.Now.Month && p.Date.Year == DateTime.Now.Year).ToList();
-            SetCurrentRows(posts);
+
+            var firstDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            var lastDay = DateTime.Now;
+            SetCurrentRows(posts, firstDay, lastDay);
         }
 
         private void ShowPreviousYear()
         {
             currentView = OverallView.LastYear;
             var posts = allData.Posts.Where(p => p.Date.Year == DateTime.Now.AddYears(-1).Year).ToList();
-            SetCurrentRows(posts);
+
+            var firstDay = new DateTime(DateTime.Now.Year - 1, 1, 1);
+            var lastDay = new DateTime(DateTime.Now.Year, 1, 1).AddDays(-1);
+            SetCurrentRows(posts, firstDay, lastDay);
         }
 
         private void ShowCurrentYear()
         {
             currentView = OverallView.ThisYear;
             var posts = allData.Posts.Where(p => p.Date.Year == DateTime.Now.Year).ToList();
-            SetCurrentRows(posts);
+
+            var firstDay = new DateTime(DateTime.Now.Year, 1, 1);
+            var lastDay = DateTime.Now;
+            SetCurrentRows(posts, firstDay, lastDay);
         }
 
         // Modals
