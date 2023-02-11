@@ -30,6 +30,7 @@ namespace F3Wasm.Pages
         public int selectedPax100Count { get; set; }
         public IReadOnlyList<DateTime?> selectedPaxDates { get; set; }
         public IReadOnlyList<DateTime?> disabledPaxQDates { get; set; }
+        public string selectedPaxPostWithView { get; set; } = null;
         public Dictionary<string, int> selectedPaxPostedWith { get; set; }
 
         protected override async Task OnInitializedAsync()
@@ -169,6 +170,8 @@ namespace F3Wasm.Pages
             disabledPaxQDates = selectedPaxPosts.Where(p => p.IsQ).Select(p => (DateTime?)p.Date).OrderByDescending(x => x).ToList();
             selectedPaxPostedWith = new Dictionary<string, int>();
             selectedPax100Count = selectedPaxPosts.Count / 100;
+            selectedPaxPostWithView = "AllTime";
+            OnSelectedPaxPostWithViewChange(selectedPaxPostWithView);
             ShowModal();
 
             Console.WriteLine(selectedPaxPosts.Count);
@@ -215,19 +218,29 @@ namespace F3Wasm.Pages
             return $"background-color: {hex};";
         }
 
+        private void OnSelectedPaxPostWithViewChange(string index)
+        {
+            Console.WriteLine("OnSelectedPaxPostWithViewChange " + index);
+            GetAllTimePaxPostWith(index);
+        }
         private void GetAllTimePaxPostWith(string index)
         {
             List<Post> paxPosts = new List<Post>();
             selectedPaxPostedWith = new Dictionary<string, int>();
-            var intIndex = int.Parse(index);
+            selectedPaxPostWithView = index;
 
             // All Time
-            if (index == "-1")
+            if (index == "AllTime")
             {
                 paxPosts = selectedPaxPosts.OrderByDescending(p => p.Date).ToList();
             }
+            else if (index == "Recent100")
+            {
+                paxPosts = selectedPaxPosts.OrderByDescending(p => p.Date).Skip(selectedPax100Count * 100).ToList();
+            }
             else 
             {
+                var intIndex = int.Parse(index);
                 paxPosts = selectedPaxPosts.OrderByDescending(p => p.Date).Skip(intIndex * 100).Take(intIndex + 1 * 100).ToList();
             }
 

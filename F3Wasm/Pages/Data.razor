@@ -17,7 +17,7 @@
     }
     /* Disabled Dates should have a different style */
    .flatpickr-day.flatpickr-disabled {
-        background: green;
+        background: #28a745;
         color: #fff;
     }
 
@@ -56,7 +56,7 @@ else
             <Button Color="currentView == OverallView.ThisYear ? Color.Primary : Color.Light" Clicked="ShowCurrentYear">@DateTime.Now.ToString("yyyy", CultureInfo.InvariantCulture)</Button>
             <Button Color="currentView == OverallView.LastMonth ? Color.Primary : Color.Light" Clicked="ShowPreviousMonth">@DateTime.Now.AddMonths(-1).ToString("MMM", CultureInfo.InvariantCulture)</Button>
             <Button Color="currentView == OverallView.ThisMonth ? Color.Primary : Color.Light" Clicked="ShowCurrentMonth">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture)</Button>
-            <Button Color="Color.Link">Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
+            <Button>Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
         </Column>
     </Row>
     <DataGrid 
@@ -123,6 +123,11 @@ else
 
                             <DatePicker TValue="DateTime?" Inline SelectionMode="DateInputSelectionMode.Multiple" 
                                 Dates="@selectedPaxDates" DatesChanged="@OnDatesChanged" DisabledDates="@disabledPaxQDates" />
+
+                            <div style="text-align:center; margin-top:6px;">
+                                <Badge Color="Color.Primary">Post</Badge>
+                                <Badge Color="Color.Success" style="width:36px;">Q</Badge>
+                            </div>
                         </Column>
                         
                         <Column>
@@ -149,44 +154,46 @@ else
                             </Table>
                         </Column>
                     </Row>
-                    @* <Row>
-                        <Column ColumnSize="ColumnSize.Is4">
+                    <Row>
+                        <Column ColumnSize="ColumnSize.Is6">
                             <span>Most PAX Posted With</span>
-                            <ListGroup Mode="ListGroupMode.Selectable">
-                                <ListGroupItem Clicked="GetAllTimePaxPostWith(null)" class="link">All Time</ListGroupItem>
+                            <ListGroup Mode="ListGroupMode.Selectable" SelectedItem="@selectedPaxPostWithView" SelectedItemChanged="OnSelectedPaxPostWithViewChange">
+                                <ListGroupItem Name="AllTime">All Time</ListGroupItem>
                                 @for (int i = 0; i < selectedPax100Count; i++)
                                 {
                                     var local = i;
-                                    <ListGroupItem Clicked="@GetAllTimePaxPostWith(local.ToString())" class="link">@(local*100)-@((local+1)*100)</ListGroupItem>
+                                    <ListGroupItem Name="@i.ToString()">@(local*100)-@((local+1)*100)</ListGroupItem>
                                 }
                                 @if (selectedPax100Count > 0)
                                 {
-                                    <ListGroupItem  class="link">@(selectedPax100Count*100)-@(selectedPaxPosts.Count)</ListGroupItem>
+                                    <ListGroupItem Name="Recent100">@(selectedPax100Count*100)-@(selectedPaxPosts.Count)</ListGroupItem>
                                 }
                             </ListGroup>
-
-                            @if (selectedPaxPostedWith != null && selectedPaxPostedWith.Count > 0)
-                            {
-                                <Table Narrow Bordered>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHeaderCell>Pax</TableHeaderCell>
-                                            <TableHeaderCell>Count</TableHeaderCell>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        @foreach (var paxPoster in selectedPaxPostedWith)
-                                        {
-                                            <TableRow>
-                                                <TableRowCell>@paxPoster.Key</TableRowCell>
-                                                <TableRowCell>@paxPoster.Value</TableRowCell>
-                                            </TableRow>
-                                        }
-                                    </TableBody>
-                                </Table>
-                            }
                         </Column>
-                    </Row> *@
+                         @if (selectedPaxPostedWith != null && selectedPaxPostedWith.Count > 0)
+                            {
+                                <Column ColumnSize="ColumnSize.Is6">
+
+                                    <Table Narrow Bordered>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHeaderCell>Pax</TableHeaderCell>
+                                                <TableHeaderCell>Count</TableHeaderCell>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            @foreach (var paxPoster in selectedPaxPostedWith)
+                                            {
+                                                <TableRow>
+                                                    <TableRowCell>@paxPoster.Key</TableRowCell>
+                                                    <TableRowCell>@paxPoster.Value</TableRowCell>
+                                                </TableRow>
+                                            }
+                                        </TableBody>
+                                    </Table>
+                                </Column>
+                            }
+                    </Row>
                 </ModalBody>
                 <ModalFooter>
                     <Button Color="Color.Secondary" Clicked="@HideModal">Close</Button>
