@@ -162,7 +162,7 @@ namespace F3Wasm.Pages
             return Task.CompletedTask;
         }
 
-        private async Task SelectedRowChanged(DisplayRow row)
+        private Task SelectedRowChanged(DisplayRow row)
         {
             Console.WriteLine("SelectedRowChanged " + row.PaxName);
 
@@ -174,10 +174,12 @@ namespace F3Wasm.Pages
             selectedPax100Count = selectedPaxPosts.Count / 100;
             selectedPaxPostWithView = "AllTime";
             ShowModal();
-            await OnSelectedPaxPostWithViewChange(selectedPaxPostWithView);
+            OnSelectedPaxPostWithViewChange(selectedPaxPostWithView);
 
             Console.WriteLine(selectedPaxPosts.Count);
             Console.WriteLine(selectedPaxPosts.Count / 100);
+
+            return Task.CompletedTask;
         }
 
         private Task OnDatesChanged(IReadOnlyList<DateTime?> date)
@@ -218,12 +220,14 @@ namespace F3Wasm.Pages
             return $"background-color: {hex};";
         }
 
-        private async Task OnSelectedPaxPostWithViewChange(string index)
+        private Task OnSelectedPaxPostWithViewChange(string index)
         {
             Console.WriteLine("OnSelectedPaxPostWithViewChange " + index);
-            await GetAllTimePaxPostWithAsync(index);
+            GetAllTimePaxPostWithAsync(index);
+
+            return Task.CompletedTask;
         }
-        private async Task GetAllTimePaxPostWithAsync(string index)
+        private Task GetAllTimePaxPostWithAsync(string index)
         {
             List<Post> paxPosts = new List<Post>();
             selectedPaxPostedWith = new Dictionary<string, int>();
@@ -260,12 +264,14 @@ namespace F3Wasm.Pages
                 }
             }
 
-            var current = await JSRuntime.InvokeAsync<int>("getPaxModalScroll");
+            // var current = await JSRuntime.InvokeAsync<int>("getPaxModalScroll");
 
             selectedPaxPostedWith = selectedPaxPostedWith.OrderByDescending(p => p.Value).Take(10).ToDictionary(p => p.Key, p => p.Value);
             // Sleep 100 ms
-            await Task.Delay(100);
-            await JSRuntime.InvokeVoidAsync("scrollPaxModal", current);
+            // await Task.Delay(100);
+            // await JSRuntime.InvokeVoidAsync("scrollPaxModal", current);
+
+            return Task.CompletedTask;
         }
     }
 }
