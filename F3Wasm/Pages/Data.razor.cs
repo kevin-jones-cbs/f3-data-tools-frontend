@@ -220,7 +220,7 @@ namespace F3Wasm.Pages
         private async Task GetAllTimePaxPostWithAsync(string index)
         {
             List<Post> paxPosts = new List<Post>();
-            selectedPaxPostedWith = new Dictionary<string, int>();
+            var newPaxPostedWith = new Dictionary<string, int>();
             selectedPaxPostWithView = index;
 
             // All Time
@@ -248,22 +248,22 @@ namespace F3Wasm.Pages
                 
                 foreach (var pax in matched)
                 {
-                    if (selectedPaxPostedWith.ContainsKey(pax.Pax))
+                    if (newPaxPostedWith.ContainsKey(pax.Pax))
                     {
-                        selectedPaxPostedWith[pax.Pax]++;
+                        newPaxPostedWith[pax.Pax]++;
                     }
                     else
                     {
-                        selectedPaxPostedWith.Add(pax.Pax, 1);
+                        newPaxPostedWith.Add(pax.Pax, 1);
                     }
                 }
             }
 
             var current = await JSRuntime.InvokeAsync<int>("getPaxModalScroll");
 
-            selectedPaxPostedWith = selectedPaxPostedWith.OrderByDescending(p => p.Value).Take(10).ToDictionary(p => p.Key, p => p.Value);
+            selectedPaxPostedWith = newPaxPostedWith.OrderByDescending(p => p.Value).Take(10).ToDictionary(p => p.Key, p => p.Value);
             // Sleep 50ms
-            await Task.Delay(50);
+            // await Task.Delay(50);
             await JSRuntime.InvokeVoidAsync("scrollPaxModal", current);
         }
     }
