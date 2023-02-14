@@ -17,6 +17,18 @@
     <link href="_content/Blazorise/blazorise.css" rel="stylesheet" />
     <link href="_content/Blazorise.Bootstrap/blazorise.bootstrap.css" rel="stylesheet" />
     <link href="_content/Blazorise.SpinKit/blazorise.spinkit.css" rel="stylesheet" />
+
+    <script>
+        function getPaxModalScroll() {
+            var modalElement = document.getElementById('SelectedPaxModal');
+            return modalElement.scrollTop;
+        }
+
+        function scrollPaxModal(scrollHeight) {
+            var modalElement = document.getElementById('SelectedPaxModal');
+            modalElement.scrollTop = scrollHeight;
+        }
+    </script>
 </head>
 
 <body>

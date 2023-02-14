@@ -87,7 +87,7 @@ else
 
     @if (selectedPax != null)
     {
-        <Modal @bind-Visible="@showPaxModal">
+        <Modal @bind-Visible="@showPaxModal" id="SelectedPaxModal">
             <ModalContent Centered Size="ModalSize.ExtraLarge">
                 <ModalHeader>
                     <ModalTitle>@selectedPax.Name</ModalTitle>
