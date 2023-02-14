@@ -164,27 +164,20 @@ namespace F3Wasm.Pages
 
         private Task SelectedRowChanged(DisplayRow row)
         {
-            Console.WriteLine("SelectedRowChanged " + row.PaxName);
-
             selectedPax = allData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
             selectedPaxPosts = allData.Posts.Where(p => p.Pax == row.PaxName).ToList();
             selectedPaxDates = selectedPaxPosts.Select(p => (DateTime?)p.Date).OrderByDescending(x => x).ToList();
             disabledPaxQDates = selectedPaxPosts.Where(p => p.IsQ).Select(p => (DateTime?)p.Date).OrderByDescending(x => x).ToList();
             selectedPaxPostedWith = new Dictionary<string, int>();
             selectedPax100Count = selectedPaxPosts.Count / 100;
-            selectedPaxPostWithView = "AllTime";
+            selectedPaxPostWithView = null;
             ShowModal();
-            OnSelectedPaxPostWithViewChange(selectedPaxPostWithView);
-
-            Console.WriteLine(selectedPaxPosts.Count);
-            Console.WriteLine(selectedPaxPosts.Count / 100);
 
             return Task.CompletedTask;
         }
 
         private Task OnDatesChanged(IReadOnlyList<DateTime?> date)
         {
-            Console.WriteLine("OnDateChanged " + date.ToString());
             return Task.CompletedTask;
         }
 
@@ -220,21 +213,18 @@ namespace F3Wasm.Pages
             return $"background-color: {hex};";
         }
 
-        private Task OnSelectedPaxPostWithViewChange(string index)
+        private async Task OnSelectedPaxPostWithViewChange(string index)
         {
-            Console.WriteLine("OnSelectedPaxPostWithViewChange " + index);
-            GetAllTimePaxPostWithAsync(index);
-
-            return Task.CompletedTask;
+            await GetAllTimePaxPostWithAsync(index);
         }
-        private Task GetAllTimePaxPostWithAsync(string index)
+        private async Task GetAllTimePaxPostWithAsync(string index)
         {
             List<Post> paxPosts = new List<Post>();
             selectedPaxPostedWith = new Dictionary<string, int>();
             selectedPaxPostWithView = index;
 
             // All Time
-            if (index == "AllTime")
+            if (index == "AllTime" || index == "QAllTime")
             {
                 paxPosts = selectedPaxPosts.OrderByDescending(p => p.Date).ToList();
             }
@@ -251,6 +241,11 @@ namespace F3Wasm.Pages
             foreach (var paxPost in paxPosts)
             {
                 var matched = allData.Posts.Where(p => p.Date == paxPost.Date && p.Site == paxPost.Site && p.Pax != paxPost.Pax).ToList();
+                if (index == "QAllTime")
+                {
+                    matched = matched.Where(p => p.IsQ).ToList();
+                }
+                
                 foreach (var pax in matched)
                 {
                     if (selectedPaxPostedWith.ContainsKey(pax.Pax))
@@ -264,14 +259,11 @@ namespace F3Wasm.Pages
                 }
             }
 
-            // var current = await JSRuntime.InvokeAsync<int>("getPaxModalScroll");
+            var current = await JSRuntime.InvokeAsync<int>("getPaxModalScroll");
 
             selectedPaxPostedWith = selectedPaxPostedWith.OrderByDescending(p => p.Value).Take(10).ToDictionary(p => p.Key, p => p.Value);
-            // Sleep 100 ms
-            // await Task.Delay(100);
-            // await JSRuntime.InvokeVoidAsync("scrollPaxModal", current);
 
-            return Task.CompletedTask;
+            await JSRuntime.InvokeVoidAsync("scrollPaxModal", current);
         }
     }
 }

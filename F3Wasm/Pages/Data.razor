@@ -85,9 +85,10 @@ else
 
     </DataGrid>
 
-    @if (selectedPax != null)
-    {
-        <Modal @bind-Visible="@showPaxModal" id="SelectedPaxModal">
+
+    <Modal @bind-Visible="@showPaxModal" id="SelectedPaxModal">
+        @if (selectedPax != null)
+        {
             <ModalContent Centered Size="ModalSize.ExtraLarge">
                 <ModalHeader>
                     <ModalTitle>@selectedPax.Name</ModalTitle>
@@ -157,7 +158,7 @@ else
                     <Row>
                         <Column ColumnSize="ColumnSize.Is6">
                             <span>Most PAX Posted With</span>
-                            <ListGroup Mode="ListGroupMode.Selectable" SelectedItem="@selectedPaxPostWithView" SelectedItemChanged="OnSelectedPaxPostWithViewChange">
+                            <ListGroup Mode="ListGroupMode.Selectable" SelectedItem="@selectedPaxPostWithView" SelectedItemChanged="@(async (r) => await OnSelectedPaxPostWithViewChange(r))">
                                 <ListGroupItem Name="AllTime">All Time</ListGroupItem>
                                 @for (int i = 0; i < selectedPax100Count; i++)
                                 {
@@ -168,7 +169,11 @@ else
                                 {
                                     <ListGroupItem Name="Recent100">@(selectedPax100Count*100)-@(selectedPaxPosts.Count)</ListGroupItem>
                                 }
+
+                            <span style="margin-top:12px">Most Q'd By</span>
+                                <ListGroupItem Name="QAllTime">All Time</ListGroupItem>
                             </ListGroup>
+
                         </Column>
                          @if (selectedPaxPostedWith != null && selectedPaxPostedWith.Count > 0)
                             {
@@ -199,6 +204,6 @@ else
                     <Button Color="Color.Secondary" Clicked="@HideModal">Close</Button>
                 </ModalFooter>
             </ModalContent>
-        </Modal>    
-    }
+        }
+    </Modal>    
 }
