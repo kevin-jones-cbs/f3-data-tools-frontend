@@ -262,7 +262,8 @@ namespace F3Wasm.Pages
             var current = await JSRuntime.InvokeAsync<int>("getPaxModalScroll");
 
             selectedPaxPostedWith = selectedPaxPostedWith.OrderByDescending(p => p.Value).Take(10).ToDictionary(p => p.Key, p => p.Value);
-
+            // Sleep 50ms
+            await Task.Delay(50);
             await JSRuntime.InvokeVoidAsync("scrollPaxModal", current);
         }
     }
