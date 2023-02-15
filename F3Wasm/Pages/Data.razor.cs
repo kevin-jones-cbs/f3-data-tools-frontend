@@ -162,15 +162,22 @@ namespace F3Wasm.Pages
             return Task.CompletedTask;
         }
 
+        private Task OnModalClosing(ModalClosingEventArgs e)
+        {
+            selectedPax = null;
+
+            return Task.CompletedTask;
+        }
+
         private Task SelectedRowChanged(DisplayRow row)
         {
-            selectedPax = allData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
             selectedPaxPosts = allData.Posts.Where(p => p.Pax == row.PaxName).ToList();
             selectedPaxDates = selectedPaxPosts.Select(p => (DateTime?)p.Date).OrderByDescending(x => x).ToList();
             disabledPaxQDates = selectedPaxPosts.Where(p => p.IsQ).Select(p => (DateTime?)p.Date).OrderByDescending(x => x).ToList();
             selectedPaxPostedWith = new Dictionary<string, int>();
             selectedPax100Count = selectedPaxPosts.Count / 100;
             selectedPaxPostWithView = null;
+            selectedPax = allData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
             ShowModal();
 
             return Task.CompletedTask;
@@ -203,7 +210,7 @@ namespace F3Wasm.Pages
                     hex = "#00b994";
                     break;
                 case DayOfWeek.Saturday:
-                    hex = "#25b808";                    
+                    hex = "#25b808";
                     break;
                 default:
                     hex = "#ffffff";
@@ -232,7 +239,7 @@ namespace F3Wasm.Pages
             {
                 paxPosts = selectedPaxPosts.OrderByDescending(p => p.Date).Skip(selectedPax100Count * 100).ToList();
             }
-            else 
+            else
             {
                 var intIndex = int.Parse(index);
                 paxPosts = selectedPaxPosts.OrderByDescending(p => p.Date).Skip(intIndex * 100).Take(intIndex + 1 * 100).ToList();
@@ -245,7 +252,7 @@ namespace F3Wasm.Pages
                 {
                     matched = matched.Where(p => p.IsQ).ToList();
                 }
-                
+
                 foreach (var pax in matched)
                 {
                     if (newPaxPostedWith.ContainsKey(pax.Pax))
@@ -259,12 +266,12 @@ namespace F3Wasm.Pages
                 }
             }
 
-            var current = await JSRuntime.InvokeAsync<int>("getPaxModalScroll");
+            // var current = await JSRuntime.InvokeAsync<int>("getPaxModalScroll");
 
             selectedPaxPostedWith = newPaxPostedWith.OrderByDescending(p => p.Value).Take(10).ToDictionary(p => p.Key, p => p.Value);
             // Sleep 50ms
             // await Task.Delay(50);
-            await JSRuntime.InvokeVoidAsync("scrollPaxModal", current);
+            // await JSRuntime.InvokeVoidAsync("scrollPaxModal", current);
         }
     }
 }

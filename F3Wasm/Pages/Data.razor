@@ -86,10 +86,10 @@ else
     </DataGrid>
 
 
-    <Modal @bind-Visible="@showPaxModal" id="SelectedPaxModal">
+    <Modal @bind-Visible="@showPaxModal" id="SelectedPaxModal" Closing="@OnModalClosing">
         @if (selectedPax != null)
         {
-            <ModalContent Centered Size="ModalSize.ExtraLarge">
+            <ModalContent Centered Size="ModalSize.Fullscreen">
                 <ModalHeader>
                     <ModalTitle>@selectedPax.Name</ModalTitle>
                     <CloseButton />
