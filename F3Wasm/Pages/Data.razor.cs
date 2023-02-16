@@ -222,27 +222,28 @@ namespace F3Wasm.Pages
 
         private async Task OnSelectedPaxPostWithViewChange(string index)
         {
-            await GetAllTimePaxPostWithAsync(index);
+            selectedPaxPostedWith = GetAllTimePaxPostWith(index, selectedPaxPosts, allData, selectedPax100Count);
+            selectedPaxPostWithView = index;
         }
-        private async Task GetAllTimePaxPostWithAsync(string index)
+
+        public static Dictionary<string, int> GetAllTimePaxPostWith(string index, List<Post> selectedPaxPosts, AllData allData, int selectedPax100Count)
         {
             List<Post> paxPosts = new List<Post>();
             var newPaxPostedWith = new Dictionary<string, int>();
-            selectedPaxPostWithView = index;
 
             // All Time
             if (index == "AllTime" || index == "QAllTime")
             {
-                paxPosts = selectedPaxPosts.OrderByDescending(p => p.Date).ToList();
+                paxPosts = selectedPaxPosts.OrderBy(p => p.Date).ToList();
             }
             else if (index == "Recent100")
             {
-                paxPosts = selectedPaxPosts.OrderByDescending(p => p.Date).Skip(selectedPax100Count * 100).ToList();
+                paxPosts = selectedPaxPosts.OrderBy(p => p.Date).Skip(selectedPax100Count * 100).ToList();
             }
             else
             {
                 var intIndex = int.Parse(index);
-                paxPosts = selectedPaxPosts.OrderByDescending(p => p.Date).Skip(intIndex * 100).Take(intIndex + 1 * 100).ToList();
+                paxPosts = selectedPaxPosts.OrderBy(p => p.Date).Skip(intIndex * 100).Take(intIndex + 1 * 100).ToList();
             }
 
             foreach (var paxPost in paxPosts)
@@ -266,12 +267,7 @@ namespace F3Wasm.Pages
                 }
             }
 
-            // var current = await JSRuntime.InvokeAsync<int>("getPaxModalScroll");
-
-            selectedPaxPostedWith = newPaxPostedWith.OrderByDescending(p => p.Value).Take(10).ToDictionary(p => p.Key, p => p.Value);
-            // Sleep 50ms
-            // await Task.Delay(50);
-            // await JSRuntime.InvokeVoidAsync("scrollPaxModal", current);
+            return newPaxPostedWith.OrderByDescending(p => p.Value).Take(10).ToDictionary(p => p.Key, p => p.Value);
         }
     }
 }

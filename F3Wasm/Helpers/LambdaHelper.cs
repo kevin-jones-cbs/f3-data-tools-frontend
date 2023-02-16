@@ -31,11 +31,16 @@ namespace F3Wasm.Data
             var response = await CallF3LambdaAsync(client, input);
         }
 
-        // Get All Data
         public static async Task<AllData> GetAllDataAsync(HttpClient client)
         {
             var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetAllPosts" });
-            var decompressed = Decompress(response);
+            return DecompressAll(response);
+        }
+
+        // Decompress All
+        public static AllData DecompressAll(string compressedString)
+        {
+            var decompressed = Decompress(compressedString);
 
             var allData = JsonSerializer.Deserialize<AllData>(decompressed, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
