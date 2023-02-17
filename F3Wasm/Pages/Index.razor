@@ -1,4 +1,4 @@
-﻿@page "/"
+﻿@page "/upload/{region}"
 @using F3Wasm.Models
 @using F3Wasm.Data
 @inject HttpClient Http
@@ -16,7 +16,7 @@
     }
 
     .radio-group-item {
-       margin-bottom: -8px;
+        margin-bottom: -8px;
         display: inline-grid;
         width: 100%;
     }
@@ -33,7 +33,7 @@
 @if (missingAos.Count > 0)
 {
     <ListGroup style="padding-bottom:12px">
-    @foreach (var missing in missingAos)
+        @foreach (var missing in missingAos)
         {
             <ListGroupItem class="custom-link" Clicked="@(x => OnMissingAoSelected(missing))">@missing.Name -
                 @missing.DayOfWeek.ToString() @missing.Date.ToShortDateString()</ListGroupItem>
@@ -52,7 +52,7 @@
 
 <DatePicker TValue="DateTime?" Placeholder="Q Date" Date="@qDate" DateChanged="@OnDateChanged" DisplayFormat="M/d/yyy" />
 <RadioGroup TValue="string" Name="ao" CheckedValue="@ao" CheckedValueChanged="@OnAoChanged" Buttons Orientation="Orientation.Vertical" style="margin-top:12px;">
-    @foreach (var ao in PaxHelper.AllAos)
+    @foreach (var ao in RegionInfo.AoList)
     {
         <div style="@ShowOrHideAo(ao)" class="radio-group-item">
             <Radio Value="@(ao.Name)" style="appearance:none">@ao.Name (@ao.City)</Radio>
@@ -114,7 +114,7 @@
                         else
                         {
                             <Autocomplete TItem="String" TValue="string" Data="@allNames" TextField="@(( item ) => item)"
-                    ValueField="@(( item ) => item)" @bind-SelectedValue="@p.Name" @bind-SelectedText="@p.UnknownName"
+                    ValueField="@(( item ) => item)" @bind-SelectedValue="@p.Name" @bind-SelectedText="@p.UnknownName" 
                     Placeholder="Search..." Filter="AutocompleteFilter.StartsWith" FreeTyping
                     CustomFilter="@(( item, searchValue ) => item.IndexOf( searchValue, 0, StringComparison.CurrentCultureIgnoreCase ) >= 0 )">
                             <NotFoundContent> Sorry... @context was not found! :( </NotFoundContent>

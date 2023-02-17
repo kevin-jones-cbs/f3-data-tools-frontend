@@ -140,7 +140,7 @@ else
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    @foreach (var location in PaxHelper.AllAos)
+                                    @foreach (var location in RegionInfo.AoList)
                                     {
                                         <TableRow >
                                             <TableRowCell><span class="dot" style="@GetPaxLocationColor(location)"></span>@location.Name</TableRowCell>
@@ -149,7 +149,7 @@ else
                                     }
                                     <TableRow>
                                         <TableRowCell><span class="dot" style="background-color:white"></span> Other</TableRowCell>
-                                        <TableRowCell>@selectedPaxPosts.Count(x => !PaxHelper.AllAos.Select(x => x.Name).Contains(x.Site))</TableRowCell>
+                                        <TableRowCell>@selectedPaxPosts.Count(x => !RegionInfo.AoList.Select(x => x.Name).Contains(x.Site))</TableRowCell>
                                     </TableRow>
                                 </TableBody>
                             </Table>

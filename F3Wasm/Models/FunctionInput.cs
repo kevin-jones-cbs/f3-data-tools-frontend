@@ -7,5 +7,6 @@ namespace F3Wasm.Models
         public string AoName { get; set; }
         public DateTime QDate { get; set; }
         public bool IsTesting { get; set; } 
+        public string Region { get; set; }
     }
 }

@@ -15,11 +15,16 @@ using Blazorise;
 using Blazorise.Components;
 using F3Wasm.Models;
 using F3Wasm.Data;
+using F3Wasm.Regions;
 
 namespace F3Wasm.Pages
 {
     public partial class Index
     {
+        [Parameter]
+        public string Region { get; set; }
+        public Region RegionInfo { get; set; }
+
         private string comment = string.Empty;
         private List<string> allNames = new List<string>();
         private List<Pax> pax = new List<Pax>();
@@ -34,7 +39,16 @@ namespace F3Wasm.Pages
         public bool showCompleteAlert { get; set; }
         public bool isLoading { get; set; }
         public bool isMissingDataLoading { get; set; }
- 
+
+        protected override async Task OnInitializedAsync()
+        {
+            RegionInfo = RegionList.All.FirstOrDefault(x => x.QueryStringValue == Region);
+            if (RegionInfo == null)
+            {
+                throw new Exception("Invalid Region");
+            }
+        }
+
         private string ShowOrHideAo(Ao ao)
         {
             return IsValidAo(ao) ? "Display: none" : string.Empty;
@@ -48,14 +62,14 @@ namespace F3Wasm.Pages
         private async Task OnMissingAoButtonClicked()
         {
             isMissingDataLoading = true;
-            missingAos = await LambdaHelper.GetMissingAosAsync(Http);
+            missingAos = await LambdaHelper.GetMissingAosAsync(Http, Region);
             if (!missingAos.Any())
             {
                 showNoMissingAoMessage = true;
             }
 
             isMissingDataLoading = false;
-        }        
+        }
 
         private async Task OnMissingAoSelected(Ao missingAo)
         {
@@ -79,7 +93,7 @@ namespace F3Wasm.Pages
 
         private async Task OnCommentButtonClicked()
         {
-            allNames = await LambdaHelper.GetPaxNamesAsync(Http);
+            allNames = await LambdaHelper.GetPaxNamesAsync(Http, Region);
             allNames = allNames.OrderBy(x => x).ToList();
             pax = PaxHelper.GetPaxFromComment(comment, allNames);
 
@@ -131,14 +145,14 @@ namespace F3Wasm.Pages
             try
             {
                 isLoading = true;
-                await LambdaHelper.UploadPaxAsync(Http, pax, ao == AoOtherValue ? otherAoName : ao, qDate.Value);
+                await LambdaHelper.UploadPaxAsync(Http, Region, pax, ao == AoOtherValue ? otherAoName : ao, qDate.Value);
                 showCompleteAlert = true;
 
                 // Remove from missing list if it's there if ao and date match
                 if (missingAos.Any(x => x.Name == ao && x.Date.Date == qDate.Value.Date))
                 {
                     missingAos.Remove(missingAos.First(x => x.Name == ao && x.Date.Date == qDate.Value.Date));
-                    
+
                     // If there are no more missing aos, show the message
                     if (!missingAos.Any())
                     {
@@ -152,7 +166,7 @@ namespace F3Wasm.Pages
                 qDate = DateTime.Now;
                 ao = string.Empty;
                 otherAoName = string.Empty;
-                isLoading = false;                
+                isLoading = false;
             }
             catch (Exception ex)
             {
