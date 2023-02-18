@@ -1,6 +1,9 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@using F3Core
+@using F3Core.Regions
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">F3 South Fork Tools</a>
+        <a class="navbar-brand" href="">F3 @GetRegionName()</a>
         @* <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button> *@
@@ -18,9 +21,19 @@
 </div>
 
 @code {
+    [Parameter]
+    public string Region { get; set; }
+    public Region RegionInfo { get; set; }
     private bool collapseNavMenu = true;
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    public string GetRegionName()
+    {
+        Console.WriteLine("GetRegionName.ctor" + Region);
+        RegionInfo = RegionList.All.FirstOrDefault(x => x.QueryStringValue == Region);
+        return RegionInfo?.DisplayName ?? "";
+    }
 
     private void ToggleNavMenu()
     {

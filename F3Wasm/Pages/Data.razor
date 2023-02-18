@@ -1,10 +1,10 @@
-@page "/data"
+@page "/data/{region}"
 @using F3Wasm.Models
 @using F3Wasm.Data
 @using System.Globalization
 @inject HttpClient Http
 
-<PageTitle>F3 South Fork Data</PageTitle>
+<PageTitle>F3 @Region Data</PageTitle>
 
 <style>
     /* For the search text box */
@@ -56,7 +56,10 @@ else
             <Button Color="currentView == OverallView.ThisYear ? Color.Primary : Color.Light" Clicked="ShowCurrentYear">@DateTime.Now.ToString("yyyy", CultureInfo.InvariantCulture)</Button>
             <Button Color="currentView == OverallView.LastMonth ? Color.Primary : Color.Light" Clicked="ShowPreviousMonth">@DateTime.Now.AddMonths(-1).ToString("MMM", CultureInfo.InvariantCulture)</Button>
             <Button Color="currentView == OverallView.ThisMonth ? Color.Primary : Color.Light" Clicked="ShowCurrentMonth">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture)</Button>
-            <Button>Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
+            @if (lastUpdatedDate != DateTime.MinValue)
+            {
+                <Button>Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
+            }
         </Column>
     </Row>
     <DataGrid 
@@ -140,7 +143,7 @@ else
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    @foreach (var location in PaxHelper.AllAos)
+                                    @foreach (var location in RegionInfo.AoList)
                                     {
                                         <TableRow >
                                             <TableRowCell><span class="dot" style="@GetPaxLocationColor(location)"></span>@location.Name</TableRowCell>
@@ -149,7 +152,7 @@ else
                                     }
                                     <TableRow>
                                         <TableRowCell><span class="dot" style="background-color:white"></span> Other</TableRowCell>
-                                        <TableRowCell>@selectedPaxPosts.Count(x => !PaxHelper.AllAos.Select(x => x.Name).Contains(x.Site))</TableRowCell>
+                                        <TableRowCell>@selectedPaxPosts.Count(x => !RegionInfo.AoList.Select(x => x.Name).Contains(x.Site))</TableRowCell>
                                     </TableRow>
                                 </TableBody>
                             </Table>

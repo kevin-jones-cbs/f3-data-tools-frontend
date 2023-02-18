@@ -15,11 +15,17 @@ using Blazorise;
 using Blazorise.Components;
 using F3Wasm.Models;
 using F3Wasm.Data;
+using F3Core;
+using F3Core.Regions;
 
 namespace F3Wasm.Pages
 {
     public partial class Data
     {
+        [Parameter]
+        public string Region { get; set; }
+        public Region RegionInfo { get; set; }
+
         [Inject]
         public IJSRuntime JSRuntime { get; set; }
         public AllData allData { get; set; }
@@ -37,7 +43,9 @@ namespace F3Wasm.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            allData = await LambdaHelper.GetAllDataAsync(Http);
+            Console.WriteLine("Data OnInitializedAsync " + Region);
+            RegionInfo =  RegionList.All.FirstOrDefault(x => x.QueryStringValue == Region);
+            allData = await LambdaHelper.GetAllDataAsync(Http, Region);
             var lastUpdateItem = allData.Posts.FirstOrDefault(x => x.Site == "UPDATE");
             if (lastUpdateItem != null)
             {
@@ -46,6 +54,7 @@ namespace F3Wasm.Pages
             }
 
             ShowAllTime();
+
         }
 
         public void SetCurrentRows(List<Post> posts, DateTime? firstDay, DateTime lastDay)

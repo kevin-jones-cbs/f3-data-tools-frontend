@@ -2,7 +2,50 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build",
+            "label": "runWasm",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "run",
+                "--project",
+                "${workspaceFolder}/F3Wasm/F3Wasm.csproj"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "buildCoreToWasm",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/F3Core/F3Core.csproj",
+                "-o",
+                "F3Wasm/Packages/"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "buildCoreToLambda",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/F3Core/F3Core.csproj",
+                "-o",
+                "F3Lambda/Packages/"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "buildCore",
+            "dependsOn": [
+                "buildCoreToWasm",
+                "buildCoreToLambda"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "buildWasm",
             "command": "dotnet",
             "type": "process",
             "args": [
@@ -14,7 +57,26 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "publish",
+            "label": "buildLambda",
+            "type": "shell",
+            "command": "dotnet",
+            "args": [
+                "build",
+                "${workspaceFolder}/F3Lambda/F3Lambda.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "publishWasm",
             "command": "dotnet",
             "type": "process",
             "args": [
@@ -26,7 +88,7 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "watch",
+            "label": "watchWasm",
             "command": "dotnet",
             "type": "process",
             "args": [

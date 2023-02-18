@@ -1,6 +1,6 @@
 using F3Core;
 
-namespace F3Wasm.Models
+namespace F3Lambda.Models
 {
     public class AllData
     {
