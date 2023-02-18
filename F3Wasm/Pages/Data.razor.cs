@@ -40,6 +40,7 @@ namespace F3Wasm.Pages
         public IReadOnlyList<DateTime?> disabledPaxQDates { get; set; }
         public string selectedPaxPostWithView { get; set; } = null;
         public Dictionary<string, int> selectedPaxPostedWith { get; set; }
+        public bool showOtherLocations { get; set; } = false;
 
         protected override async Task OnInitializedAsync()
         {
@@ -187,6 +188,7 @@ namespace F3Wasm.Pages
             selectedPax100Count = selectedPaxPosts.Count / 100;
             selectedPaxPostWithView = null;
             selectedPax = allData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
+            showOtherLocations = false;
             ShowModal();
 
             return Task.CompletedTask;
@@ -233,6 +235,11 @@ namespace F3Wasm.Pages
         {
             selectedPaxPostedWith = GetAllTimePaxPostWith(index, selectedPaxPosts, allData, selectedPax100Count);
             selectedPaxPostWithView = index;
+        }
+
+        private async Task OnShowOtherLocationsClicked()
+        {
+            showOtherLocations = !showOtherLocations;
         }
 
         public static Dictionary<string, int> GetAllTimePaxPostWith(string index, List<Post> selectedPaxPosts, AllData allData, int selectedPax100Count)

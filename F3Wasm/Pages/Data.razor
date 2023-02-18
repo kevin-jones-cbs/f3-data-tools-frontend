@@ -1,6 +1,7 @@
 @page "/data/{region}"
 @using F3Wasm.Models
 @using F3Wasm.Data
+@using F3Core
 @using System.Globalization
 @inject HttpClient Http
 
@@ -151,9 +152,20 @@ else
                                         </TableRow>
                                     }
                                     <TableRow>
-                                        <TableRowCell><span class="dot" style="background-color:white"></span> Other</TableRowCell>
+                                        <TableRowCell Clicked="@OnShowOtherLocationsClicked" class="link"><span class="dot" style="background-color:white"></span>Other</TableRowCell>
                                         <TableRowCell>@selectedPaxPosts.Count(x => !RegionInfo.AoList.Select(x => x.Name).Contains(x.Site))</TableRowCell>
                                     </TableRow>
+
+                                    @if (showOtherLocations)
+                                    {
+                                        @foreach (var group in selectedPaxPosts.Where(x => !RegionInfo.AoList.Select(x => x.Name).Contains(x.Site)).GroupBy(x => x.Site).OrderByDescending(x => x.Count()))
+                                        {
+                                            <TableRow style="background-color:#eae9e9">
+                                                <TableRowCell><span class="dot" style="background-color:white"></span> @group.Key</TableRowCell>
+                                                <TableRowCell>@group.Count()</TableRowCell>
+                                            </TableRow>
+                                        }
+                                    }
                                 </TableBody>
                             </Table>
                         </Column>
