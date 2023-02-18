@@ -326,7 +326,7 @@ public class Function
             {
                 Start = new GridCoordinate
                 {
-                    SheetId = region.MasterDataSheetId,
+                    SheetId = region.RosterSheetId,
                     RowIndex = rosterCount,
                     ColumnIndex = 1
                 },
