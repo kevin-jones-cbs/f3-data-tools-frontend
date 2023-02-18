@@ -15,7 +15,8 @@ using Blazorise;
 using Blazorise.Components;
 using F3Wasm.Models;
 using F3Wasm.Data;
-using F3Wasm.Regions;
+using F3Core;
+using F3Core.Regions;
 
 namespace F3Wasm.Pages
 {

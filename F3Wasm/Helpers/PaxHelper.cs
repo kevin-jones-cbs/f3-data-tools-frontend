@@ -1,5 +1,6 @@
 using F3Wasm.Models;
 using System.Text.RegularExpressions;
+using F3Core;
 
 namespace F3Wasm.Data
 {

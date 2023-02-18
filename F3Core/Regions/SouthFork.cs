@@ -1,6 +1,4 @@
-using F3Wasm.Models;
-
-namespace F3Wasm.Regions
+namespace F3Core.Regions
 {
     public class SouthFork : Region
     {
@@ -23,5 +21,15 @@ namespace F3Wasm.Regions
             new Ao { Name = "Powerhouse", City = "Folsom", DayOfWeek = DayOfWeek.Saturday },
             new Ao { Name = "The Grid", City = "Shingle Springs", DayOfWeek = DayOfWeek.Saturday }
         };
+
+        public override string TestingSpreadsheetId => "1wlc9khMeTuTxd9KS5WP-AGUVWUE8PIkOsvpXfiC7h34";
+
+        public override string RealSpreadsheetId => "1Wc58fAiGF7HxcM5Od0g7h-g3-no6XvzTNld68j-kfWw";
+
+        public override int MasterDataSheetId => 729344821;
+
+        public override int RosterSheetId => 437240319;
+
+        public override string RangeForGettingRowCount => "B11000:K";
     }
 }

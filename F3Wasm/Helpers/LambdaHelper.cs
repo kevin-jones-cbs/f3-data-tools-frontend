@@ -3,6 +3,7 @@ using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
 using F3Wasm.Models;
+using F3Core;
 
 namespace F3Wasm.Data
 {
@@ -78,7 +79,10 @@ namespace F3Wasm.Data
         {
             var json = JsonSerializer.Serialize(body);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://s6oww3m3a5svbuxq5pf35pjigu0xxaqk.lambda-url.us-west-1.on.aws/") { Content = content };
+
+            var lambdaUrl = "https://s6oww3m3a5svbuxq5pf35pjigu0xxaqk.lambda-url.us-west-1.on.aws/";
+
+            var request = new HttpRequestMessage(HttpMethod.Post, lambdaUrl) { Content = content };
             request.Headers.Add("Access-Control-Allow-Origin", "*");
             request.Headers.Add("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
             var response = await client.SendAsync(request);

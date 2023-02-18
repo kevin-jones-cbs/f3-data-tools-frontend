@@ -5,6 +5,21 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Lambda",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "buildLambda",
+            "program": "${env:HOME}/.dotnet/tools/dotnet-lambda-test-tool-6.0",
+            "args": [],
+            "cwd": "${workspaceFolder}/F3Lambda",
+            "console": "internalConsole",
+            "stopAtEntry": false,
+            "internalConsoleOptions": "openOnSessionStart",
+            "env": {
+                "F3_MOMENTO_AUTH_TOKEN": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJrZXZpbi5qb25lcy5kM0BnbWFpbC5jb20iLCJjcCI6ImNvbnRyb2wuY2VsbC00LXVzLXdlc3QtMi0xLnByb2QuYS5tb21lbnRvaHEuY29tIiwiYyI6ImNhY2hlLmNlbGwtNC11cy13ZXN0LTItMS5wcm9kLmEubW9tZW50b2hxLmNvbSJ9.1jtpcBFE_Gk-0Ogxxv8I8o-HVYK3ynPTo9-mQRzSNARC6QWR2981tipYNsrN6nhGj-D70IjUxxbalRfDzq5YBA"
+            }
+        },
+        {
             "name": ".NET Core Attach",
             "type": "coreclr",
             "request": "attach"
