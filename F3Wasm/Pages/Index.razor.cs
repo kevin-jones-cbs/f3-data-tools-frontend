@@ -143,6 +143,12 @@ namespace F3Wasm.Pages
                 return;
             }
 
+            if (pax.Any(x => x.IsDr && x.NamingRegionIndex == 0))
+            {
+                errorMessage = "Please Enter a Naming Region";
+                return;
+            }
+
             try
             {
                 isLoading = true;

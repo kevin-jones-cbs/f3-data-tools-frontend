@@ -1,6 +1,7 @@
 ﻿@page "/upload/{region}"
 @using F3Wasm.Models
 @using F3Wasm.Data
+@using F3Core.Regions
 @inject HttpClient Http
 
 <PageTitle>F3 @Region.ToUpper() Importer</PageTitle>
@@ -110,6 +111,18 @@
                         @if (p.IsFng)
                         {
                             <TextEdit @bind-Text="@p.Name"></TextEdit>
+                            <Check TValue="bool" @bind-Checked="@p.IsDr" style="margin-top:8px">Downrange?</Check>
+                            @if (p.IsDr)
+                            {
+                                <div style="font-size:10px; margin: 4px;color: #4b4646">Marking Downrange adds the PAX to the roster with the selected naming region, but doesn't mark as FNG</div>
+                                <Select TValue="int" @bind-SelectedValue="@p.NamingRegionIndex">
+                                    <SelectItem Value="0">Select a Naming Region</SelectItem>
+                                    @foreach (var region in RegionList.AllRegionValues)
+                                    {
+                                        <SelectItem Value="@region.Key">@region.Value</SelectItem>
+                                    }
+                                </Select>
+                            }
                         }
                         else
                         {
@@ -126,8 +139,7 @@
                         </Check>
                     </TableRowCell>
                     <TableRowCell>
-                        <Check TValue="bool" Checked="@p.IsFng"
-                    CheckedChanged="@(isChecked => OnFngSelected(p, (bool)isChecked))"></Check>
+                        <Check TValue="bool" Checked="@p.IsFng" CheckedChanged="@(isChecked => OnFngSelected(p, (bool)isChecked))"></Check>
                     </TableRowCell>
                     <TableRowCell>
                         <Icon Name="IconName.Times" Clicked="@(e => OnRemovePax(p))" class="custom-link" />

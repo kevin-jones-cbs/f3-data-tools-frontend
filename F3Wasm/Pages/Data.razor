@@ -4,7 +4,7 @@
 @using System.Globalization
 @inject HttpClient Http
 
-<PageTitle>F3 @Region Data</PageTitle>
+<PageTitle>F3 @Region.ToUpper() Data</PageTitle>
 
 <style>
     /* For the search text box */
@@ -79,8 +79,8 @@ else
         <DataGridColumn Field="@nameof(DisplayRow.PaxName)" Caption="Name" SortField="@nameof(DisplayRow.PaxName)"/>
         <DataGridColumn Field="@nameof(DisplayRow.PostCount)" Caption="Posts" Filterable="false" />
         <DataGridColumn Field="@nameof(DisplayRow.QCount)" Caption="Q" Filterable="false" />
-        <DataGridColumn Field="@nameof(DisplayRow.FirstPost)" Caption="First Post" Filterable="false" DisplayFormat="{0:M/d/yy}" />
-        <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="Post Percent" Filterable="false" DisplayFormat="{0:0}%" />
+        <DataGridColumn Field="@nameof(DisplayRow.FirstPost)" Caption="1st Post" Filterable="false" DisplayFormat="{0:M/d/yy}" />
+        <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="Post %" Filterable="false" DisplayFormat="{0:0}%" />
     </DataGridColumns>
     <LoadingTemplate>
         <p>Loading...</p>

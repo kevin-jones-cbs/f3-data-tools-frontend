@@ -18,5 +18,17 @@ namespace F3Core.Regions
             
             return All.FirstOrDefault(r => r.QueryStringValue == region);
         }
+
+        public static Dictionary<int, string> AllRegionValues = new Dictionary<int, string>
+        {
+            { 1, "Asgard" },
+            { 2, "Delta" },
+            { 3, "Gold Rush" },
+            { 4, "Rubicon" },
+            { 5, "South Fork" },
+            { 6, "Terracotta" },
+            { 7, "Other" }
+        };
+
     }
 }

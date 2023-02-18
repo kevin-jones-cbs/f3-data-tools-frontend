@@ -8,5 +8,7 @@ namespace F3Core
         public bool IsFng { get; set; }
         public bool IsQ { get; set; }
         public string DateJoined { get; set; }
+        public bool IsDr { get; set; }
+        public int NamingRegionIndex { get; set; }
     }
 }

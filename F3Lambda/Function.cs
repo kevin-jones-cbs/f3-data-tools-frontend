@@ -280,7 +280,7 @@ public class Function
                 {
                     new CellData { UserEnteredValue = new ExtendedValue { StringValue = ao } },
                     new CellData { UserEnteredValue = new ExtendedValue { StringValue = member.Name } },
-                    new CellData { UserEnteredValue = new ExtendedValue { NumberValue = member.IsFng ? 1 : (double?)null } },
+                    new CellData { UserEnteredValue = new ExtendedValue { NumberValue = member.IsFng && !member.IsDr ? 1 : (double?)null } },
                     new CellData { UserEnteredValue = new ExtendedValue { NumberValue = 1 } },
                     new CellData { UserEnteredValue = new ExtendedValue { NumberValue = member.IsQ ? 1 : (double?)null } }
                 }
@@ -336,12 +336,20 @@ public class Function
 
             foreach (var member in pax.Where(x => x.IsFng))
             {
+                var namingRegion = region.DisplayName;
+                if (member.IsDr)
+                {
+                    namingRegion = RegionList.AllRegionValues.First(x => x.Key == member.NamingRegionIndex).Value;
+                }
+
                 updateFngCellsRequest.Rows.Add(new RowData
                 {
                     Values = new List<CellData>
                     {
                         new CellData { UserEnteredValue = new ExtendedValue { StringValue = member.Name } },
-                        new CellData { UserEnteredValue = new ExtendedValue { NumberValue = qDate.ToOADate() } }
+                        new CellData { UserEnteredValue = new ExtendedValue { NumberValue = qDate.Date.ToOADate() } },
+                        new CellData { UserEnteredValue = new ExtendedValue { StringValue = string.Empty } },
+                        new CellData { UserEnteredValue = new ExtendedValue { StringValue = namingRegion } }
                     }
                 });
             }
