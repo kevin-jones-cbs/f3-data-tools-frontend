@@ -37,7 +37,16 @@ namespace F3Wasm.Data
                 {
                     paxDictionary.Add(nameMapping.Key, nameMapping.Value.NewStringEscaped().Replace(" ", @"\s?"));
                 }
-            }            
+            }     
+
+            // Find all the 2.0's and create an entry with the 2.0 in front
+            var pax20 = paxDictionary.Where(x => x.Key.EndsWith("(2.0)")).ToList();
+            foreach (var p in pax20)
+            {
+                var paxName = "2.0" + p.Key.Replace(" (2.0)", string.Empty);
+                var oldName = p.Key;
+                paxDictionary[oldName] = paxName;
+            }
 
             var allPaxRegex = new Regex(@$"\b({string.Join("|", paxDictionary.Values)})\b", RegexOptions.IgnoreCase);
 
@@ -72,7 +81,7 @@ namespace F3Wasm.Data
                 p.UnknownName = string.Empty;
             }
 
-            var regexHotwordPattern = @"\b(VQ|Q|FNG|PAX List|PAX|The Ditch|Stargate|Greyhound|The Linkz|Denali|Everest|The Cut|The S.A.K.|The Sak|The Public|Butcher's Block|The Claim}Powerhouse|The Grid|(\d*))\b";
+            var regexHotwordPattern = @"\b(VQ|Q|FNG|Former FMG|PAX List|PAX|The Ditch|Stargate|Greyhound|The Linkz|Denali|Everest|The Cut|The S.A.K.|The Sak|The Public|Butcher's Block|The Claim}Powerhouse|The Grid|(\d*))\b";
             // Trim the comment, remove any @'s, then string split on spaces, 
             comment = comment.Replace("@", string.Empty).Trim();
             var commentSplit = Regex.Replace(comment, regexHotwordPattern, string.Empty, RegexOptions.IgnoreCase)

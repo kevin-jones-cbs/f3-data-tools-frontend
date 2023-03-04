@@ -4,5 +4,5 @@
         "titleBar.activeBackground": "#5F3429",
         "titleBar.activeForeground": "#FCF9F9"
     },
-    "dotnet-test-explorer.testProjectPath": "**/*Tests.@(csproj|vbproj|fsproj)"
+    "dotnet-test-explorer.testProjectPath": "F3Wasm.Tests/F3Wasm.Tests.@(csproj|vbproj|fsproj)"
 }

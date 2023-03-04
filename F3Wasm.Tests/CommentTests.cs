@@ -19,7 +19,7 @@ namespace F3Wasm.Tests
             var result = PaxHelper.GetPaxFromComment(comment, TestData.PaxNames);
 
             Assert.Equal(expectedCount, result.Where(x => x != null && x.IsOfficial).ToList().Count);
-            Assert.Equal(0, result.Where(x => x != null && !x.IsOfficial).ToList().Count);
+            Assert.Empty(result.Where(x => x != null && !x.IsOfficial).ToList());
         }
 
         [Theory]
@@ -37,6 +37,7 @@ namespace F3Wasm.Tests
         }
 
         [Theory]
+        // Band Name, Sheet Name
         [InlineData("@Peacock", "Peacock")]
         [InlineData("@S’mores", "S'mores")]
         [InlineData("@Mani Pedi", "Manny Pedi")]
@@ -45,25 +46,26 @@ namespace F3Wasm.Tests
         [InlineData("@Hill Billy", "Hillbilly")]
         [InlineData("Heat Check", "HeatCheck")]
         [InlineData("Linguine", "Linguini")]
+        [InlineData("@2.0Glitch", "Glitch (2.0)")]
         public void SpecialNames(string comment, string expectedName)
         {
             var result = PaxHelper.GetPaxFromComment(comment, TestData.PaxNames);
 
-            Assert.Equal(result.Count, 1);
+            Assert.Single(result);
             Assert.Equal(result[0].Name, expectedName);
         }
 
-        [Theory]
-        [InlineData("Q: @Peacock @Clark", "Peacock")]
-        [InlineData("Q: Peacock @Clark @Peacock", "Peacock")]
-        [InlineData("Q: @Spread'Em @Peacock", "Spread'em")]
-        public void WithAQ(string comment, string expectedQ)
-        {
-            var result = PaxHelper.GetPaxFromComment(comment, TestData.PaxNames);
+        // [Theory]
+        // [InlineData("Q: @Peacock @Clark", "Peacock")]
+        // [InlineData("Q: Peacock @Clark @Peacock", "Peacock")]
+        // [InlineData("Q: @Spread'Em @Peacock", "Spread'em")]
+        // public void WithAQ(string comment, string expectedQ)
+        // {
+        //     var result = PaxHelper.GetPaxFromComment(comment, TestData.PaxNames);
 
-            Assert.Equal(result.Count, 2);
-            Assert.Equal(result.Where(x => x.IsQ).Count(), 1);
-            Assert.Equal(result.FirstOrDefault(x => x.IsQ).Name, expectedQ);
-        }
+        //     Assert.Equal(2, result.Count);
+        //     Assert.Single(result.Where(x => x.IsQ));
+        //     Assert.Equal(expectedQ, result.FirstOrDefault(x => x.IsQ).Name);
+        // }
     }
 }

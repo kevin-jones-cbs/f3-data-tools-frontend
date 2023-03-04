@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\F3Wasm\F3Wasm.csproj" />
+    <ProjectReference Include="..\F3Core\F3Core.csproj" />
   </ItemGroup>
 
 </Project>
