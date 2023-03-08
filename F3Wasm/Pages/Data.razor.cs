@@ -181,9 +181,9 @@ namespace F3Wasm.Pages
 
         private Task SelectedRowChanged(DisplayRow row)
         {
-            selectedPaxPosts = allData.Posts.Where(p => p.Pax == row.PaxName).ToList();
-            selectedPaxDates = selectedPaxPosts.Select(p => (DateTime?)p.Date).OrderByDescending(x => x).ToList();
-            disabledPaxQDates = selectedPaxPosts.Where(p => p.IsQ).Select(p => (DateTime?)p.Date).OrderByDescending(x => x).ToList();
+            selectedPaxPosts = allData.Posts.Where(p => p.Pax == row.PaxName).OrderByDescending(x => x.Date).ToList();
+            selectedPaxDates = selectedPaxPosts.Select(p => (DateTime?)p.Date).ToList();
+            disabledPaxQDates = selectedPaxPosts.Where(p => p.IsQ).Select(p => (DateTime?)p.Date).ToList();
             selectedPaxPostedWith = new Dictionary<string, int>();
             selectedPax100Count = selectedPaxPosts.Count / 100;
             selectedPaxPostWithView = null;
@@ -240,6 +240,39 @@ namespace F3Wasm.Pages
         private async Task OnShowOtherLocationsClicked()
         {
             showOtherLocations = !showOtherLocations;
+        }
+
+        public string GetNamedBy()
+        {
+            var paxFirstPost = selectedPaxPosts.LastOrDefault();
+            if (paxFirstPost == null)
+                return "";
+
+            var namedBy = allData.Posts.Where(p => p.Site == paxFirstPost.Site && p.IsQ && p.Date == paxFirstPost.Date).FirstOrDefault();
+
+            if (namedBy == null)
+                return "";
+
+            return namedBy.Pax;
+        }
+
+        public string GetDaysTo100()
+        {
+            // Get the 100th post for the selected pax
+            var pax100thPost = selectedPaxPosts.OrderBy(x => x.Date).Skip(99).FirstOrDefault();
+            var notYet = false;
+            if (pax100thPost == null)
+            {
+                // No 100 yet, so just count today
+                pax100thPost = new Post() { Date = DateTime.Now };
+                notYet = true;
+            }
+
+            var pax1stpost = selectedPaxPosts.LastOrDefault();
+
+            // Get the number of days since their first post
+            var days = GetDaysSince(pax100thPost.Date, pax1stpost.Date);
+            return days.ToString() + (notYet ? " (so far)" : "");
         }
 
         public static Dictionary<string, int> GetAllTimePaxPostWith(string index, List<Post> selectedPaxPosts, AllData allData, int selectedPax100Count)
