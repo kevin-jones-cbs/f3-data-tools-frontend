@@ -98,7 +98,9 @@
                     <TableRowCell>
                         <Check TValue="bool" Disabled></Check>
                     </TableRowCell>
-                    <TableRowCell></TableRowCell>
+                    <TableRowCell>
+                        <Icon Name="IconName.Times" Clicked="@(e => OnRemovePax(p))" class="custom-link" />
+                    </TableRowCell>
                 </TableRow>
             }
 
