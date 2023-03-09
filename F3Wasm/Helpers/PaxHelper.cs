@@ -21,7 +21,7 @@ namespace F3Wasm.Data
         public static List<Pax> GetPaxFromComment(string comment, List<string> allPax)
         {
             comment = comment.NewStringEscaped();
-            allPax = allPax.Distinct().ToList();
+            allPax = allPax.Distinct().Reverse().ToList();
 
             // Pax dictionary where value is .StringEscaped
             var paxDictionary = allPax.ToDictionary(x => x, x => x.NewStringEscaped().Replace(" ", @"\s?"));

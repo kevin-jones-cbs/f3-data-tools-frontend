@@ -47,6 +47,7 @@ namespace F3Wasm.Tests
         [InlineData("Heat Check", "HeatCheck")]
         [InlineData("Linguine", "Linguini")]
         [InlineData("@2.0Glitch", "Glitch (2.0)")]
+        [InlineData("@Slug Bug", "Slug Bug")]
         public void SpecialNames(string comment, string expectedName)
         {
             var result = PaxHelper.GetPaxFromComment(comment, TestData.PaxNames);
