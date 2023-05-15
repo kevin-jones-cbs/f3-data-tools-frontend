@@ -1,16 +1,43 @@
+using F3Core.Regions;
 using F3Wasm.Data;
+using F3Wasm.Models;
 using Xunit;
 
 namespace F3Wasm.Tests
 {
     public class DateTests
     {
-        [Theory]
-        [InlineData("1/29/2023", "1/27/2023", 2)]
-        public void AllOfficialNames(string todaysDate, string firstPost, int expectedPercent)
+        [Fact]
+        public void NoSunday()
         {
-            var result = F3Wasm.Pages.Data.GetDaysSince(DateTime.Parse(todaysDate), DateTime.Parse(firstPost));
-            Assert.Equal(expectedPercent, result);
+            var posts = new List<Post>()
+            {
+                new Post() { Date = DateTime.Parse("1/27/2023"), Site = "The Public", Pax = "Manny Pedi" },
+                new Post() { Date = DateTime.Parse("1/29/2023"), Site = "The Ditch", Pax = "Manny Pedi" },
+                new Post() { Date = DateTime.Parse("1/29/2023"), Site = "Stargate", Pax = "Doodles" },
+            };
+
+            var region = new SouthFork();
+            var result = F3Wasm.Pages.Data.GetCurrentPossibleWorkoutDays(posts, region);
+
+            Assert.Equal(2, result);
+        }
+
+        [Fact]
+        public void WithAFullMoon()
+        {
+            var posts = new List<Post>()
+            {
+                new Post() { Date = DateTime.Parse("1/27/2023"), Site = "The Public", Pax = "Manny Pedi" },
+                new Post() { Date = DateTime.Parse("1/29/2023"), Site = "The Ditch", Pax = "Manny Pedi" },
+                new Post() { Date = DateTime.Parse("1/29/2023"), Site = "Stargate", Pax = "Doodles" },
+                new Post() { Date = DateTime.Parse("1/29/2023"), Site = "Full Moon Ruck", Pax = "Manny Pedi" },
+            };
+
+            var region = new SouthFork();
+            var result = F3Wasm.Pages.Data.GetCurrentPossibleWorkoutDays(posts, region);
+
+            Assert.Equal(3, result);
         }
     }
 }

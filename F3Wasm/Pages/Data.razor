@@ -135,7 +135,7 @@ else
                                 </TableRow>
                                 <TableRow>
                                     <TableRowHeader>Post Percent</TableRowHeader>
-                                        <TableRowCell>@(((double)selectedPaxPosts.Count / (double)GetDaysSince(DateTime.Now, selectedPaxPosts.Min(x => x.Date)) * 100).ToString("0.00"))%</TableRowCell>
+                                        <TableRowCell>@(((double)selectedPaxPosts.Count / (double)selectedPaxPossibleCount * 100).ToString("0.00"))%</TableRowCell>
                                     </TableRow>
                                 </TableBody>
                             </Table>

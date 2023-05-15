@@ -7,6 +7,23 @@ namespace F3Wasm.Tests
     public class AnalyticRuns
     {
         [Fact]
+        public async Task GetLocationCountsForMonth()
+        {
+            var client = new HttpClient();
+            var allData = await LambdaHelper.GetAllDataAsync(client, "southfork");
+            var thisMonthPosts = allData.Posts.Where(p => p.Date.Year == DateTime.Now.Year && p.Date.Month == 4).ToList();
+
+            // Group this month posts by ao, order by count descending
+            var postsByAo = thisMonthPosts.GroupBy(p => p.Site).OrderByDescending(g => g.Count()).ToList();
+
+            // Print to console
+            foreach (var ao in postsByAo)
+            {
+                Console.WriteLine($"{ao.Key} - {ao.Count()}");
+            }            
+        }
+
+        [Fact]
         public async Task GetAveragePostsPerDay()
         {
             var client = new HttpClient();
