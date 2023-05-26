@@ -1,8 +1,7 @@
-using F3Wasm.Models;
 using System.Text.RegularExpressions;
 using F3Core;
 
-namespace F3Wasm.Data
+namespace F3Lambda.Data
 {
     public static class PaxHelper
     {

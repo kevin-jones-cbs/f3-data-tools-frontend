@@ -96,9 +96,9 @@ namespace F3Wasm.Pages
         {
             allNames = await LambdaHelper.GetPaxNamesAsync(Http, Region);
             allNames = allNames.OrderBy(x => x).ToList();
-            pax = PaxHelper.GetPaxFromComment(comment, allNames);
+            pax = await LambdaHelper.GetPaxFromCommentAsync(Http, Region, comment);
 
-            // No need to show that we finished again, we're doing another aoo
+            // No need to show that we finished again, we're doing another ao
             showCompleteAlert = false;
         }
 

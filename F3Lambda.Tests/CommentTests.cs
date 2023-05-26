@@ -1,7 +1,7 @@
-using F3Wasm.Data;
+using F3Lambda.Data;
 using Xunit;
 
-namespace F3Wasm.Tests
+namespace F3Lambda.Tests
 {
     public class CommentTests
     {
@@ -16,7 +16,7 @@ namespace F3Wasm.Tests
                     @Herbie @Happy Tree @Doodles @Potts @Singe @Deuce @Putt Putt @Shipwreck @Clark @SofaKing @Deep Dish @Baskinz @Daffodil @Switch @ROXBURY mike c.", 15)]
         public void AllOfficialNames(string comment, int expectedCount)
         {
-            var result = PaxHelper.GetPaxFromComment(comment, TestData.PaxNames);
+            var result = PaxHelper.GetPaxFromComment(comment, LambdaTestData.PaxNames);
 
             Assert.Equal(expectedCount, result.Where(x => x != null && x.IsOfficial).ToList().Count);
             Assert.Empty(result.Where(x => x != null && !x.IsOfficial).ToList());
@@ -28,7 +28,7 @@ namespace F3Wasm.Tests
         [InlineData("Peacock Clark Mani Pedi Super Man", 3, 2, "Super")]
         public void WithUnofficialNames(string comment, int expectedOfficialCount, int expectedUnofficialCount, string expectedUnofficialName)
         {
-            var result = PaxHelper.GetPaxFromComment(comment, TestData.PaxNames);
+            var result = PaxHelper.GetPaxFromComment(comment, LambdaTestData.PaxNames);
 
             Assert.Equal(expectedOfficialCount, result.Where(x => x != null && x.IsOfficial).ToList().Count);
             Assert.Equal(expectedUnofficialCount, result.Where(x => x != null && !x.IsOfficial).ToList().Count);
@@ -50,7 +50,7 @@ namespace F3Wasm.Tests
         [InlineData("@Slug Bug", "Slug Bug")]
         public void SpecialNames(string comment, string expectedName)
         {
-            var result = PaxHelper.GetPaxFromComment(comment, TestData.PaxNames);
+            var result = PaxHelper.GetPaxFromComment(comment, LambdaTestData.PaxNames);
 
             Assert.Single(result);
             Assert.Equal(result[0].Name, expectedName);
@@ -62,7 +62,7 @@ namespace F3Wasm.Tests
         // [InlineData("Q: @Spread'Em @Peacock", "Spread'em")]
         // public void WithAQ(string comment, string expectedQ)
         // {
-        //     var result = PaxHelper.GetPaxFromComment(comment, TestData.PaxNames);
+        //     var result = PaxHelper.GetPaxFromComment(comment, LambdaTestData.PaxNames);
 
         //     Assert.Equal(2, result.Count);
         //     Assert.Single(result.Where(x => x.IsQ));

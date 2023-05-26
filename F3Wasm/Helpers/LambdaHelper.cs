@@ -24,6 +24,14 @@ namespace F3Wasm.Data
             return paxNames;
         }
 
+        // Get Pax from Comment
+        public static async Task<List<Pax>> GetPaxFromCommentAsync(HttpClient client, string region, string comment)
+        {
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetPaxFromComment", Region = region, Comment = comment });
+            var pax = JsonSerializer.Deserialize<List<Pax>>(response);
+            return pax;
+        }
+
         // Upload Pax 
         public static async Task UploadPaxAsync(HttpClient client, string region, List<Pax> pax, string ao, DateTime qDate)
         {

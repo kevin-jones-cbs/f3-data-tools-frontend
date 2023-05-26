@@ -8,5 +8,6 @@ namespace F3Core
         public DateTime QDate { get; set; }
         public bool IsTesting { get; set; }
         public string Region { get; set; }
+        public string Comment { get; set; }
     }
 }

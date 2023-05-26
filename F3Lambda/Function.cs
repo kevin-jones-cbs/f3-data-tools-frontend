@@ -16,6 +16,7 @@ using Momento.Sdk.Config;
 using Momento.Sdk.Responses;
 using F3Core;
 using F3Core.Regions;
+using F3Lambda.Data;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -90,6 +91,14 @@ public class Function
                 return allPosts;
             }
 
+            // GetPaxFromComment
+            if (functionInput.Action == "GetPaxFromComment")
+            {
+                var sheetsService = GetSheetsService();
+                var pax = await GetPaxFromCommentAsync(sheetsService, spreadsheetId, functionInput.Comment);
+                return pax;
+            }
+
             return "Error, unknown action";
         }
         catch (System.Exception ex)
@@ -97,6 +106,14 @@ public class Function
             Console.WriteLine(ex.Message);
             return "Error" + ex.Message;
         }
+    }
+
+    private async Task<List<Pax>> GetPaxFromCommentAsync(SheetsService sheetsService, string spreadsheetId, string comment)
+    {
+        var allPax = await GetPaxNamesAsync(sheetsService, spreadsheetId);
+        var pax = PaxHelper.GetPaxFromComment(comment, allPax);
+
+        return pax;
     }
 
     private async Task<string> GetAllDataAsync(SheetsService sheetsService, string spreadsheetId, bool isTesting)

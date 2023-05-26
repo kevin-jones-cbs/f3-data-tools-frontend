@@ -12,6 +12,7 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\F3Lambda\F3Lambda.csproj" />
+    <ProjectReference Include="..\F3Lambda\F3Lambda.csproj" />
+    <ProjectReference Include="..\F3Core\F3Core.csproj" />
   </ItemGroup>
 </Project>
