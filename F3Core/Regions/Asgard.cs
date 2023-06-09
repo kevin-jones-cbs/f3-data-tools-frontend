@@ -16,6 +16,7 @@ namespace F3Core.Regions
             new Ao { Name = "The Sandy Garden", City = "Fair Oaks", DayOfWeek = DayOfWeek.Wednesday },
             new Ao { Name = "The Ring - Th", City = "Fair Oaks", DayOfWeek = DayOfWeek.Thursday },
             new Ao { Name = "The Iron Jungle - Fr", City = "Sacramento", DayOfWeek = DayOfWeek.Friday },
+            new Ao { Name = "Lost Realm", City = "Sacramento", DayOfWeek = DayOfWeek.Friday },
             new Ao { Name = "The Break", City = "Sacramento", DayOfWeek = DayOfWeek.Saturday }
         };
 
