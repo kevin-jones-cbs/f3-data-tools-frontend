@@ -24,6 +24,23 @@ namespace F3Wasm.Tests
         }
 
         [Fact]
+        public async Task GetQSummary()
+        {
+            var client = new HttpClient();
+            var allData = await LambdaHelper.GetAllDataAsync(client, "southfork");
+            var thisMonthPosts = allData.Posts.Where(p => p.Date.Year == DateTime.Now.Year && p.Date.Month == 4).ToList();
+
+            // Group by Pax Name that have isQ
+            var qPax = thisMonthPosts.Where(p => p.IsQ).GroupBy(p => p.Pax).OrderByDescending(g => g.Count()).ToList();
+
+            // Print to console
+            foreach (var pax in qPax)
+            {
+                Console.WriteLine($"{pax.Key} - {pax.Count()}");
+            }
+        }
+
+        [Fact]
         public async Task GetAveragePostsPerDay()
         {
             var client = new HttpClient();
