@@ -453,7 +453,7 @@ namespace F3Lambda.Tests
             "Yogi",
             "Woody",
             "Switch",
-            "Richard Simmons",
+            "Richard Simmons ",
             "Unicorn",
             "Geico",
             "Uke",
@@ -535,7 +535,10 @@ namespace F3Lambda.Tests
             "Cap'n Hook",
             "Bugz (2.0)",
             "Ralph",
-            "Jackelope"
+            "Jackelope",
+            "Popcorn (2.0)",
+            "Kung Fu Panda",
+            "Patty^2"
         };
     }
 }

@@ -15,6 +15,10 @@ namespace F3Lambda.Data
             { "Linguini", "Linguine" },
             { "Hillbilly", "Hill Billy" },
             { "HeatCheck", "Heat Check" },
+            { "Travolta", "Peter Puglia"},
+            { "Partridge", "Partrige" },
+            { "Kung Fu Panda", "KungFu Panda" },
+            { "SlumLord", "Slum Lord" },
         };  
 
         public static List<Pax> GetPaxFromComment(string comment, List<string> allPax)
@@ -23,7 +27,7 @@ namespace F3Lambda.Data
             allPax = allPax.Distinct().Reverse().ToList();
 
             // Pax dictionary where value is .StringEscaped
-            var paxDictionary = allPax.ToDictionary(x => x, x => x.NewStringEscaped().Replace(" ", @"\s?"));
+            var paxDictionary = allPax.ToDictionary(x => x, x => x.NewStringEscaped().Trim().Replace(" ", @"\s?"));
             
             // Combine with the Name Mapping, replace key if it exists
             foreach (var nameMapping in NameMapping)
@@ -38,11 +42,12 @@ namespace F3Lambda.Data
                 }
             }     
 
-            // Find all the 2.0's and create an entry with the 2.0 in front
+            // Remove the 2.0 and use that as the key
             var pax20 = paxDictionary.Where(x => x.Key.EndsWith("(2.0)")).ToList();
+            comment = comment.Replace("(2.0)", string.Empty).Replace("2.0", string.Empty);
             foreach (var p in pax20)
             {
-                var paxName = "2.0" + p.Key.Replace(" (2.0)", string.Empty);
+                var paxName = p.Key.Replace(" (2.0)", string.Empty);
                 var oldName = p.Key;
                 paxDictionary[oldName] = paxName;
             }
@@ -80,7 +85,7 @@ namespace F3Lambda.Data
                 p.UnknownName = string.Empty;
             }
 
-            var regexHotwordPattern = @"\b(VQ|Q|FNG|Former FMG|PAX List|PAX|The Ditch|Stargate|Greyhound|The Linkz|tRuck Stop|Denali|Everest|The Cut|The S.A.K.|The Sak|The Public|Butcher's Block|The Claim|Powerhouse|The Grid|The Break|The Way|(\d*))\b";
+            var regexHotwordPattern = @"\b(VQ|Q|QIC|Former FNGs|FNG|Former FMG|PAX List|PAX|The Ditch|Stargate|Greyhound|The Linkz|tRuck Stop|Denali|Everest|The Cut|The S.A.K.|The Sak|The Public|Butcher's Block|The Claim|Powerhouse|The Grid|The Break|The Way|(\d*))\b";
             // Trim the comment, remove any @'s, then string split on spaces, 
             comment = comment.Replace("@", string.Empty).Trim();
             var commentSplit = Regex.Replace(comment, regexHotwordPattern, string.Empty, RegexOptions.IgnoreCase)
@@ -104,7 +109,8 @@ namespace F3Lambda.Data
     {
         public static string NewStringEscaped(this string input)
         {
-            return input.Replace("’", "'");
+            return input.Replace("’", "'")
+                        .Replace("^", "");
         }
     }
 }
