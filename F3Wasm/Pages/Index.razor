@@ -143,13 +143,17 @@
                     <TableRowCell>
                         <Check TValue="bool" Checked="@p.IsFng" CheckedChanged="@(isChecked => OnFngSelected(p, (bool)isChecked))"></Check>
                     </TableRowCell>
-                    <TableRowCell>
-                        <Icon Name="IconName.Times" Clicked="@(e => OnRemovePax(p))" class="custom-link" />
+                    <TableRowCell Clicked="@(e => OnRemovePax(p))" >
+                        <Icon Name="IconName.Times" class="custom-link" />
                     </TableRowCell>
                 </TableRow>
             }
         </TableBody>
     </Table>
+
+    <div class="one-row" style="padding-bottom:12px">
+        <Button Color="Color.Secondary" Clicked="@OnAddRowClicked" @bind-Disabled="@isLoading">Add Row</Button>
+    </div>
 
     <div class="one-row" style="padding-bottom:12px">
         <Button Color="Color.Primary" Clicked="@OnUploadButtonClicked" @bind-Disabled="@isLoading">Upload</Button>

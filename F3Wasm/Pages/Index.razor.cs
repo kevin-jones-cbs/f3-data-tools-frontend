@@ -102,6 +102,11 @@ namespace F3Wasm.Pages
             showCompleteAlert = false;
         }
 
+        private async Task OnAddRowClicked()
+        {
+            pax.Add(new Pax());
+        }
+
         private async Task OnUploadButtonClicked()
         {
             // Validate
