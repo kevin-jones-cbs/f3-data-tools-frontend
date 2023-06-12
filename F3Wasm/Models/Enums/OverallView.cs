@@ -6,6 +6,7 @@ namespace F3Wasm.Models
         LastYear,
         ThisYear,
         LastMonth,
-        ThisMonth
+        ThisMonth,
+        UNSET
     }
 }

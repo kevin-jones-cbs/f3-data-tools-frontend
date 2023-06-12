@@ -27,7 +27,6 @@ namespace F3Wasm.Pages
         public Region RegionInfo { get; set; }
 
         [Inject]
-        public IJSRuntime JSRuntime { get; set; }
         public AllData allData { get; set; }
         public OverallView currentView { get; set; }
 
@@ -217,32 +216,7 @@ namespace F3Wasm.Pages
 
         private string GetPaxLocationColor(Ao location)
         {
-            // Color white
-            string hex;
-            switch (location.DayOfWeek)
-            {
-                case DayOfWeek.Monday:
-                    hex = "#ff5b72";
-                    break;
-                case DayOfWeek.Tuesday:
-                    hex = "#9370f0";
-                    break;
-                case DayOfWeek.Wednesday:
-                    hex = "#32b0e5";
-                    break;
-                case DayOfWeek.Thursday:
-                    hex = "#fdb00d";
-                    break;
-                case DayOfWeek.Friday:
-                    hex = "#00b994";
-                    break;
-                case DayOfWeek.Saturday:
-                    hex = "#25b808";
-                    break;
-                default:
-                    hex = "#ffffff";
-                    break;
-            }
+            string hex = ColorHelpers.GetAoHex(location);
 
             return $"background-color: {hex};";
         }
