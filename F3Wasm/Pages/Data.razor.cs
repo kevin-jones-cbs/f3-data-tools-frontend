@@ -26,7 +26,6 @@ namespace F3Wasm.Pages
         public string Region { get; set; }
         public Region RegionInfo { get; set; }
 
-        [Inject]
         public AllData allData { get; set; }
         public OverallView currentView { get; set; }
 
