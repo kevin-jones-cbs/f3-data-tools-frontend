@@ -18,7 +18,7 @@ namespace F3Lambda.Data
             { "Travolta", "Peter Puglia"},
             { "Partridge", "Partrige" },
             { "Kung Fu Panda", "KungFu Panda" },
-            { "SlumLord", "Slum Lord" },
+            { "Slumlord", "Slum Lord" },
             { "Jackelope", "Jackalope" },
             { "Top Bunk", "Top Bunk" },
         };  

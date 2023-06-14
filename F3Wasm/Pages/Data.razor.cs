@@ -42,6 +42,8 @@ namespace F3Wasm.Pages
         public Dictionary<string, int> selectedPaxPostedWith { get; set; }
         public bool showOtherLocations { get; set; } = false;
 
+        public List<WorkoutDay> AllPossibleWorkoutDays { get; set; }
+
         protected override async Task OnInitializedAsync()
         {
             Console.WriteLine("Data OnInitializedAsync " + Region);
@@ -54,6 +56,8 @@ namespace F3Wasm.Pages
                 allData.Posts.Remove(lastUpdateItem);
             }
 
+            AllPossibleWorkoutDays = GetCurrentPossibleWorkoutDays(allData.Posts);
+
             ShowAllTime();
         }
 
@@ -62,9 +66,9 @@ namespace F3Wasm.Pages
             var currentUniqueWorkoutDayCount = -1;
             if (firstDay != null)
             {
-                currentUniqueWorkoutDayCount = GetCurrentPossibleWorkoutDays(posts.Where(x => x.Date >= firstDay && x.Date <= lastDay).ToList(), RegionInfo);
+                currentUniqueWorkoutDayCount = AllPossibleWorkoutDays.Where(x => x.Date >= firstDay && x.Date <= lastDay).Count();
             }
-            
+
             // Group the posts by pax name
             var paxPosts = posts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.ToList());
             currentRows = new List<DisplayRow>();
@@ -80,9 +84,9 @@ namespace F3Wasm.Pages
 
                 var paxFirstDate = pax.Value.Min(p => p.Date);
 
-                if (currentUniqueWorkoutDayCount == -1)
+                if (firstDay == null)
                 {
-                    currentUniqueWorkoutDayCount = GetCurrentPossibleWorkoutDays(posts.Where(x => x.Date >= paxFirstDate).ToList(), RegionInfo);
+                    currentUniqueWorkoutDayCount = AllPossibleWorkoutDays.Where(x => x.Date >= paxFirstDate).Count();
                 }
 
                 if (paxFirstDate != DateTime.MinValue)
@@ -100,28 +104,25 @@ namespace F3Wasm.Pages
             currentRows = currentRows.OrderByDescending(r => r.PostCount).ToList();
         }
 
-        public static int GetCurrentPossibleWorkoutDays(List<Post> posts, Region region)
+        public static List<WorkoutDay> GetCurrentPossibleWorkoutDays(List<Post> posts)
         {
-            var currentUniqueWorkoutDays = new List<string>();
-
+            var currentUniqueWorkoutDays = new List<WorkoutDay>();
             foreach (var post in posts)
             {
-                // Find the matching Ao for the given post.Site
-                Ao matchingAo = region.AoList.FirstOrDefault(ao => ao.Name == post.Site);
-
-                // If a matching Ao is found, update the uniqueWorkoutDays dictionary
                 DateTime postDateWithoutTime = post.Date.Date;
-                bool isEvening = post.Site.ToLower().Contains("moon");
+                bool isEvening = post.Site.Contains("moon", StringComparison.OrdinalIgnoreCase);
                 var key = $"{postDateWithoutTime.ToShortDateString()}-{isEvening}";
 
-                // If the date is not already in the dictionary, add it with the IsMorning value
-                if (!currentUniqueWorkoutDays.Contains(key))
+                // Check if the day and isEvening is already in the list
+                if (currentUniqueWorkoutDays.Any(x => x.Date == postDateWithoutTime && x.IsEvening == isEvening))
                 {
-                    currentUniqueWorkoutDays.Add(key);
+                    continue;
                 }
+
+                currentUniqueWorkoutDays.Add(new WorkoutDay() { Date = postDateWithoutTime, IsEvening = isEvening });
             }
 
-            return currentUniqueWorkoutDays.Count;
+            return currentUniqueWorkoutDays;
         }
 
         private void ShowAllTime()
@@ -199,7 +200,7 @@ namespace F3Wasm.Pages
             disabledPaxQDates = selectedPaxPosts.Where(p => p.IsQ).Select(p => (DateTime?)p.Date).ToList();
             selectedPaxPostedWith = new Dictionary<string, int>();
             selectedPax100Count = selectedPaxPosts.Count / 100;
-            selectedPaxPossibleCount = GetCurrentPossibleWorkoutDays(allData.Posts.Where(x => x.Date >= selectedPaxPosts.LastOrDefault().Date).ToList(), RegionInfo);
+            selectedPaxPossibleCount = AllPossibleWorkoutDays.Where(x => x.Date >= selectedPaxPosts.LastOrDefault().Date).Count();
             selectedPaxPostWithView = null;
             selectedPax = allData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
             showOtherLocations = false;
@@ -257,11 +258,11 @@ namespace F3Wasm.Pages
                 notYet = true;
             }
 
-            var pax1stpost = selectedPaxPosts.LastOrDefault();
+            var pax1stPost = selectedPaxPosts.LastOrDefault();
 
             // Get the number of days since their first post
-            var days = GetCurrentPossibleWorkoutDays(selectedPaxPosts, RegionInfo);
-            return days.ToString() + (notYet ? " (so far)" : "");
+            var days = AllPossibleWorkoutDays.Where(x => x.Date >= pax1stPost.Date && x.Date <= pax100thPost.Date).ToList();
+            return days.Count.ToString() + (notYet ? " (so far)" : "");
         }
 
         public static Dictionary<string, int> GetAllTimePaxPostWith(string index, List<Post> selectedPaxPosts, AllData allData, int selectedPax100Count)

@@ -17,10 +17,9 @@ namespace F3Wasm.Tests
                 new Post() { Date = DateTime.Parse("1/29/2023"), Site = "Stargate", Pax = "Doodles" },
             };
 
-            var region = new SouthFork();
-            var result = F3Wasm.Pages.Data.GetCurrentPossibleWorkoutDays(posts, region);
+            var result = F3Wasm.Pages.Data.GetCurrentPossibleWorkoutDays(posts);
 
-            Assert.Equal(2, result);
+            Assert.Equal(2, result.Count);
         }
 
         [Fact]
@@ -34,10 +33,9 @@ namespace F3Wasm.Tests
                 new Post() { Date = DateTime.Parse("1/29/2023"), Site = "Full Moon Ruck", Pax = "Manny Pedi" },
             };
 
-            var region = new SouthFork();
-            var result = F3Wasm.Pages.Data.GetCurrentPossibleWorkoutDays(posts, region);
+            var result = F3Wasm.Pages.Data.GetCurrentPossibleWorkoutDays(posts);
 
-            Assert.Equal(3, result);
+            Assert.Equal(3, result.Count);
         }
     }
 }
