@@ -17,6 +17,8 @@ using F3Wasm.Models;
 using F3Wasm.Data;
 using F3Core;
 using F3Core.Regions;
+using System.Web;
+using Blazorise.DataGrid;
 
 namespace F3Wasm.Pages
 {
@@ -24,11 +26,13 @@ namespace F3Wasm.Pages
     {
         [Parameter]
         public string Region { get; set; }
+
         public Region RegionInfo { get; set; }
+        public bool IsEmbed { get; set; }
 
         public AllData allData { get; set; }
         public OverallView currentView { get; set; }
-
+        private DataGrid<DisplayRow> dataGrid;
         public List<DisplayRow> currentRows { get; set; }
         public DateTime lastUpdatedDate { get; set; }
         public bool showPaxModal { get; set; }
@@ -43,6 +47,7 @@ namespace F3Wasm.Pages
         public bool showOtherLocations { get; set; } = false;
 
         public List<WorkoutDay> AllPossibleWorkoutDays { get; set; }
+        private string customFilterValue;
 
         protected override async Task OnInitializedAsync()
         {
@@ -58,6 +63,17 @@ namespace F3Wasm.Pages
 
             AllPossibleWorkoutDays = GetCurrentPossibleWorkoutDays(allData.Posts);
 
+            // Get IsEmbed from the query string
+            var uri = new Uri(NavigationManager.Uri);
+            var hasIsEmbedParam = HttpUtility.ParseQueryString(uri.Query).AllKeys.Contains("IsEmbed");
+
+            if (hasIsEmbedParam)
+            {
+                var isEmbedParam = HttpUtility.ParseQueryString(uri.Query)["IsEmbed"];
+                bool.TryParse(isEmbedParam, out var isEmbed);
+                IsEmbed = isEmbed;
+            }
+            
             ShowAllTime();
         }
 
@@ -171,6 +187,21 @@ namespace F3Wasm.Pages
             SetCurrentRows(posts, firstDay, lastDay);
         }
 
+        // Filter
+        private Task OnCustomFilterValueChanged( string e )
+        {
+            customFilterValue = e;
+            return dataGrid.Reload();
+        }
+
+        private bool OnCustomFilter( DisplayRow model )
+        {
+            if ( string.IsNullOrEmpty( customFilterValue ) )
+                return true;
+
+            return model.PaxName?.Contains( customFilterValue, StringComparison.OrdinalIgnoreCase ) == true;
+        }
+
         // Modals
         private Task ShowModal()
         {
@@ -195,6 +226,12 @@ namespace F3Wasm.Pages
 
         private Task SelectedRowChanged(DisplayRow row)
         {
+            if (IsEmbed)
+            {
+                // Embedded version doesn't show the modal
+                return Task.CompletedTask;
+            }
+
             selectedPaxPosts = allData.Posts.Where(p => p.Pax == row.PaxName).OrderByDescending(x => x.Date).ToList();
             selectedPaxDates = selectedPaxPosts.Select(p => (DateTime?)p.Date).ToList();
             disabledPaxQDates = selectedPaxPosts.Where(p => p.IsQ).Select(p => (DateTime?)p.Date).ToList();

@@ -4,15 +4,18 @@
 @using F3Core
 @using System.Globalization
 @inject HttpClient Http
+@inject NavigationManager NavigationManager
 
 <PageTitle>F3 @Region.ToUpper() Data</PageTitle>
 
 <style>
-    /* For the search text box */
+    /* Show the search text box (because of below) */
     .form-control:first-of-type {
         display: block;
+        margin: 12px 0px 12px 0px;
+        width: 50%;
     }
-    /* Hide the date picker box */
+    /* Hide the date picker box in the modal */
     .form-control {
         display: none;
     }
@@ -57,20 +60,21 @@ else
             <Button Color="currentView == OverallView.ThisYear ? Color.Primary : Color.Light" Clicked="ShowCurrentYear">@DateTime.Now.ToString("yyyy", CultureInfo.InvariantCulture)</Button>
             <Button Color="currentView == OverallView.LastMonth ? Color.Primary : Color.Light" Clicked="ShowPreviousMonth">@DateTime.Now.AddMonths(-1).ToString("MMM", CultureInfo.InvariantCulture)</Button>
             <Button Color="currentView == OverallView.ThisMonth ? Color.Primary : Color.Light" Clicked="ShowCurrentMonth">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture)</Button>
-        @if (lastUpdatedDate != DateTime.MinValue)
+            @if (lastUpdatedDate != DateTime.MinValue)
             {
                 <Button>Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
             }
         </Column>
     </Row>
+    <TextEdit Placeholder="Search PAX..." Text="@customFilterValue" TextChanged="@OnCustomFilterValueChanged"></TextEdit>
     <DataGrid 
+        @ref="dataGrid"
         TItem="DisplayRow"
         Data="@currentRows"
         ShowPager
-        Filterable
-        FilterMethod="DataGridFilterMethod.Contains"
+        CustomFilter="@OnCustomFilter"
         SortMode="DataGridSortMode.Single"
-        PageSize="25"
+        PageSize="50"
         Narrow
         ShowPageSizes
         PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }"
@@ -88,7 +92,6 @@ else
     </LoadingTemplate>
 
     </DataGrid>
-
 
     <Modal @bind-Visible="@showPaxModal" id="SelectedPaxModal" Closing="@OnModalClosing">
         @if (selectedPax != null)

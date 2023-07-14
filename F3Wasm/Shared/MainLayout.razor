@@ -3,19 +3,25 @@
 @using F3Core;
 
 <div class="page">
-    <div class="sidebar">
-        <NavMenu Region="@Region"/>
-    </div>
+    @if (!IsEmbed)
+    {
+        <div class="sidebar">
+            <NavMenu Region="@Region"/>
+        </div>
+    }
 
     <main>
-        @if (new FunctionInput().IsTesting)
+        @if (!IsEmbed)
         {
-            <div class="top-row px-4" style="background: red;">Test Mode</div>
-        }
-        else
-        {
-            <div class="top-row px-4"></div>
-        }
+            @if (new FunctionInput().IsTesting)
+            {
+                <div class="top-row px-4" style="background: red;">Test Mode</div>
+            }
+            else
+            {
+                <div class="top-row px-4"></div>
+            }
+        }           
 
         <article class="content px-4">
             @Body

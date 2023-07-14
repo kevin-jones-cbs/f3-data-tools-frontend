@@ -24,7 +24,6 @@ namespace F3Core.Regions
             new Ao { Name = "The Claim", City = "Placerville", DayOfWeek = DayOfWeek.Friday },
             new Ao { Name = "Powerhouse", City = "Folsom", DayOfWeek = DayOfWeek.Saturday },
             new Ao { Name = "The Grid", City = "Shingle Springs", DayOfWeek = DayOfWeek.Saturday },
-            new Ao { Name = "The Break", City = "Rotating", DayOfWeek = DayOfWeek.Saturday },
             new Ao { Name = "The Way", City = "Rotating", DayOfWeek = DayOfWeek.Sunday }
         };
 
