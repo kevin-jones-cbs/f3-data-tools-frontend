@@ -49,6 +49,9 @@ namespace F3Wasm.Pages
         public List<WorkoutDay> AllPossibleWorkoutDays { get; set; }
         private string customFilterValue;
 
+        // Don't show the modal for these PAX
+        private static List<string> OptedOutPax = new List<string>();
+
         protected override async Task OnInitializedAsync()
         {
             Console.WriteLine("Data OnInitializedAsync " + Region);
@@ -226,9 +229,9 @@ namespace F3Wasm.Pages
 
         private Task SelectedRowChanged(DisplayRow row)
         {
-            if (IsEmbed)
+            if (OptedOutPax.Contains(row.PaxName))
             {
-                // Embedded version doesn't show the modal
+                // Don't show modal for opted out pax
                 return Task.CompletedTask;
             }
 

@@ -45,6 +45,13 @@
         background-color: transparent;
         cursor: pointer;
     }
+
+    #privacy-note {
+        margin-top: 12px;
+        font-size: 10px;
+        text-align: center;
+    }
+    
 </style>
 
 @if (allData == null)
@@ -230,6 +237,11 @@ else
                                 </Table>
                             </Column>
                         }
+                    </Row>
+                    <Row>
+                        <Column id="privacy-note">
+                            If you see any errors, or would like to hide your data, contact Peacock or a Band admin. 
+                        </Column>
                     </Row>
                 </ModalBody>
                 <ModalFooter>
