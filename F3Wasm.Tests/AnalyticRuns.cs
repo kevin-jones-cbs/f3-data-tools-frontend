@@ -41,6 +41,37 @@ namespace F3Wasm.Tests
         }
 
         [Fact]
+        public async Task GetStaleRoster()
+        {
+            var client = new HttpClient();
+            var allData = await LambdaHelper.GetAllDataAsync(client, "southfork");
+
+            // Get a list of Pax with their post count, and the date of their last post
+            var pax = allData.Pax.Select(p => new
+            {
+                p.Name,
+                PostCount = allData.Posts.Count(po => po.Pax.Equals(p.Name)),
+                LastPost = allData.Posts.Where(po => po.Pax.Equals(p.Name)).OrderByDescending(po => po.Date).FirstOrDefault()?.Date
+            }).ToList();
+
+            // Only show Pax that have not posted in the last year
+            var stalePax = pax.Where(p => p.LastPost != null && (DateTime.Now - p.LastPost.Value).Days > 365).OrderByDescending(p => p.LastPost).ToList();
+
+            // Exclude anyone with more than 10 posts
+            stalePax = stalePax.Where(p => p.PostCount < 10).ToList();
+
+            // Save to a csv file
+            var csv = new StringBuilder();
+            csv.AppendLine("Name,Post Count,Last Post");
+            foreach (var p in stalePax)
+            {
+                csv.AppendLine($"{p.Name},{p.PostCount},{p.LastPost?.ToShortDateString()}");
+            }
+
+            File.WriteAllText("stale_pax.csv", csv.ToString());
+        }
+
+        [Fact]
         public async Task GetAveragePostsPerDay()
         {
             var client = new HttpClient();

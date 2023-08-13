@@ -150,6 +150,10 @@ public class Function
                 Pax = pax
             };
 
+            // Exclude any "archived" pax
+            rtn.Pax = rtn.Pax.Where(x => !x.Name.Contains("(Archived)")).ToList();
+            rtn.Posts = rtn.Posts.Where(x => !x.Pax.Contains("(Archived)")).ToList();
+
             // Json serialize the object as small in size as possible
             var options = new JsonSerializerOptions
             {
@@ -245,6 +249,9 @@ public class Function
     {
         var result = await sheetsService.Spreadsheets.Values.Get(spreadsheetId, "Roster!B:B").ExecuteAsync();
         var paxMembers = result.Values.Select(x => x.FirstOrDefault().ToString()).Distinct().ToList();
+
+        // Exclude any "archived" pax
+        paxMembers = paxMembers.Where(x => !x.Contains("(Archived)")).ToList();
 
         return paxMembers;
     }
