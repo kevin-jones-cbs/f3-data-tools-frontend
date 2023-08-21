@@ -44,6 +44,8 @@ namespace F3Wasm.Pages
         public IReadOnlyList<DateTime?> disabledPaxQDates { get; set; }
         public string selectedPaxPostWithView { get; set; } = null;
         public Dictionary<string, int> selectedPaxPostedWith { get; set; }
+        public DateTime selectedPaxStreakStart { get; set; }
+        public int selectedPaxStreak { get; set; }
         public bool showOtherLocations { get; set; } = false;
 
         public List<WorkoutDay> AllPossibleWorkoutDays { get; set; }
@@ -76,7 +78,7 @@ namespace F3Wasm.Pages
                 bool.TryParse(isEmbedParam, out var isEmbed);
                 IsEmbed = isEmbed;
             }
-            
+
             ShowAllTime();
         }
 
@@ -89,7 +91,7 @@ namespace F3Wasm.Pages
             }
 
             // Group the posts by pax name
-            var paxPosts = posts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.ToList());
+            var paxPosts = posts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
             currentRows = new List<DisplayRow>();
 
             // Add the pax to the display
@@ -117,10 +119,53 @@ namespace F3Wasm.Pages
                 // Get the Q count
                 row.QCount = pax.Value.Where(p => p.IsQ).Count();
 
+                (var streak, var streakStart) = CalculateStreak(pax.Value);
+                row.Streak = streak;
+
                 currentRows.Add(row);
             }
 
             currentRows = currentRows.OrderByDescending(r => r.PostCount).ToList();
+        }
+
+        private static (int, DateTime) CalculateStreak(List<Post> posts)
+        {
+            int currentStreak = 0;
+            int longestStreak = 0;
+            DateTime? lastWorkoutDate = null;
+            DateTime currentStreakStart = DateTime.MinValue;
+            DateTime longestStreakStart = DateTime.MinValue;
+            DateTime firstSundayOpp = new DateTime(2023, 4, 16);
+
+            foreach (var workoutDay in posts)
+            {
+                if (lastWorkoutDate == null)
+                {
+                    currentStreak = 1;
+                    currentStreakStart = workoutDay.Date;
+                }
+                else if (workoutDay.Date == lastWorkoutDate.Value.AddDays(1) ||
+                    (workoutDay.Date.DayOfWeek == DayOfWeek.Monday && workoutDay.Date < firstSundayOpp && workoutDay.Date == lastWorkoutDate.Value.AddDays(2))) // Handle before we had Sundays
+                {
+                    currentStreak++;
+                }
+                else
+                {
+                    // If the dates are not consecutive, reset the streak
+                    currentStreak = 1;
+                    currentStreakStart = workoutDay.Date;
+                }
+
+                longestStreak = Math.Max(longestStreak, currentStreak);
+                if (longestStreak == currentStreak)
+                {
+                    longestStreakStart = currentStreakStart;
+                }
+
+                lastWorkoutDate = workoutDay.Date;
+            }
+
+            return (longestStreak, longestStreakStart);
         }
 
         public static List<WorkoutDay> GetCurrentPossibleWorkoutDays(List<Post> posts)
@@ -191,18 +236,18 @@ namespace F3Wasm.Pages
         }
 
         // Filter
-        private Task OnCustomFilterValueChanged( string e )
+        private Task OnCustomFilterValueChanged(string e)
         {
             customFilterValue = e;
             return dataGrid.Reload();
         }
 
-        private bool OnCustomFilter( DisplayRow model )
+        private bool OnCustomFilter(DisplayRow model)
         {
-            if ( string.IsNullOrEmpty( customFilterValue ) )
+            if (string.IsNullOrEmpty(customFilterValue))
                 return true;
 
-            return model.PaxName?.Contains( customFilterValue, StringComparison.OrdinalIgnoreCase ) == true;
+            return model.PaxName?.Contains(customFilterValue, StringComparison.OrdinalIgnoreCase) == true;
         }
 
         // Modals
@@ -243,6 +288,10 @@ namespace F3Wasm.Pages
             selectedPaxPossibleCount = AllPossibleWorkoutDays.Where(x => x.Date >= selectedPaxPosts.LastOrDefault().Date).Count();
             selectedPaxPostWithView = null;
             selectedPax = allData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
+
+            var paxPostsAsc = selectedPaxPosts.OrderBy(p => p.Date).ToList();
+            (selectedPaxStreak, selectedPaxStreakStart) = CalculateStreak(paxPostsAsc);
+
             showOtherLocations = false;
             ShowModal();
 

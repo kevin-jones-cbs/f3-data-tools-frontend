@@ -61,7 +61,7 @@
 else
 {
     <Row>
-    <Column>
+        <Column>
             <Button Color="currentView == OverallView.AllTime ? Color.Primary : Color.Light" Clicked="ShowAllTime">All Time</Button>
             <Button Color="currentView == OverallView.LastYear ? Color.Primary : Color.Light" Clicked="ShowPreviousYear">@DateTime.Now.AddYears(-1).ToString("yyyy", CultureInfo.InvariantCulture)</Button>
             <Button Color="currentView == OverallView.ThisYear ? Color.Primary : Color.Light" Clicked="ShowCurrentYear">@DateTime.Now.ToString("yyyy", CultureInfo.InvariantCulture)</Button>
@@ -86,6 +86,7 @@ else
         ShowPageSizes
         PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }"
         SelectedRowChanged="SelectedRowChanged"
+        Responsive
     >
     <DataGridColumns>
         <DataGridColumn Field="@nameof(DisplayRow.PaxName)" Caption="Name" SortField="@nameof(DisplayRow.PaxName)"/>
@@ -93,6 +94,7 @@ else
         <DataGridColumn Field="@nameof(DisplayRow.QCount)" Caption="Q" Filterable="false" />
         <DataGridColumn Field="@nameof(DisplayRow.FirstPost)" Caption="1st Post" Filterable="false" DisplayFormat="{0:M/d/yy}" />
         <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="Post %" Filterable="false" DisplayFormat="{0:0}%" />
+        <DataGridColumn Field="@nameof(DisplayRow.Streak)" Caption="Daily Streak" Filterable="false" />
     </DataGridColumns>
     <LoadingTemplate>
         <p>Loading...</p>
@@ -145,18 +147,26 @@ else
                                 </TableRow>
                                 <TableRow>
                                     <TableRowHeader>Post Percent</TableRowHeader>
-                                        <TableRowCell>@(((double)selectedPaxPosts.Count / (double)selectedPaxPossibleCount * 100).ToString("0.00"))%</TableRowCell>
-                                    </TableRow>
+                                    <TableRowCell>@(((double)selectedPaxPosts.Count / (double)selectedPaxPossibleCount * 100).ToString("0.00"))%</TableRowCell>
+                                </TableRow>
+                                    <TableRow>
+                                    <TableRowHeader>Best Daily Streak</TableRowHeader>
+                                    <TableRowCell>@(selectedPaxStreak)</TableRowCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableRowHeader>Streak Start</TableRowHeader>
+                                    <TableRowCell>@(selectedPaxStreakStart.ToShortDateString())</TableRowCell>
+                                </TableRow>
                                 </TableBody>
                             </Table>
 
                             <DatePicker TValue="DateTime?" Inline SelectionMode="DateInputSelectionMode.Multiple"
-                        Dates="@selectedPaxDates" DatesChanged="@OnDatesChanged" DisabledDates="@disabledPaxQDates" />
+                                Dates="@selectedPaxDates" DatesChanged="@OnDatesChanged" DisabledDates="@disabledPaxQDates" />
 
-                            <div style="text-align:center; margin-top:6px;">
-                                <Badge Color="Color.Primary">Post</Badge>
-                                <Badge Color="Color.Success" style="width:36px;">Q</Badge>
-                            </div>
+                                <div style="text-align:center; margin-top:6px;">
+                                    <Badge Color="Color.Primary">Post</Badge>
+                                    <Badge Color="Color.Success" style="width:36px;">Q</Badge>
+                                </div>
                             </Column>
 
                             <Column>
