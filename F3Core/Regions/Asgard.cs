@@ -12,11 +12,12 @@ namespace F3Core.Regions
             new Ao { Name = "Training Ground", City = "Antelope", DayOfWeek = DayOfWeek.Monday },
             new Ao { Name = "Airstrip", City = "Rancho Cordova", DayOfWeek = DayOfWeek.Tuesday },
             new Ao { Name = "Bifrost", City = "Citrus Heights", DayOfWeek = DayOfWeek.Tuesday },
-            new Ao { Name = "The Garden", City = "Fair Oaks", DayOfWeek = DayOfWeek.Wednesday },
-            new Ao { Name = "The Sandy Garden", City = "Fair Oaks", DayOfWeek = DayOfWeek.Wednesday },
+            new Ao { Name = "The Mammoth", City = "Sacramento", DayOfWeek = DayOfWeek.Wednesday },
+            new Ao { Name = "The Pound - W", City = "Citrus Heights", DayOfWeek = DayOfWeek.Wednesday },
             new Ao { Name = "The Ring - Th", City = "Fair Oaks", DayOfWeek = DayOfWeek.Thursday },
+            new Ao { Name = "Sandy Garden - Th", City = "Fair Oaks", DayOfWeek = DayOfWeek.Thursday },
             new Ao { Name = "The Iron Jungle - Fr", City = "Sacramento", DayOfWeek = DayOfWeek.Friday },
-            new Ao { Name = "Lost Realm", City = "Sacramento", DayOfWeek = DayOfWeek.Friday },
+            new Ao { Name = "Beavertown", City = "Sacramento", DayOfWeek = DayOfWeek.Friday },
             new Ao { Name = "The Break", City = "Sacramento", DayOfWeek = DayOfWeek.Saturday }
         };
 
