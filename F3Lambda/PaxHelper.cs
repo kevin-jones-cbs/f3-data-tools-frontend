@@ -21,6 +21,8 @@ namespace F3Lambda.Data
             { "Slumlord", "Slum Lord" },
             { "Jackelope", "Jackalope" },
             { "Top Bunk", "Top Bunk" },
+            { "Nail'd It", "Nailed It" },
+            { "A-Dudle-Doo", "A Doodle Doo" },
         };  
 
         public static List<Pax> GetPaxFromComment(string comment, List<string> allPax)
