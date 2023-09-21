@@ -354,6 +354,27 @@ namespace F3Wasm.Pages
             return days.Count.ToString() + (notYet ? " (so far)" : "");
         }
 
+        public string GetCalDaysTo100()
+        {
+            // Get the 100th post for the selected pax
+            var pax100thPost = selectedPaxPosts.OrderBy(x => x.Date).Skip(99).FirstOrDefault();
+            var notYet = false;
+            if (pax100thPost == null)
+            {
+                // No 100 yet, so just count today
+                pax100thPost = new Post() { Date = DateTime.Now };
+                notYet = true;
+            }
+
+            var pax1stPost = selectedPaxPosts.LastOrDefault();
+
+            // Get the number of days between their first post and 100th post
+            var days = (pax100thPost.Date - pax1stPost.Date).Days;
+
+            // Get the number of days since their first post
+            return days.ToString() + (notYet ? " (so far)" : "");
+        }
+
         public static Dictionary<string, int> GetAllTimePaxPostWith(string index, List<Post> selectedPaxPosts, AllData allData, int selectedPax100Count)
         {
             List<Post> paxPosts = new List<Post>();
