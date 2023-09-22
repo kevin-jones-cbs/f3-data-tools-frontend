@@ -41,7 +41,7 @@ public class Function
             // For Cold Starts
             if (functionInput.Action == "Awake")
             {
-                return "Awake";
+                return "Awake 2";
             }
 
             // Get the region

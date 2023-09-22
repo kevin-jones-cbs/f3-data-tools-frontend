@@ -1,0 +1,39 @@
+name: Deploy To Lambda
+env:
+  PROJECT_NAME: F3Lambda
+  LAMBDA_NAME: F3Pax
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '6.0.x'
+
+    - name: Publish .NET Lambda
+      run: |
+        cd ${{env.PROJECT_NAME}}
+        dotnet publish -c Release -o ./publish
+
+    - name: Zip the publish contents
+      run: |
+        cd publish
+        zip -r ../${{env.PROJECT_NAME}}.zip .
+
+    - name: Update Lambda function
+      run: |
+        aws lambda update-function-code --function-name ${{env.PROJECT_NAME}} --zip-file ${{env.PROJECT_NAME}}.zip
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
