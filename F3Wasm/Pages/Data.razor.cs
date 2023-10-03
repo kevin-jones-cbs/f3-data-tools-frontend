@@ -389,6 +389,10 @@ namespace F3Wasm.Pages
             {
                 paxPosts = selectedPaxPosts.OrderBy(p => p.Date).Skip(selectedPax100Count * 100).ToList();
             }
+            else if (index == "QOthersAllTime")
+            {
+                paxPosts = selectedPaxPosts.Where(x => x.IsQ).OrderBy(p => p.Date).ToList();
+            }
             else
             {
                 var intIndex = int.Parse(index);
@@ -416,7 +420,7 @@ namespace F3Wasm.Pages
                 }
             }
 
-            return newPaxPostedWith.OrderByDescending(p => p.Value).Take(10).ToDictionary(p => p.Key, p => p.Value);
+            return newPaxPostedWith.OrderByDescending(p => p.Value).Take(15).ToDictionary(p => p.Key, p => p.Value);
         }
     }
 }
