@@ -51,6 +51,11 @@
         font-size: 10px;
         text-align: center;
     }
+
+    #loader {
+        display: flex;
+        justify-content: center;
+    }
     
 </style>
 
@@ -67,41 +72,57 @@ else
             <Button Color="currentView == OverallView.ThisYear ? Color.Primary : Color.Light" Clicked="ShowCurrentYear">@DateTime.Now.ToString("yyyy", CultureInfo.InvariantCulture)</Button>
             <Button Color="currentView == OverallView.LastMonth ? Color.Primary : Color.Light" Clicked="ShowPreviousMonth">@DateTime.Now.AddMonths(-1).ToString("MMM", CultureInfo.InvariantCulture)</Button>
             <Button Color="currentView == OverallView.ThisMonth ? Color.Primary : Color.Light" Clicked="ShowCurrentMonth">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture)</Button>
+            <Button Color="currentView == OverallView.Kotter ? Color.Primary : Color.Light" Clicked="ShowKotter">Kotter</Button>
             @if (lastUpdatedDate != DateTime.MinValue)
             {
                 <Button>Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
             }
         </Column>
     </Row>
-    <TextEdit Placeholder="Search PAX..." Text="@customFilterValue" TextChanged="@OnCustomFilterValueChanged"></TextEdit>
-    <DataGrid 
-        @ref="dataGrid"
-        TItem="DisplayRow"
-        Data="@currentRows"
-        ShowPager
-        CustomFilter="@OnCustomFilter"
-        SortMode="DataGridSortMode.Single"
-        PageSize="50"
-        Narrow
-        ShowPageSizes
-        PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }"
-        SelectedRowChanged="SelectedRowChanged"
-        Responsive
-    >
-    <DataGridColumns>
-        <DataGridColumn Field="@nameof(DisplayRow.PaxName)" Caption="Name" SortField="@nameof(DisplayRow.PaxName)"/>
-        <DataGridColumn Field="@nameof(DisplayRow.PostCount)" Caption="Posts" Filterable="false" />
-        <DataGridColumn Field="@nameof(DisplayRow.QCount)" Caption="Q" Filterable="false" />
-        <DataGridColumn Field="@nameof(DisplayRow.FirstPost)" Caption="1st Post" Filterable="false" DisplayFormat="{0:M/d/yy}" />
-        <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="Post %" Filterable="false" DisplayFormat="{0:0}%" />
-        <DataGridColumn Field="@nameof(DisplayRow.Streak)" Caption="Daily Streak" Filterable="false" />
-    </DataGridColumns>
-    <LoadingTemplate>
-        <p>Loading...</p>
-    </LoadingTemplate>
 
-    </DataGrid>
+    @if (loading)
+    {
+        <div id="loader">
+            <SpinKit Type="SpinKitType.Bounce" />
+        </div>
+    }
+    else
+    {
+        <TextEdit Placeholder="Search PAX..." Text="@customFilterValue" TextChanged="@OnCustomFilterValueChanged"></TextEdit>
+        <DataGrid 
+            @ref="dataGrid"
+            TItem="DisplayRow"
+            Data="@currentRows"
+            ShowPager
+            CustomFilter="@OnCustomFilter"
+            SortMode="DataGridSortMode.Single"
+            PageSize="50"
+            Narrow
+            ShowPageSizes
+            PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }"
+            SelectedRowChanged="SelectedRowChanged"
+            Responsive
+        >
+        <DataGridColumns>
+            <DataGridColumn Field="@nameof(DisplayRow.PaxName)" Caption="Name" SortField="@nameof(DisplayRow.PaxName)"/>
+            <DataGridColumn Field="@nameof(DisplayRow.PostCount)" Caption="Posts" Filterable="false" />
+            <DataGridColumn Field="@nameof(DisplayRow.QCount)" Caption="Q" Filterable="false" />
 
+            @if(currentView == OverallView.Kotter)
+            {
+                <DataGridColumn Field="@nameof(DisplayRow.LastPost)" Caption="Last Post" Filterable="false" DisplayFormat="{0:M/d/yy}" />
+                <DataGridColumn Field="@nameof(DisplayRow.KotterDays)" Caption="Days Since" Filterable="false"  />
+            }
+            else
+            {
+                <DataGridColumn Field="@nameof(DisplayRow.FirstPost)" Caption="1st Post" Filterable="false" DisplayFormat="{0:M/d/yy}" />
+                <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="Post %" Filterable="false" DisplayFormat="{0:0}%" />
+                <DataGridColumn Field="@nameof(DisplayRow.Streak)" Caption="Daily Streak" Filterable="false"  />
+            }
+        </DataGridColumns>
+
+        </DataGrid>
+    }
     <Modal @bind-Visible="@showPaxModal" id="SelectedPaxModal" Closing="@OnModalClosing">
         @if (selectedPax != null)
         {
@@ -267,5 +288,5 @@ else
                 </ModalFooter>
             </ModalContent>
         }
-        </Modal>
+    </Modal>
 }

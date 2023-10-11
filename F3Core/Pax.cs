@@ -10,5 +10,6 @@ namespace F3Core
         public string DateJoined { get; set; }
         public bool IsDr { get; set; }
         public int NamingRegionIndex { get; set; }
+        public string NamingRegion { get; set; }
     }
 }

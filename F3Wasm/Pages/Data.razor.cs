@@ -51,6 +51,8 @@ namespace F3Wasm.Pages
         public List<WorkoutDay> AllPossibleWorkoutDays { get; set; }
         private string customFilterValue;
 
+        public bool loading { get; set; }
+
         // Don't show the modal for these PAX
         private static List<string> OptedOutPax = new List<string>();
 
@@ -122,10 +124,23 @@ namespace F3Wasm.Pages
                 (var streak, var streakStart) = CalculateStreak(pax.Value);
                 row.Streak = streak;
 
+                // Kotter
+                row.LastPost = pax.Value.Max(p => p.Date);
+                row.KotterDays = (DateTime.Now - row.LastPost.Value).Days;
+
                 currentRows.Add(row);
             }
 
-            currentRows = currentRows.OrderByDescending(r => r.PostCount).ToList();
+            if (currentView == OverallView.Kotter)
+            {
+                currentRows = currentRows.OrderBy(r => r.KotterDays).ToList();                
+            }
+            else
+            {
+                currentRows = currentRows.OrderByDescending(r => r.PostCount).ToList();                
+            }
+
+            loading = false;
         }
 
         private static (int, DateTime) CalculateStreak(List<Post> posts)
@@ -191,12 +206,14 @@ namespace F3Wasm.Pages
 
         private void ShowAllTime()
         {
+            loading = true;
             currentView = OverallView.AllTime;
             SetCurrentRows(allData.Posts, null, DateTime.Now);
         }
 
         private void ShowPreviousMonth()
         {
+            loading = true;
             currentView = OverallView.LastMonth;
             var posts = allData.Posts.Where(p => p.Date.Month == DateTime.Now.AddMonths(-1).Month && p.Date.Year == DateTime.Now.AddMonths(-1).Year).ToList();
 
@@ -207,10 +224,31 @@ namespace F3Wasm.Pages
 
         private void ShowCurrentMonth()
         {
+            loading = true;
             currentView = OverallView.ThisMonth;
             var posts = allData.Posts.Where(p => p.Date.Month == DateTime.Now.Month && p.Date.Year == DateTime.Now.Year).ToList();
 
             var firstDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            var lastDay = DateTime.Now;
+            SetCurrentRows(posts, firstDay, lastDay);
+        }
+
+        private async Task ShowKotter()
+        {
+            loading = true;
+            await Task.Delay(1);
+            currentView = OverallView.Kotter;
+            var paxLastPostDates = allData.Posts.GroupBy(p => p.Pax).Select(g => new { Name = g.Key, MaxDate = g.Max(x => x.Date), Region = allData.Pax.FirstOrDefault(p => p.Name == g.Key)?.NamingRegion }).ToList();
+
+            // Only show pax who haven't posted in the last 14 days, less than a year ago, where this is their home region.
+            var posts = allData.Posts.Where(p => paxLastPostDates.Any(x => 
+                                            x.Name == p.Pax && 
+                                            !p.Pax.Contains("2.0") &&
+                                            x.MaxDate < DateTime.Now.AddDays(-14) && 
+                                            x.MaxDate > DateTime.Now.AddDays(-365) &&
+                                            x.Region == RegionInfo.DisplayName)).ToList();
+
+            var firstDay = new DateTime(DateTime.Now.Year, 1, 1);
             var lastDay = DateTime.Now;
             SetCurrentRows(posts, firstDay, lastDay);
         }

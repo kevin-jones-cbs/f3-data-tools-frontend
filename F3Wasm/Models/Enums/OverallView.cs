@@ -7,6 +7,7 @@ namespace F3Wasm.Models
         ThisYear,
         LastMonth,
         ThisMonth,
+        Kotter,
         UNSET
     }
 }
