@@ -137,11 +137,12 @@ public class Function
             }).ToList();
 
             // Get the roster
-            var result = await sheetsService.Spreadsheets.Values.Get(spreadsheetId, "Roster!B4:C").ExecuteAsync();
+            var result = await sheetsService.Spreadsheets.Values.Get(spreadsheetId, "Roster!B4:E").ExecuteAsync();
             var pax = result.Values.Select(x => new Pax
             {
                 Name = x[0].ToString(),
-                DateJoined = x.Count == 2 && x[1].ToString().Contains("/") ? DateTime.Parse(x[1].ToString()).ToShortDateString() : string.Empty
+                DateJoined = x.Count == 2 && x[1].ToString().Contains("/") ? DateTime.Parse(x[1].ToString()).ToShortDateString() : string.Empty,
+                NamingRegion = x[3].ToString()
             }).ToList();
 
             var rtn = new AllData
