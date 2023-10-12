@@ -458,7 +458,7 @@ namespace F3Wasm.Pages
                 }
             }
 
-            return newPaxPostedWith.OrderByDescending(p => p.Value).Take(15).ToDictionary(p => p.Key, p => p.Value);
+            return newPaxPostedWith.OrderByDescending(p => p.Value).ToDictionary(p => p.Key, p => p.Value);
         }
     }
 }
