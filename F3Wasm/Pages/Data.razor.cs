@@ -128,16 +128,27 @@ namespace F3Wasm.Pages
                 row.LastPost = pax.Value.Max(p => p.Date);
                 row.KotterDays = (DateTime.Now - row.LastPost.Value).Days;
 
+                // Ao Challenge. Find the number of unique aos for this pax, for this month
+                if (currentView == OverallView.AoChallenge)
+                {
+                    row.AoPosts = pax.Value.GroupBy(p => p.Site).Select(g => g.Key).Count();
+                    row.AoPercent = (double)row.AoPosts / 19 * 100;
+                }
+
                 currentRows.Add(row);
             }
 
             if (currentView == OverallView.Kotter)
             {
-                currentRows = currentRows.OrderBy(r => r.KotterDays).ToList();                
+                currentRows = currentRows.OrderBy(r => r.KotterDays).ToList();
+            }
+            else if (currentView == OverallView.AoChallenge)
+            {
+                currentRows = currentRows.OrderByDescending(r => r.AoPosts).ToList();
             }
             else
             {
-                currentRows = currentRows.OrderByDescending(r => r.PostCount).ToList();                
+                currentRows = currentRows.OrderByDescending(r => r.PostCount).ToList();
             }
 
             loading = false;
@@ -241,16 +252,31 @@ namespace F3Wasm.Pages
             var paxLastPostDates = allData.Posts.GroupBy(p => p.Pax).Select(g => new { Name = g.Key, MaxDate = g.Max(x => x.Date), Region = allData.Pax.FirstOrDefault(p => p.Name == g.Key)?.NamingRegion }).ToList();
 
             // Only show pax who haven't posted in the last 14 days, less than a year ago, where this is their home region.
-            var posts = allData.Posts.Where(p => paxLastPostDates.Any(x => 
-                                            x.Name == p.Pax && 
+            var posts = allData.Posts.Where(p => paxLastPostDates.Any(x =>
+                                            x.Name == p.Pax &&
                                             !p.Pax.Contains("2.0") &&
-                                            x.MaxDate < DateTime.Now.AddDays(-14) && 
+                                            x.MaxDate < DateTime.Now.AddDays(-14) &&
                                             x.MaxDate > DateTime.Now.AddDays(-365) &&
                                             x.Region == RegionInfo.DisplayName)).ToList();
 
             var firstDay = new DateTime(DateTime.Now.Year, 1, 1);
             var lastDay = DateTime.Now;
             SetCurrentRows(posts, firstDay, lastDay);
+        }
+
+        private async Task ShowAoChallenge()
+        {
+            loading = true;
+            await Task.Delay(1);
+            currentView = OverallView.AoChallenge;
+
+            var posts = allData.Posts.Where(p => p.Date.Month == DateTime.Now.Month && p.Date.Year == DateTime.Now.Year).ToList();
+
+            var firstDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            var lastDay = DateTime.Now;
+            SetCurrentRows(posts, firstDay, lastDay);
+
+            loading = false;
         }
 
         private void ShowPreviousYear()
@@ -346,6 +372,21 @@ namespace F3Wasm.Pages
             string hex = ColorHelpers.GetAoHex(location);
 
             return $"background-color: {hex};";
+        }
+
+        private string GetAoChallengeButtonColor(Ao location)
+        {
+            string hex = ColorHelpers.GetAoHex(location);
+
+            var now = DateTime.Now;
+            var hasPosted = selectedPaxPosts.Where(x => x.Date.Year == now.Year && x.Date.Month == now.Month).Any(x => x.Site == location.Name);
+
+            if (hasPosted)
+            {
+                return $"background-color: {hex}; color: white;";
+            }
+
+            return $"border: solid 1px {hex}; color:{hex}";
         }
 
         private async Task OnSelectedPaxPostWithViewChange(string index)

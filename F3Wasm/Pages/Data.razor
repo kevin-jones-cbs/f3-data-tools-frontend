@@ -15,10 +15,12 @@
         margin: 12px 0px 12px 0px;
         width: 50%;
     }
+
     /* Hide the date picker box in the modal */
     .form-control {
         display: none;
     }
+
     /* Disabled Dates should have a different style */
     .flatpickr-day.flatpickr-disabled {
         background: #28a745;
@@ -26,7 +28,7 @@
     }
 
     /* Center the date picker */
-    .flatpickr-calendar{
+    .flatpickr-calendar {
         margin: auto;
     }
 
@@ -56,7 +58,16 @@
         display: flex;
         justify-content: center;
     }
-    
+
+    .aoChallengeButton {
+        height: 75px;
+    }
+
+    #aoChallengeContainer {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
 </style>
 
 @if (allData == null)
@@ -66,60 +77,69 @@
 else
 {
     <Row>
-        <Column>
-            <Button Color="currentView == OverallView.AllTime ? Color.Primary : Color.Light" Clicked="ShowAllTime">All Time</Button>
-            <Button Color="currentView == OverallView.LastYear ? Color.Primary : Color.Light" Clicked="ShowPreviousYear">@DateTime.Now.AddYears(-1).ToString("yyyy", CultureInfo.InvariantCulture)</Button>
-            <Button Color="currentView == OverallView.ThisYear ? Color.Primary : Color.Light" Clicked="ShowCurrentYear">@DateTime.Now.ToString("yyyy", CultureInfo.InvariantCulture)</Button>
-            <Button Color="currentView == OverallView.LastMonth ? Color.Primary : Color.Light" Clicked="ShowPreviousMonth">@DateTime.Now.AddMonths(-1).ToString("MMM", CultureInfo.InvariantCulture)</Button>
-            <Button Color="currentView == OverallView.ThisMonth ? Color.Primary : Color.Light" Clicked="ShowCurrentMonth">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture)</Button>
-            <Button Color="currentView == OverallView.Kotter ? Color.Primary : Color.Light" Clicked="ShowKotter">Kotter</Button>
-            @if (lastUpdatedDate != DateTime.MinValue)
-            {
-                <Button>Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
-            }
-        </Column>
+    <Column>
+        <Button Color="currentView == OverallView.AllTime ? Color.Primary : Color.Light" Clicked="ShowAllTime">All Time</Button>
+        <Button Color="currentView == OverallView.LastYear ? Color.Primary : Color.Light" Clicked="ShowPreviousYear">@DateTime.Now.AddYears(-1).ToString("yyyy", CultureInfo.InvariantCulture)</Button>
+        <Button Color="currentView == OverallView.ThisYear ? Color.Primary : Color.Light" Clicked="ShowCurrentYear">@DateTime.Now.ToString("yyyy", CultureInfo.InvariantCulture)</Button>
+        <Button Color="currentView == OverallView.LastMonth ? Color.Primary : Color.Light" Clicked="ShowPreviousMonth">@DateTime.Now.AddMonths(-1).ToString("MMM", CultureInfo.InvariantCulture)</Button>
+        <Button Color="currentView == OverallView.ThisMonth ? Color.Primary : Color.Light" Clicked="ShowCurrentMonth">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture)</Button>
+        <Button Color="currentView == OverallView.Kotter ? Color.Primary : Color.Light" Clicked="ShowKotter">Kotter</Button>
+        @if (RegionInfo.DisplayName == "South Fork" && false)
+        {
+            <Button Color="Color.Success" Outline="currentView != OverallView.AoChallenge" Clicked="ShowAoChallenge">November AO Challenge</Button>
+        }
+
+        @if (lastUpdatedDate != DateTime.MinValue)
+        {
+            <Button>Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
+        }
+    </Column>
     </Row>
 
     @if (loading)
     {
         <div id="loader">
-            <SpinKit Type="SpinKitType.Bounce" />
-        </div>
+    <SpinKit Type="SpinKitType.Bounce" />
+</div>
     }
     else
     {
         <TextEdit Placeholder="Search PAX..." Text="@customFilterValue" TextChanged="@OnCustomFilterValueChanged"></TextEdit>
-        <DataGrid 
-            @ref="dataGrid"
-            TItem="DisplayRow"
-            Data="@currentRows"
-            ShowPager
-            CustomFilter="@OnCustomFilter"
-            SortMode="DataGridSortMode.Single"
-            PageSize="50"
-            Narrow
-            ShowPageSizes
-            PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }"
-            SelectedRowChanged="SelectedRowChanged"
-            Responsive
-        >
-        <DataGridColumns>
-            <DataGridColumn Field="@nameof(DisplayRow.PaxName)" Caption="Name" SortField="@nameof(DisplayRow.PaxName)"/>
-            <DataGridColumn Field="@nameof(DisplayRow.PostCount)" Caption="Posts" Filterable="false" />
-            <DataGridColumn Field="@nameof(DisplayRow.QCount)" Caption="Q" Filterable="false" />
+        <DataGrid @ref="dataGrid" TItem="DisplayRow" Data="@currentRows" ShowPager CustomFilter="@OnCustomFilter"
+             SortMode="DataGridSortMode.Single" PageSize="50" Narrow ShowPageSizes
+             PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }" SelectedRowChanged="SelectedRowChanged"
+    Responsive>
+         <DataGridColumns>
+             <DataGridColumn Field="@nameof(DisplayRow.PaxName)" Caption="Name" SortField="@nameof(DisplayRow.PaxName)" />
 
-            @if(currentView == OverallView.Kotter)
-            {
-                <DataGridColumn Field="@nameof(DisplayRow.LastPost)" Caption="Last Post" Filterable="false" DisplayFormat="{0:M/d/yy}" />
-                <DataGridColumn Field="@nameof(DisplayRow.KotterDays)" Caption="Days Since" Filterable="false"  />
-            }
-            else
-            {
-                <DataGridColumn Field="@nameof(DisplayRow.FirstPost)" Caption="1st Post" Filterable="false" DisplayFormat="{0:M/d/yy}" />
-                <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="Post %" Filterable="false" DisplayFormat="{0:0}%" />
-                <DataGridColumn Field="@nameof(DisplayRow.Streak)" Caption="Daily Streak" Filterable="false"  />
-            }
-        </DataGridColumns>
+             @if (currentView != OverallView.AoChallenge)
+                {
+                    <DataGridColumn Field="@nameof(DisplayRow.PostCount)" Caption="Posts" Filterable="false" />
+                    <DataGridColumn Field="@nameof(DisplayRow.QCount)" Caption="Q" Filterable="false" />
+                }
+
+                @if (currentView == OverallView.Kotter)
+                {
+                    <DataGridColumn Field="@nameof(DisplayRow.LastPost)" Caption="Last Post" Filterable="false"
+                        DisplayFormat="{0:M/d/yy}" />
+                    <DataGridColumn Field="@nameof(DisplayRow.KotterDays)" Caption="Days Since" Filterable="false" />
+                }
+                else if (currentView == OverallView.AoChallenge)
+                {
+                    <DataGridColumn Field="@nameof(DisplayRow.PostCount)" Caption="Nov Posts" Filterable="false" />
+                    <DataGridColumn Field="@nameof(DisplayRow.AoPosts)" Caption="Nov AOs Posted" Filterable="false" />
+                    <DataGridColumn Field="@nameof(DisplayRow.AoPercent)" Caption="Nov AOs Posted" Filterable="false"
+                        DisplayFormat="{0:0}%" />
+                }
+                else
+                {
+                    <DataGridColumn Field="@nameof(DisplayRow.FirstPost)" Caption="1st Post" Filterable="false"
+                        DisplayFormat="{0:M/d/yy}" />
+                    <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="Post %" Filterable="false"
+                        DisplayFormat="{0:0}%" />
+                    <DataGridColumn Field="@nameof(DisplayRow.Streak)" Caption="Daily Streak" Filterable="false" />
+                }
+            </DataGridColumns>
 
         </DataGrid>
     }
@@ -127,166 +147,189 @@ else
         @if (selectedPax != null)
         {
             <ModalContent Centered Size="ModalSize.Fullscreen">
-            <ModalHeader>
-            <ModalTitle>@selectedPax.Name</ModalTitle>
-            <CloseButton />
-            </ModalHeader>
-            <ModalBody>
-            <Row VerticalGutter="16">
-                <Column>
-                    <Table Narrow Striped>
-                            <TableBody>
-                                <TableRow>
-                                    <TableRowHeader>Posts</TableRowHeader>
-                                    <TableRowCell>@selectedPaxPosts.Count</TableRowCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableRowHeader>Qs</TableRowHeader>
-                                    <TableRowCell>@selectedPaxPosts.Count(x => x.IsQ == true)</TableRowCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableRowHeader>First Post</TableRowHeader>
-                                    <TableRowCell>@selectedPaxPosts.Min(x => x.Date).ToShortDateString()</TableRowCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableRowHeader>Named By</TableRowHeader>
-                                    <TableRowCell>@GetNamedBy()</TableRowCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableRowHeader>VQ</TableRowHeader>
-                                    <TableRowCell>@selectedPaxPosts.LastOrDefault(x => x.IsQ)?.Date.ToShortDateString()
-                                    </TableRowCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableRowHeader>F3 Days to 100</TableRowHeader>
-                                    <TableRowCell>@GetDaysTo100()
-                                    </TableRowCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableRowHeader>Calendar Days to 100</TableRowHeader>
-                                    <TableRowCell>@GetCalDaysTo100()
-                                    </TableRowCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableRowHeader>Last Post</TableRowHeader>
-                                    <TableRowCell>@selectedPaxPosts.Max(x => x.Date).ToShortDateString()</TableRowCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableRowHeader>Post Percent</TableRowHeader>
-                                    <TableRowCell>@(((double)selectedPaxPosts.Count / (double)selectedPaxPossibleCount * 100).ToString("0.00"))%</TableRowCell>
-                                </TableRow>
-                                    <TableRow>
-                                    <TableRowHeader>Best Daily Streak</TableRowHeader>
-                                    <TableRowCell>@(selectedPaxStreak)</TableRowCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableRowHeader>Streak Start</TableRowHeader>
-                                    <TableRowCell>@(selectedPaxStreakStart.ToShortDateString())</TableRowCell>
-                                </TableRow>
-                                </TableBody>
-                            </Table>
-
-                            <DatePicker TValue="DateTime?" Inline SelectionMode="DateInputSelectionMode.Multiple"
-                                Dates="@selectedPaxDates" DatesChanged="@OnDatesChanged" DisabledDates="@disabledPaxQDates" />
-
-                                <div style="text-align:center; margin-top:6px;">
-                                    <Badge Color="Color.Primary">Post</Badge>
-                                    <Badge Color="Color.Success" style="width:36px;">Q</Badge>
-                                </div>
-                            </Column>
-
-                            <Column>
-                            <Table Narrow Bordered>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHeaderCell>Location</TableHeaderCell>
-                                    <TableHeaderCell>Post Count</TableHeaderCell>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
+                 <ModalHeader>
+                     <ModalTitle>@selectedPax.Name</ModalTitle>
+                     <CloseButton />
+                 </ModalHeader>
+                 <ModalBody>
+                     @if (currentView == OverallView.AoChallenge)
+                    {
+                        <Column>
+                            <h4>November AO Challenge</h4>
+                            <div id="aoChallengeContainer">
                                 @foreach (var location in RegionInfo.AoList)
-                                    {
-                                        <TableRow >
-                                            <TableRowCell><span class="dot" style="@GetPaxLocationColor(location)"></span>@location.Name</TableRowCell>
-                                            <TableRowCell>@selectedPaxPosts.Count(x => x.Site == location.Name)</TableRowCell>
+                                {
+                                    <Button class="aoChallengeButton"
+                                        style="@GetAoChallengeButtonColor(location)">@location.Name</Button>
+                                }
+                            </div>
+                        </Column>
+                    }
+                    else
+                    {
+                        <Row VerticalGutter="16">
+                            <Column>
+                                <Table Narrow Striped>
+                                 <TableBody>
+                                     <TableRow>
+                                         <TableRowHeader>Posts</TableRowHeader>
+                                         <TableRowCell>@selectedPaxPosts.Count</TableRowCell>
+                                     </TableRow>
+                                     <TableRow>
+                                         <TableRowHeader>Qs</TableRowHeader>
+                                         <TableRowCell>@selectedPaxPosts.Count(x => x.IsQ == true)</TableRowCell>
+                                     </TableRow>
+                                     <TableRow>
+                                         <TableRowHeader>First Post</TableRowHeader>
+                                         <TableRowCell>@selectedPaxPosts.Min(x => x.Date).ToShortDateString()</TableRowCell>
+                                     </TableRow>
+                                     <TableRow>
+                                         <TableRowHeader>Named By</TableRowHeader>
+                                         <TableRowCell>@GetNamedBy()</TableRowCell>
+                                     </TableRow>
+                                     <TableRow>
+                                         <TableRowHeader>VQ</TableRowHeader>
+                                         <TableRowCell>@selectedPaxPosts.LastOrDefault(x => x.IsQ)?.Date.ToShortDateString()
+                                         </TableRowCell>
+                                     </TableRow>
+                                     <TableRow>
+                                         <TableRowHeader>F3 Days to 100</TableRowHeader>
+                                         <TableRowCell>@GetDaysTo100()
+                                         </TableRowCell>
+                                     </TableRow>
+                                     <TableRow>
+                                         <TableRowHeader>Calendar Days to 100</TableRowHeader>
+                                         <TableRowCell>@GetCalDaysTo100()
+                                         </TableRowCell>
+                                     </TableRow>
+                                     <TableRow>
+                                         <TableRowHeader>Last Post</TableRowHeader>
+                                         <TableRowCell>@selectedPaxPosts.Max(x => x.Date).ToShortDateString()</TableRowCell>
+                                     </TableRow>
+                                     <TableRow>
+                                         <TableRowHeader>Post Percent</TableRowHeader>
+                                         <TableRowCell>@(((double)selectedPaxPosts.Count / (double)selectedPaxPossibleCount *
+                                          100).ToString("0.00"))%</TableRowCell>
                                         </TableRow>
-                                    }
-                                    <TableRow>
-                                        <TableRowCell Clicked="@OnShowOtherLocationsClicked" class="link"><span class="dot" style="background-color:white"></span>Other</TableRowCell>
-                                        <TableRowCell>@selectedPaxPosts.Count(x => !RegionInfo.AoList.Select(x => x.Name).Contains(x.Site))</TableRowCell>
-                                    </TableRow>
-
-                                    @if (showOtherLocations)
-                                    {
-                                        @foreach (var group in selectedPaxPosts.Where(x => !RegionInfo.AoList.Select(x => x.Name).Contains(x.Site)).GroupBy(x => x.Site).OrderByDescending(x => x.Count()))
-                                        {
-                                            <TableRow style="background-color:#eae9e9">
-                                                <TableRowCell><span class="dot" style="background-color:white"></span> @group.Key</TableRowCell>
-                                                <TableRowCell>@group.Count()</TableRowCell>
+                                        <TableRow>
+                                            <TableRowHeader>Best Daily Streak</TableRowHeader>
+                                            <TableRowCell>@(selectedPaxStreak)</TableRowCell>
                                             </TableRow>
-                                        }
-                                    }
-                                </TableBody>
-                            </Table>
-                        </Column>
-                    </Row>
-                    <Row>
-                        <Column ColumnSize="ColumnSize.Is6">
-                            <span>Most PAX Posted With</span>
-                            <ListGroup Mode="ListGroupMode.Selectable" SelectedItem="@selectedPaxPostWithView" SelectedItemChanged="@(async (r) => await OnSelectedPaxPostWithViewChange(r))">
-                                <ListGroupItem Name="AllTime">All Time</ListGroupItem>
-                                @for (int i = 0; i < selectedPax100Count; i++)
-                                {
-                                    var local = i;
-                                    <ListGroupItem Name="@i.ToString()">@(local*100)-@((local+1)*100)</ListGroupItem>
-                                }
-                                @if (selectedPax100Count > 0)
-                                {
-                                    <ListGroupItem Name="Recent100">@(selectedPax100Count*100)-@(selectedPaxPosts.Count)</ListGroupItem>
-                                }
+                                            <TableRow>
+                                                <TableRowHeader>Streak Start</TableRowHeader>
+                                                <TableRowCell>@(selectedPaxStreakStart.ToShortDateString())</TableRowCell>
+                                            </TableRow>
+                                        </TableBody>
+                                    </Table>
 
-                                <span style="margin-top:12px">Most Q'd By</span>
-                                <ListGroupItem Name="QAllTime">All Time</ListGroupItem>
+                                    <DatePicker TValue="DateTime?" Inline SelectionMode="DateInputSelectionMode.Multiple"
+                                     Dates="@selectedPaxDates" DatesChanged="@OnDatesChanged" DisabledDates="@disabledPaxQDates" />
+                                 <div style="text-align:center; margin-top:6px;">
+                                     <Badge Color="Color.Primary">Post</Badge>
+                                     <Badge Color="Color.Success" style="width:36px;">Q</Badge>
+                                 </div>
+                             </Column>
 
-                                <span style="margin-top:12px">Most Q'd</span>
-                                <ListGroupItem Name="QOthersAllTime">All Time</ListGroupItem>
-                            </ListGroup>
-
-                        </Column>
-                        @if (selectedPaxPostedWith != null && selectedPaxPostedWith.Count > 0)
-                        {
-                            <Column ColumnSize="ColumnSize.Is6">
-
-                                <Table Narrow Bordered FixedHeader FixedHeaderTableHeight="440px" FixedHeaderTableMaxHeight="440px">
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHeaderCell>Pax (@selectedPaxPostedWith.Count)</TableHeaderCell>
-                                        <TableHeaderCell>Count</TableHeaderCell>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    @foreach (var paxPoster in selectedPaxPostedWith)
+                             <Column>
+                                 <Table Narrow Bordered>
+                                 <TableHeader>
+                                     <TableRow>
+                                         <TableHeaderCell>Location</TableHeaderCell>
+                                         <TableHeaderCell>Post Count</TableHeaderCell>
+                                     </TableRow>
+                                 </TableHeader>
+                                 <TableBody>
+                                     @foreach (var location in RegionInfo.AoList)
                                         {
                                             <TableRow>
-                                                <TableRowCell>@paxPoster.Key</TableRowCell>
-                                                <TableRowCell>@paxPoster.Value</TableRowCell>
+                                                <TableRowCell><span class="dot"
+                                                        style="@GetPaxLocationColor(location)"></span>@location.Name</TableRowCell>
+                                                <TableRowCell>@selectedPaxPosts.Count(x => x.Site == location.Name)</TableRowCell>
                                             </TableRow>
+                                        }
+                                        <TableRow>
+                                            <TableRowCell Clicked="@OnShowOtherLocationsClicked" class="link"><span class="dot"
+                                                    style="background-color:white"></span>Other</TableRowCell>
+                                            <TableRowCell>@selectedPaxPosts.Count(x => !RegionInfo.AoList.Select(x =>
+                                    x.Name).Contains(x.Site))</TableRowCell>
+                                        </TableRow>
+
+                                        @if (showOtherLocations)
+                                        {
+                                            @foreach (var group in selectedPaxPosts.Where(x => !RegionInfo.AoList.Select(x =>
+                                           x.Name).Contains(x.Site)).GroupBy(x => x.Site).OrderByDescending(x => x.Count()))
+                                            {
+                                                <TableRow style="background-color:#eae9e9">
+                                                    <TableRowCell><span class="dot" style="background-color:white"></span> @group.Key
+                                                    </TableRowCell>
+                                                    <TableRowCell>@group.Count()</TableRowCell>
+                                                </TableRow>
+                                            }
                                         }
                                     </TableBody>
                                 </Table>
                             </Column>
-                        }
-                    </Row>
-                    <Row>
-                        <Column id="privacy-note">
-                            If you see any errors, or would like to hide your data, contact Peacock or a Band admin. 
-                        </Column>
-                    </Row>
+                        </Row>
+                        <Row>
+                            <Column ColumnSize="ColumnSize.Is6">
+                                <span>Most PAX Posted With</span>
+                                <ListGroup Mode="ListGroupMode.Selectable" SelectedItem="@selectedPaxPostWithView"
+                                    SelectedItemChanged="@(async (r) => await OnSelectedPaxPostWithViewChange(r))">
+                                    <ListGroupItem Name="AllTime">All Time</ListGroupItem>
+                                    @for (int i = 0; i < selectedPax100Count; i++)
+                                    {
+                                        var local = i;
+                                        <ListGroupItem Name="@i.ToString()">@(local * 100)-@((local + 1) * 100)</ListGroupItem>
+                                    }
+                                    @if (selectedPax100Count > 0)
+                                    {
+                                        <ListGroupItem Name="Recent100">@(selectedPax100Count * 100)-@(selectedPaxPosts.Count)
+                                        </ListGroupItem>
+                                    }
+
+                                    <span style="margin-top:12px">Most Q'd By</span>
+                                    <ListGroupItem Name="QAllTime">All Time</ListGroupItem>
+
+                                    <span style="margin-top:12px">Most Q'd</span>
+                                    <ListGroupItem Name="QOthersAllTime">All Time</ListGroupItem>
+                                </ListGroup>
+
+                            </Column>
+                            @if (selectedPaxPostedWith != null && selectedPaxPostedWith.Count > 0)
+                            {
+                                <Column ColumnSize="ColumnSize.Is6">
+
+                                    <Table Narrow Bordered FixedHeader FixedHeaderTableHeight="440px" FixedHeaderTableMaxHeight="440px">
+                                         <TableHeader>
+                                             <TableRow>
+                                                 <TableHeaderCell>Pax (@selectedPaxPostedWith.Count)</TableHeaderCell>
+                                                 <TableHeaderCell>Count</TableHeaderCell>
+                                             </TableRow>
+                                         </TableHeader>
+                                         <TableBody>
+                                             @foreach (var paxPoster in selectedPaxPostedWith)
+                                            {
+                                                <TableRow>
+                                                    <TableRowCell>@paxPoster.Key</TableRowCell>
+                                                    <TableRowCell>@paxPoster.Value</TableRowCell>
+                                                </TableRow>
+                                            }
+                                        </TableBody>
+                                    </Table>
+                                </Column>
+                            }
+                        </Row>
+                        <Row>
+                            <Column id="privacy-note">
+                                If you see any errors, or would like to hide your data, contact Peacock or a Band admin.
+                            </Column>
+                        </Row>
+                    }
                 </ModalBody>
                 <ModalFooter>
                     <Button Color="Color.Secondary" Clicked="@HideModal">Close</Button>
                 </ModalFooter>
             </ModalContent>
         }
-    </Modal>
+        </Modal>
 }

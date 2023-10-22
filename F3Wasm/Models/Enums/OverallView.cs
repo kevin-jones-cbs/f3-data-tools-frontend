@@ -8,6 +8,7 @@ namespace F3Wasm.Models
         LastMonth,
         ThisMonth,
         Kotter,
+        AoChallenge,
         UNSET
     }
 }
