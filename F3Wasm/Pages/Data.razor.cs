@@ -374,9 +374,20 @@ namespace F3Wasm.Pages
             return $"background-color: {hex};";
         }
 
+        public string FullMoonRuckName = "Full Moon Ruck";
+        public Ao FullMoonRuckAo = new Ao() { Name = "Full Moon Ruck" };
         private string GetAoChallengeButtonColor(Ao location)
         {
-            string hex = ColorHelpers.GetAoHex(location);
+            string hex;
+
+            if (location.Name == FullMoonRuckName)
+            {
+                hex = "#423c3f";
+            }
+            else
+            {
+                hex = ColorHelpers.GetAoHex(location);
+            }
 
             var now = DateTime.Now;
             var hasPosted = selectedPaxPosts.Where(x => x.Date.Year == now.Year && x.Date.Month == now.Month).Any(x => x.Site == location.Name);

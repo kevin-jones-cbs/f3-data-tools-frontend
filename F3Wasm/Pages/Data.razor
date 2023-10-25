@@ -63,7 +63,7 @@
         height: 75px;
     }
 
-    #aoChallengeContainer {
+    .aoChallengeContainer {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 10px;
@@ -84,9 +84,9 @@ else
         <Button Color="currentView == OverallView.LastMonth ? Color.Primary : Color.Light" Clicked="ShowPreviousMonth">@DateTime.Now.AddMonths(-1).ToString("MMM", CultureInfo.InvariantCulture)</Button>
         <Button Color="currentView == OverallView.ThisMonth ? Color.Primary : Color.Light" Clicked="ShowCurrentMonth">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture)</Button>
         <Button Color="currentView == OverallView.Kotter ? Color.Primary : Color.Light" Clicked="ShowKotter">Kotter</Button>
-        @if (RegionInfo.DisplayName == "South Fork" && false)
+        @if (RegionInfo.DisplayName == "South Fork")
         {
-            <Button Color="Color.Success" Outline="currentView != OverallView.AoChallenge" Clicked="ShowAoChallenge">November AO Challenge</Button>
+            <Button Color="Color.Success" Outline="currentView != OverallView.AoChallenge" Clicked="ShowAoChallenge">AO Challenge</Button>
         }
 
         @if (lastUpdatedDate != DateTime.MinValue)
@@ -95,6 +95,21 @@ else
         }
     </Column>
     </Row>
+    @if (currentView == OverallView.AoChallenge)
+    {
+        <Row>   
+            <Column style="font-style:italic;">
+                Earn a patch by posting at every AO in November! Tap your name to see which AOs you've posted at. 
+                @if (DateTime.Now.Month == 10) 
+                { 
+                    <span>
+                        The numbers below are from October. 
+                    </span>
+                }
+            </Column>
+        </Row>
+    }
+    
 
     @if (loading)
     {
@@ -105,10 +120,19 @@ else
     else
     {
         <TextEdit Placeholder="Search PAX..." Text="@customFilterValue" TextChanged="@OnCustomFilterValueChanged"></TextEdit>
-        <DataGrid @ref="dataGrid" TItem="DisplayRow" Data="@currentRows" ShowPager CustomFilter="@OnCustomFilter"
-             SortMode="DataGridSortMode.Single" PageSize="50" Narrow ShowPageSizes
-             PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }" SelectedRowChanged="SelectedRowChanged"
-    Responsive>
+        <DataGrid @ref="dataGrid" 
+            TItem="DisplayRow" 
+            Data="@currentRows" 
+            ShowPager 
+            CustomFilter="@OnCustomFilter"
+            SortMode="DataGridSortMode.Single" 
+            PageSize="50" 
+            Narrow 
+            ShowPageSizes
+            PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }" 
+            SelectedRowChanged="SelectedRowChanged"
+            Responsive
+        >
          <DataGridColumns>
              <DataGridColumn Field="@nameof(DisplayRow.PaxName)" Caption="Name" SortField="@nameof(DisplayRow.PaxName)" />
 
@@ -126,9 +150,9 @@ else
                 }
                 else if (currentView == OverallView.AoChallenge)
                 {
-                    <DataGridColumn Field="@nameof(DisplayRow.PostCount)" Caption="Nov Posts" Filterable="false" />
-                    <DataGridColumn Field="@nameof(DisplayRow.AoPosts)" Caption="Nov AOs Posted" Filterable="false" />
-                    <DataGridColumn Field="@nameof(DisplayRow.AoPercent)" Caption="Nov AOs Posted" Filterable="false"
+                    <DataGridColumn Field="@nameof(DisplayRow.PostCount)" Caption="Posts" Filterable="false" />
+                    <DataGridColumn Field="@nameof(DisplayRow.AoPosts)" Caption="AOs Posted" Filterable="false" />
+                    <DataGridColumn Field="@nameof(DisplayRow.AoPercent)" Caption="Challenge Percent" Filterable="false"
                         DisplayFormat="{0:0}%" />
                 }
                 else
@@ -155,13 +179,15 @@ else
                      @if (currentView == OverallView.AoChallenge)
                     {
                         <Column>
-                            <h4>November AO Challenge</h4>
-                            <div id="aoChallengeContainer">
+                            <h4>AO Challenge</h4>
+                            <div class="aoChallengeContainer">
                                 @foreach (var location in RegionInfo.AoList)
                                 {
                                     <Button class="aoChallengeButton"
                                         style="@GetAoChallengeButtonColor(location)">@location.Name</Button>
                                 }
+                                <Button class="aoChallengeButton"
+                                    style="@GetAoChallengeButtonColor(FullMoonRuckAo)">Full Moon Ruck</Button>
                             </div>
                         </Column>
                     }
