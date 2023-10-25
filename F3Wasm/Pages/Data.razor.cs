@@ -132,7 +132,7 @@ namespace F3Wasm.Pages
                 if (currentView == OverallView.AoChallenge)
                 {
                     row.AoPosts = pax.Value.GroupBy(p => p.Site).Select(g => g.Key).Count();
-                    row.AoPercent = (double)row.AoPosts / 19 * 100;
+                    row.AoPercent = (double)row.AoPosts / RegionInfo.AoList.Count * 100;
                 }
 
                 currentRows.Add(row);

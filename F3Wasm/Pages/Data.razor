@@ -88,6 +88,10 @@ else
         {
             <Button Color="Color.Success" Outline="currentView != OverallView.AoChallenge" Clicked="ShowAoChallenge">AO Challenge</Button>
         }
+        else if (RegionInfo.DisplayName == "Asgard")
+        {
+            <Button Color="currentView == OverallView.AoChallenge ? Color.Primary : Color.Light" Clicked="ShowAoChallenge">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture) AOs</Button>
+        }
 
         @if (lastUpdatedDate != DateTime.MinValue)
         {
@@ -95,7 +99,7 @@ else
         }
     </Column>
     </Row>
-    @if (currentView == OverallView.AoChallenge)
+    @if (currentView == OverallView.AoChallenge && RegionInfo.DisplayName == "South Fork")
     {
         <Row>   
             <Column style="font-style:italic;">
@@ -136,7 +140,7 @@ else
          <DataGridColumns>
              <DataGridColumn Field="@nameof(DisplayRow.PaxName)" Caption="Name" SortField="@nameof(DisplayRow.PaxName)" />
 
-             @if (currentView != OverallView.AoChallenge)
+                @if (currentView != OverallView.AoChallenge)
                 {
                     <DataGridColumn Field="@nameof(DisplayRow.PostCount)" Caption="Posts" Filterable="false" />
                     <DataGridColumn Field="@nameof(DisplayRow.QCount)" Caption="Q" Filterable="false" />
@@ -152,7 +156,7 @@ else
                 {
                     <DataGridColumn Field="@nameof(DisplayRow.PostCount)" Caption="Posts" Filterable="false" />
                     <DataGridColumn Field="@nameof(DisplayRow.AoPosts)" Caption="AOs Posted" Filterable="false" />
-                    <DataGridColumn Field="@nameof(DisplayRow.AoPercent)" Caption="Challenge Percent" Filterable="false"
+                    <DataGridColumn Field="@nameof(DisplayRow.AoPercent)" Caption="AO Percent" Filterable="false"
                         DisplayFormat="{0:0}%" />
                 }
                 else
@@ -179,15 +183,25 @@ else
                      @if (currentView == OverallView.AoChallenge)
                     {
                         <Column>
-                            <h4>AO Challenge</h4>
+                            @if (RegionInfo.DisplayName == "South Fork")
+                            {
+                                <h4>AO Challenge</h4>
+                            }
+                            else
+                            {
+                                <h4>AOs Posted This Month</h4>
+                            }
                             <div class="aoChallengeContainer">
                                 @foreach (var location in RegionInfo.AoList)
                                 {
                                     <Button class="aoChallengeButton"
                                         style="@GetAoChallengeButtonColor(location)">@location.Name</Button>
                                 }
-                                <Button class="aoChallengeButton"
-                                    style="@GetAoChallengeButtonColor(FullMoonRuckAo)">Full Moon Ruck</Button>
+                                @if (RegionInfo.DisplayName == "South Fork")
+                                {
+                                    <Button class="aoChallengeButton"
+                                        style="@GetAoChallengeButtonColor(FullMoonRuckAo)">Full Moon Ruck</Button>
+                                }
                             </div>
                         </Column>
                     }
