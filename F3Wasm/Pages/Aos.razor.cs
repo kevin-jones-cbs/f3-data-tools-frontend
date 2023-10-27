@@ -40,7 +40,7 @@ namespace F3Wasm.Pages
         private ApexChart<AoDisplay> chart;
         private ApexChartOptions<AoDisplay> options;
 
-        public OverallView currentView { get; set; } = OverallView.ThisMonth;
+        public OverallView currentView { get; set; } = OverallView.AllTime;
         public SortView currentSort { get; set; } = SortView.DayOfWeek;
 
         protected override async Task OnInitializedAsync()
@@ -97,18 +97,18 @@ namespace F3Wasm.Pages
             {
                 case OverallView.AllTime:
                     break;
-                case OverallView.LastYear:
-                    allPosts = allPosts.Where(x => x.Date >= new DateTime(DateTime.Now.Year - 1, 1, 1) && x.Date <= new DateTime(DateTime.Now.Year, 1, 1).AddDays(-1)).ToList();
-                    break;
-                case OverallView.ThisYear:
-                    allPosts = allPosts.Where(x => x.Date >= new DateTime(DateTime.Now.Year, 1, 1)).ToList();
-                    break;
-                case OverallView.LastMonth:
-                    allPosts = allPosts.Where(x => x.Date >= new DateTime(DateTime.Now.Year, DateTime.Now.Month - 1, 1) && x.Date <= new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddDays(-1)).ToList();
-                    break;
-                case OverallView.ThisMonth:
-                    allPosts = allPosts.Where(x => x.Date >= new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1)).ToList();
-                    break;
+                // case OverallView.LastYear:
+                //     allPosts = allPosts.Where(x => x.Date >= new DateTime(DateTime.Now.Year - 1, 1, 1) && x.Date <= new DateTime(DateTime.Now.Year, 1, 1).AddDays(-1)).ToList();
+                //     break;
+                // case OverallView.ThisYear:
+                //     allPosts = allPosts.Where(x => x.Date >= new DateTime(DateTime.Now.Year, 1, 1)).ToList();
+                //     break;
+                // case OverallView.LastMonth:
+                //     allPosts = allPosts.Where(x => x.Date >= new DateTime(DateTime.Now.Year, DateTime.Now.Month - 1, 1) && x.Date <= new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddDays(-1)).ToList();
+                //     break;
+                // case OverallView.ThisMonth:
+                //     allPosts = allPosts.Where(x => x.Date >= new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1)).ToList();
+                //     break;
                 default:
                     break;
             }

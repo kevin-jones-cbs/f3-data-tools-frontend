@@ -17,10 +17,10 @@ else
     <Row>
         <Column>
             <Button Color="currentView == OverallView.AllTime ? Blazorise.Color.Primary : Blazorise.Color.Light" Clicked="@(x => UpdateDisplay(OverallView.AllTime))">All Time</Button>
-            <Button Color="currentView == OverallView.LastYear ? Blazorise.Color.Primary : Blazorise.Color.Light" Clicked="@(x => UpdateDisplay(OverallView.LastYear))">@DateTime.Now.AddYears(-1).ToString("yyyy", CultureInfo.InvariantCulture)</Button>
-            <Button Color="currentView == OverallView.ThisYear ? Blazorise.Color.Primary : Blazorise.Color.Light" Clicked="@(x => UpdateDisplay(OverallView.ThisYear))">@DateTime.Now.ToString("yyyy", CultureInfo.InvariantCulture)</Button>
-            <Button Color="currentView == OverallView.LastMonth ? Blazorise.Color.Primary : Blazorise.Color.Light" Clicked="@(x => UpdateDisplay(OverallView.LastMonth))">@DateTime.Now.AddMonths(-1).ToString("MMM", CultureInfo.InvariantCulture)</Button>
-            <Button Color="currentView == OverallView.ThisMonth ? Blazorise.Color.Primary : Blazorise.Color.Light" Clicked="@(x => UpdateDisplay(OverallView.ThisMonth))">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture)</Button>
+            @* <Button Color="currentView == OverallView.LastYear ? Blazorise.Color.Primary : Blazorise.Color.Light" Clicked="@(x => UpdateDisplay(OverallView.LastYear))">@DateTime.Now.AddYears(-1).ToString("yyyy", CultureInfo.InvariantCulture)</Button>
+            <Button Color="currentView == OverallView.ThisYear ? Blazorise.Color.Primary : Blazorise.Color.Light" Clicked="@(x => UpdateDisplay(OverallView.ThisYear))">@DateTime.Now.ToString("yyyy", CultureInfo.InvariantCulture)</Button> *@
+            @* <Button Color="currentView == OverallView.LastMonth ? Blazorise.Color.Primary : Blazorise.Color.Light" Clicked="@(x => UpdateDisplay(OverallView.LastMonth))">@DateTime.Now.AddMonths(-1).ToString("MMM", CultureInfo.InvariantCulture)</Button>
+            <Button Color="currentView == OverallView.ThisMonth ? Blazorise.Color.Primary : Blazorise.Color.Light" Clicked="@(x => UpdateDisplay(OverallView.ThisMonth))">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture)</Button> *@
         </Column>
     </Row>
     <Row>
