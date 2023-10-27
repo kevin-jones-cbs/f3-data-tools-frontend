@@ -3,10 +3,8 @@ namespace F3Wasm.Models
     public enum OverallView
     {
         AllTime,
-        LastYear,
-        ThisYear,
-        LastMonth,
-        ThisMonth,
+        Year,
+        Month,
         Kotter,
         AoChallenge,
         UNSET

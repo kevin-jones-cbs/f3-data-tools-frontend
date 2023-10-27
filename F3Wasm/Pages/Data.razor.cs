@@ -48,6 +48,13 @@ namespace F3Wasm.Pages
         public int selectedPaxStreak { get; set; }
         public bool showOtherLocations { get; set; } = false;
 
+        Dropdown yearDropdown;
+        Dropdown monthDropdown;
+        public List<int> validYears { get; set; }
+        public List<string> validMonths { get; set; } = new List<string> { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+        public int currentYear { get; set; }
+        public string currentMonth { get; set; }
+
         public List<WorkoutDay> AllPossibleWorkoutDays { get; set; }
         private string customFilterValue;
 
@@ -61,6 +68,11 @@ namespace F3Wasm.Pages
             Console.WriteLine("Data OnInitializedAsync " + Region);
             RegionInfo = RegionList.All.FirstOrDefault(x => x.QueryStringValue == Region);
             allData = await LambdaHelper.GetAllDataAsync(Http, Region);
+
+            validYears = allData.Posts.Select(p => p.Date.Year).Distinct().OrderByDescending(x => x).Where(x => x <= DateTime.Now.Year).ToList();
+            // Order the months by month number
+            validMonths = validMonths.OrderByDescending(x => DateTime.ParseExact(x, "MMM", System.Globalization.CultureInfo.InvariantCulture).Month).ToList();
+
             var lastUpdateItem = allData.Posts.FirstOrDefault(x => x.Site == "UPDATE");
             if (lastUpdateItem != null)
             {
@@ -81,7 +93,7 @@ namespace F3Wasm.Pages
                 IsEmbed = isEmbed;
             }
 
-            ShowAllTime();
+            await ShowAllTime();
         }
 
         public void SetCurrentRows(List<Post> posts, DateTime? firstDay, DateTime lastDay)
@@ -215,33 +227,48 @@ namespace F3Wasm.Pages
             return currentUniqueWorkoutDays;
         }
 
-        private void ShowAllTime()
+        #region Show AllTime, Years, Month, etc.
+        private async Task ShowAllTime()
         {
+            await Task.Delay(1);
             loading = true;
             currentView = OverallView.AllTime;
             SetCurrentRows(allData.Posts, null, DateTime.Now);
+
+            await RefreshDropdowns();
         }
 
-        private void ShowPreviousMonth()
+        private async Task ShowYear(int year)
+        {
+            await Task.Delay(1);
+            currentView = OverallView.Year;
+            currentYear = year;
+            var posts = allData.Posts.Where(p => p.Date.Year == year).ToList();
+
+            var firstDay = new DateTime(DateTime.Now.Year - 1, 1, 1);
+            var lastDay = new DateTime(DateTime.Now.Year, 1, 1).AddDays(-1);
+            SetCurrentRows(posts, firstDay, lastDay);
+            await RefreshDropdowns();
+        }
+
+        private async Task ShowMonth(string month)
         {
             loading = true;
-            currentView = OverallView.LastMonth;
-            var posts = allData.Posts.Where(p => p.Date.Month == DateTime.Now.AddMonths(-1).Month && p.Date.Year == DateTime.Now.AddMonths(-1).Year).ToList();
+            currentView = OverallView.Month;
+            currentMonth = month;
+            if (currentYear == 0)
+            {
+                currentYear = DateTime.Now.Year;
+            }
+
+            var monthInt = DateTime.ParseExact(month, "MMM", System.Globalization.CultureInfo.InvariantCulture).Month;
+
+            var posts = allData.Posts.Where(p => p.Date.Month == monthInt && p.Date.Year == currentYear).ToList();
 
             var firstDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month - 1, 1);
             var lastDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddDays(-1);
             SetCurrentRows(posts, firstDay, lastDay);
-        }
-
-        private void ShowCurrentMonth()
-        {
-            loading = true;
-            currentView = OverallView.ThisMonth;
-            var posts = allData.Posts.Where(p => p.Date.Month == DateTime.Now.Month && p.Date.Year == DateTime.Now.Year).ToList();
-
-            var firstDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-            var lastDay = DateTime.Now;
-            SetCurrentRows(posts, firstDay, lastDay);
+            await RefreshDropdowns();
         }
 
         private async Task ShowKotter()
@@ -262,6 +289,7 @@ namespace F3Wasm.Pages
             var firstDay = new DateTime(DateTime.Now.Year, 1, 1);
             var lastDay = DateTime.Now;
             SetCurrentRows(posts, firstDay, lastDay);
+            await RefreshDropdowns();
         }
 
         private async Task ShowAoChallenge()
@@ -277,27 +305,22 @@ namespace F3Wasm.Pages
             SetCurrentRows(posts, firstDay, lastDay);
 
             loading = false;
+            await RefreshDropdowns();
         }
 
-        private void ShowPreviousYear()
+        private async Task RefreshDropdowns()
         {
-            currentView = OverallView.LastYear;
-            var posts = allData.Posts.Where(p => p.Date.Year == DateTime.Now.AddYears(-1).Year).ToList();
+            await Task.Delay(1);
+            if (yearDropdown != null && monthDropdown != null)
+            {
+                await yearDropdown.Show();
+                await yearDropdown.Hide();
+                await monthDropdown.Show();
+                await monthDropdown.Hide();
+            }
+        }        
 
-            var firstDay = new DateTime(DateTime.Now.Year - 1, 1, 1);
-            var lastDay = new DateTime(DateTime.Now.Year, 1, 1).AddDays(-1);
-            SetCurrentRows(posts, firstDay, lastDay);
-        }
-
-        private void ShowCurrentYear()
-        {
-            currentView = OverallView.ThisYear;
-            var posts = allData.Posts.Where(p => p.Date.Year == DateTime.Now.Year).ToList();
-
-            var firstDay = new DateTime(DateTime.Now.Year, 1, 1);
-            var lastDay = DateTime.Now;
-            SetCurrentRows(posts, firstDay, lastDay);
-        }
+        #endregion
 
         // Filter
         private Task OnCustomFilterValueChanged(string e)

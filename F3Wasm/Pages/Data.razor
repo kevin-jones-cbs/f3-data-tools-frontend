@@ -79,11 +79,31 @@ else
     <Row>
     <Column>
         <Button Color="currentView == OverallView.AllTime ? Color.Primary : Color.Light" Clicked="ShowAllTime">All Time</Button>
-        <Button Color="currentView == OverallView.LastYear ? Color.Primary : Color.Light" Clicked="ShowPreviousYear">@DateTime.Now.AddYears(-1).ToString("yyyy", CultureInfo.InvariantCulture)</Button>
-        <Button Color="currentView == OverallView.ThisYear ? Color.Primary : Color.Light" Clicked="ShowCurrentYear">@DateTime.Now.ToString("yyyy", CultureInfo.InvariantCulture)</Button>
-        <Button Color="currentView == OverallView.LastMonth ? Color.Primary : Color.Light" Clicked="ShowPreviousMonth">@DateTime.Now.AddMonths(-1).ToString("MMM", CultureInfo.InvariantCulture)</Button>
-        <Button Color="currentView == OverallView.ThisMonth ? Color.Primary : Color.Light" Clicked="ShowCurrentMonth">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture)</Button>
+        <Dropdown @ref="yearDropdown" Display="Display.InlineBlock">
+            <DropdownToggle Color="currentView == OverallView.Year || currentView == OverallView.Month ? Color.Primary : Color.Light">Year @if (currentView == OverallView.Year || currentView == OverallView.Month) @currentYear</DropdownToggle>
+            <DropdownMenu MaxMenuHeight="120px">
+                @foreach (var year in validYears)
+                {
+                    <DropdownItem Clicked="@(() => ShowYear(year))">@year</DropdownItem>
+                }
+            </DropdownMenu>
+        </Dropdown>
+
+        <Dropdown @ref="monthDropdown" Display="Display.InlineBlock">
+            <DropdownToggle Color="currentView == OverallView.Month ? Color.Primary : Color.Light">Month @if (currentView == OverallView.Month) @currentMonth</DropdownToggle>
+            <DropdownMenu MaxMenuHeight="240px">
+                @foreach (var month in validMonths)
+                {
+                    <DropdownItem Clicked="@(() => ShowMonth(month))">@month</DropdownItem>
+                }
+            </DropdownMenu>
+        </Dropdown>
+    </Column>
+    </Row>
+    <Row style="margin-top:6px;">
+    <Column>
         <Button Color="currentView == OverallView.Kotter ? Color.Primary : Color.Light" Clicked="ShowKotter">Kotter</Button>
+
         @if (RegionInfo.DisplayName == "South Fork")
         {
             <Button Color="Color.Success" Outline="currentView != OverallView.AoChallenge" Clicked="ShowAoChallenge">AO Challenge</Button>
