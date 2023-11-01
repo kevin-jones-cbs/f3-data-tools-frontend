@@ -45,7 +45,6 @@ namespace F3Wasm.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            Console.WriteLine("Data OnInitializedAsync " + Region);
             RegionInfo = RegionList.All.FirstOrDefault(x => x.QueryStringValue == Region);
             allData = await LambdaHelper.GetAllDataAsync(Http, Region);
 

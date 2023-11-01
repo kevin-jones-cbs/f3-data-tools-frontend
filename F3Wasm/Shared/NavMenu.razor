@@ -30,7 +30,6 @@
 
     public string GetRegionName()
     {
-        Console.WriteLine("GetRegionName.ctor" + Region);
         RegionInfo = RegionList.All.FirstOrDefault(x => x.QueryStringValue == Region);
         return RegionInfo?.DisplayName ?? "";
     }

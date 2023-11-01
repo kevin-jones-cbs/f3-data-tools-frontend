@@ -62,10 +62,11 @@ namespace F3Wasm.Pages
 
         // Don't show the modal for these PAX
         private static List<string> OptedOutPax = new List<string>();
-
+        [Inject]
+        private IJSRuntime JSRuntime { get; set; }
+        
         protected override async Task OnInitializedAsync()
         {
-            Console.WriteLine("Data OnInitializedAsync " + Region);
             RegionInfo = RegionList.All.FirstOrDefault(x => x.QueryStringValue == Region);
             allData = await LambdaHelper.GetAllDataAsync(Http, Region);
 
@@ -94,6 +95,11 @@ namespace F3Wasm.Pages
             }
 
             await ShowAllTime();
+        }
+
+        private async Task SetupDuplicateDates(string[] dates2, string[] dates3)
+        {
+            await JSRuntime.InvokeVoidAsync("setupDuplicateDates", dates2, dates3);
         }
 
         public void SetCurrentRows(List<Post> posts, DateTime? firstDay, DateTime lastDay)
@@ -182,7 +188,7 @@ namespace F3Wasm.Pages
                     currentStreak = 1;
                     currentStreakStart = workoutDay.Date;
                 }
-                else if (workoutDay.Date == lastWorkoutDate.Value.AddDays(1) ||
+                else if (workoutDay.Date == lastWorkoutDate.Value.AddDays(0) || workoutDay.Date == lastWorkoutDate.Value.AddDays(1) ||
                     (workoutDay.Date.DayOfWeek == DayOfWeek.Monday && workoutDay.Date < firstSundayOpp && workoutDay.Date == lastWorkoutDate.Value.AddDays(2))) // Handle before we had Sundays
                 {
                     currentStreak++;
@@ -318,7 +324,7 @@ namespace F3Wasm.Pages
                 await monthDropdown.Show();
                 await monthDropdown.Hide();
             }
-        }        
+        }
 
         #endregion
 
@@ -359,12 +365,12 @@ namespace F3Wasm.Pages
             return Task.CompletedTask;
         }
 
-        private Task SelectedRowChanged(DisplayRow row)
+        private async Task SelectedRowChanged(DisplayRow row)
         {
             if (OptedOutPax.Contains(row.PaxName))
             {
                 // Don't show modal for opted out pax
-                return Task.CompletedTask;
+                return;
             }
 
             selectedPaxPosts = allData.Posts.Where(p => p.Pax == row.PaxName).OrderByDescending(x => x.Date).ToList();
@@ -376,13 +382,17 @@ namespace F3Wasm.Pages
             selectedPaxPostWithView = null;
             selectedPax = allData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
 
+            // Get the dates that were posted two and three times
+            var dates2 = selectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 2).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
+            var dates3 = selectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 3).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
+
             var paxPostsAsc = selectedPaxPosts.OrderBy(p => p.Date).ToList();
             (selectedPaxStreak, selectedPaxStreakStart) = CalculateStreak(paxPostsAsc);
 
             showOtherLocations = false;
-            ShowModal();
 
-            return Task.CompletedTask;
+            await ShowModal();
+            await SetupDuplicateDates(dates2, dates3);
         }
 
         private Task OnDatesChanged(IReadOnlyList<DateTime?> date)
