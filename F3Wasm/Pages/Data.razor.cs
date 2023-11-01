@@ -188,7 +188,11 @@ namespace F3Wasm.Pages
                     currentStreak = 1;
                     currentStreakStart = workoutDay.Date;
                 }
-                else if (workoutDay.Date == lastWorkoutDate.Value.AddDays(0) || workoutDay.Date == lastWorkoutDate.Value.AddDays(1) ||
+                else if (workoutDay.Date == lastWorkoutDate.Value.AddDays(0)) 
+                {
+                    // Do nothing. Duplicate day.
+                }
+                else if (workoutDay.Date == lastWorkoutDate.Value.AddDays(1) ||
                     (workoutDay.Date.DayOfWeek == DayOfWeek.Monday && workoutDay.Date < firstSundayOpp && workoutDay.Date == lastWorkoutDate.Value.AddDays(2))) // Handle before we had Sundays
                 {
                     currentStreak++;
