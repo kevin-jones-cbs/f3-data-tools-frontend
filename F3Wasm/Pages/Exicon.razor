@@ -1,0 +1,32 @@
+@page "/exicon"
+@using F3Wasm.Models
+@using F3Wasm.Data
+@using F3Core
+@using System.Globalization
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<PageTitle>F3 Exicon</PageTitle>
+
+<DataGrid 
+    TItem="OgModel"
+    Data="@Entries"
+    ShowPager
+    SortMode="DataGridSortMode.Single"
+    PageSize="50"
+    Narrow
+    ShowPageSizes
+    Filterable
+    FilterMethod="DataGridFilterMethod.Contains"
+    PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }"
+    Responsive
+>
+    <DataGridColumns>
+        <DataGridColumn Field="@nameof(OgModel.Term)" Caption="Name" />
+        <DataGridColumn Field="@nameof(OgModel.Description)" Caption="Description" Filterable="true" />
+    </DataGridColumns>
+    <LoadingTemplate>
+        <p>Loading...</p>
+    </LoadingTemplate>
+
+</DataGrid>
