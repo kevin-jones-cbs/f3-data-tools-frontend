@@ -1,8 +1,9 @@
 import os 
 from momento import PreviewVectorIndexClientAsync, VectorIndexConfigurations, CredentialProvider
 import openai
+import asyncio
 
-async def lambda_handler(event, context):
+async def async_handler(event, context):
     # Read the term from the event
     term = event['term']
     print("Term: " + term)
@@ -46,6 +47,10 @@ def get_embedding(text, engine="text-embedding-ada-002"):
     embedding = response.data[0].embedding
 
     return embedding
+
+def lambda_handler(event, context):
+    loop = asyncio.get_event_loop()
+    return loop.run_until_complete(async_handler(event, context))
 
 # import asyncio
 
