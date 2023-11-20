@@ -1,4 +1,4 @@
-import os
+import os 
 from momento import PreviewVectorIndexClientAsync, VectorIndexConfigurations, CredentialProvider
 import openai
 
