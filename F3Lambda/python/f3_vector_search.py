@@ -1,5 +1,4 @@
 import os
-from sentence_transformers import SentenceTransformer, util
 from momento import PreviewVectorIndexClientAsync, VectorIndexConfigurations, CredentialProvider
 import openai
 
