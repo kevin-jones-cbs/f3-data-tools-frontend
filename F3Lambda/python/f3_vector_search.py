@@ -1,6 +1,7 @@
 import os
 from sentence_transformers import SentenceTransformer, util
 from momento import PreviewVectorIndexClientAsync, VectorIndexConfigurations, CredentialProvider
+import openai
 
 async def lambda_handler(event, context):
     # Read the term from the event
@@ -33,20 +34,29 @@ async def lambda_handler(event, context):
         'body': results
     }
 
-def get_embedding(i):	
-	model = SentenceTransformer("all-MiniLM-L6-v2")	
-	model.max_seq_length = 256
-	return model.encode(i, normalize_embeddings=True)
+# def get_embedding(i):	
+# 	model = SentenceTransformer("all-MiniLM-L6-v2")	
+# 	model.max_seq_length = 256
+# 	return model.encode(i, normalize_embeddings=True)
 
-import asyncio
+def get_embedding(text, engine="text-embedding-ada-002"):
+    openai.api_key = os.getenv("OPEN_AI_EMBED_TOKEN")
 
-if __name__ == "__main__":
-    # Define a sample event and context
-    event = {
-        "term": "animal"  # Replace with your actual event data
-    }
-    context = {}  # Context can be an empty dictionary when testing
+    # Generate the embedding
+    response = openai.embeddings.create(input=text, model=engine)
+    embedding = response.data[0].embedding
 
-    # Get an event loop and run the function
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(lambda_handler(event, context))
+    return embedding
+
+# import asyncio
+
+# if __name__ == "__main__":
+#     # Define a sample event and context
+#     event = {
+#         "term": "animal"  # Replace with your actual event data
+#     }
+#     context = {}  # Context can be an empty dictionary when testing
+
+#     # Get an event loop and run the function
+#     loop = asyncio.get_event_loop()
+#     loop.run_until_complete(lambda_handler(event, context))
