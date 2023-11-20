@@ -38,25 +38,23 @@ jobs:
       run: |
         aws lambda update-function-code --function-name ${{env.LAMBDA_NAME}} --zip-file fileb://${{env.PROJECT_NAME}}/publish.zip
 
-    - name: Go to python
-      run: |
-        cd ..
-        cd python
-
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.11'
 
     - name: Install Python dependencies
+      working-directory: ./python
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt -t .
 
     - name: Package Lambda Function
+      working-directory: ./python
       run: |
         zip -r lambda.zip . -x "*.git*" -x "*.vscode*" -x "*.DS_Store*"
 
     - name: Deploy Lambda Function
+      working-directory: ./python
       run: |
         aws lambda update-function-code --function-name ${{env.PYTHON_LAMBDA_NAME}} --zip-file fileb://lambda.zip
