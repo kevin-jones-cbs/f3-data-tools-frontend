@@ -1,3 +1,2 @@
-pandas
 momento
 sentence-transformers==2.2.1
