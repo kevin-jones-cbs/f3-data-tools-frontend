@@ -1,0 +1,7 @@
+Resources:
+  MyLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: f3_vector_search.lambda_handler
+      Runtime: python3.11
+      CodeUri: .
