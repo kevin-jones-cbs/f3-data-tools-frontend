@@ -2,6 +2,7 @@ name: Deploy To Lambda
 env:
   PROJECT_NAME: F3Lambda
   LAMBDA_NAME: F3Pax
+  PYTHON_LAMBDA_NAME: F3VectorSearch
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_DEFAULT_REGION: us-west-1
@@ -58,4 +59,4 @@ jobs:
 
     - name: Deploy Lambda Function
       run: |
-        aws lambda update-function-code --function-name ${{env.LAMBDA_NAME}} --zip-file fileb://lambda.zip
+        aws lambda update-function-code --function-name ${{env.PYTHON_LAMBDA_NAME}} --zip-file fileb://lambda.zip
