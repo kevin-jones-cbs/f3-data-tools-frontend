@@ -38,8 +38,3 @@ jobs:
       working-directory: ${{env.WORKING_DIR}}
       run: |
         aws lambda update-function-code --function-name ${{env.LAMBDA_NAME}} --zip-file fileb://publish.zip
-
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.11'
