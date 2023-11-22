@@ -97,5 +97,35 @@ namespace F3Wasm.Data
             var responseString = await response.Content.ReadAsStringAsync();
             return responseString;
         }
+
+        public static async Task<List<ExiconEntry>> SearchExiconEntriesAsync(HttpClient client, string term)
+        {
+            // Anonymouse object with Term property
+            var input = JsonSerializer.Serialize(new { term });
+            var content = new StringContent(input, Encoding.UTF8, "application/json");
+
+            var lambdaUrl = "https://wdd5t63r4ve5btbdv5yypcnugq0fgeow.lambda-url.us-west-1.on.aws/";
+
+            var request = new HttpRequestMessage(HttpMethod.Post, lambdaUrl) { Content = content };
+            request.Headers.Add("Access-Control-Allow-Origin", "*");
+            request.Headers.Add("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+            var response = await client.SendAsync(request);
+            var responseString = await response.Content.ReadAsStringAsync();
+
+            // This returns {id: 1, score: 0.782}
+            var entries = JsonSerializer.Deserialize<List<ExiconEntry>>(responseString);
+
+            // Fill in the rest of the data
+            var allEntries = ExiconData.Entries;
+            var one = allEntries.FirstOrDefault();
+            foreach (var entry in entries)
+            {
+                var fullEntry = allEntries.FirstOrDefault(x => x.Id == entry.Id);
+                entry.Term = fullEntry.Term;
+                entry.Description = fullEntry.Description;
+            }
+            
+            return entries;
+        }
     }
 }

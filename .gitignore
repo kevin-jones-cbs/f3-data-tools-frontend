@@ -478,3 +478,4 @@ $RECYCLE.BIN/
 
 # Ignore python setup
 F3Lambda/python/setup
+F3Wasm/Helpers/exicon.json

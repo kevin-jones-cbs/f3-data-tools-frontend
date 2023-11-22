@@ -8,9 +8,13 @@
 
 <PageTitle>F3 Exicon</PageTitle>
 
+<TextEdit Placeholder="Advanced Search..." @bind-Text="@advancedSearch"></TextEdit>
+<Button @onclick="AdvancedSearch">Search</Button>
+<Button @onclick="Reset">Reset</Button>
+
 <DataGrid 
-    TItem="OgModel"
-    Data="@Entries"
+    TItem="ExiconEntry"
+    Data="@CurrentEntries"
     ShowPager
     SortMode="DataGridSortMode.Single"
     PageSize="50"
@@ -22,8 +26,24 @@
     Responsive
 >
     <DataGridColumns>
-        <DataGridColumn Field="@nameof(OgModel.Term)" Caption="Name" />
-        <DataGridColumn Field="@nameof(OgModel.Description)" Caption="Description" Filterable="true" />
+        @* <DataGridColumn Field="@nameof(ExiconEntry.Term)" Width="50px" Caption="Name" /> *@
+        <DataGridColumn Field="@nameof(ExiconEntry.Description)" Caption="Description" Filterable="true">
+            <DisplayTemplate>
+                @{
+                    var entry = context as ExiconEntry;
+                    <Card>
+                        <CardBody>
+                            <CardTitle Size="5">
+                                @entry.Term
+                            </CardTitle>
+                            <CardText>
+                                @entry.Description
+                            </CardText>
+                        </CardBody>
+                    </Card>
+                }
+            </DisplayTemplate>
+        </DataGridColumn>
     </DataGridColumns>
     <LoadingTemplate>
         <p>Loading...</p>
