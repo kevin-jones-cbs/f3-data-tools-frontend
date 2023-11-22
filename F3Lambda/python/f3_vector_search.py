@@ -4,9 +4,9 @@ import openai
 import asyncio
 
 async def async_handler(event, context):
+    print (event)
     # Read the term from the event
     term = event['term']
-    print("Term: " + term)
 
     # Instantiate Momento Vector Client
     mvi_client = PreviewVectorIndexClientAsync(   
@@ -16,7 +16,7 @@ async def async_handler(event, context):
     
     rsp = await mvi_client.search(   
         index_name='exicon',   
-        query_vector=get_embedding("animal"),   
+        query_vector=get_embedding(term),   
         top_k=50,
         metadata_fields=['Id']
     )
