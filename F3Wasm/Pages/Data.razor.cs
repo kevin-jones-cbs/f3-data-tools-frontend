@@ -139,7 +139,7 @@ namespace F3Wasm.Pages
                 // Get the Q count
                 row.QCount = pax.Value.Where(p => p.IsQ).Count();
 
-                (var streak, var streakStart) = CalculateStreak(pax.Value);
+                (var streak, var streakStart) = CalculateStreak(pax.Value, RegionInfo);
                 row.Streak = streak;
 
                 // Kotter
@@ -172,7 +172,7 @@ namespace F3Wasm.Pages
             loading = false;
         }
 
-        private static (int, DateTime) CalculateStreak(List<Post> posts)
+        private static (int, DateTime) CalculateStreak(List<Post> posts, Region region)
         {
             int currentStreak = 0;
             int longestStreak = 0;
@@ -193,7 +193,7 @@ namespace F3Wasm.Pages
                     // Do nothing. Duplicate day.
                 }
                 else if (workoutDay.Date == lastWorkoutDate.Value.AddDays(1) ||
-                    (workoutDay.Date.DayOfWeek == DayOfWeek.Monday && workoutDay.Date < firstSundayOpp && workoutDay.Date == lastWorkoutDate.Value.AddDays(2))) // Handle before we had Sundays
+                    (workoutDay.Date.DayOfWeek == DayOfWeek.Monday && (workoutDay.Date < firstSundayOpp || region.DisplayName == "Asgard") && workoutDay.Date == lastWorkoutDate.Value.AddDays(2))) // Handle before we had Sundays
                 {
                     currentStreak++;
                 }
@@ -391,7 +391,7 @@ namespace F3Wasm.Pages
             var dates3 = selectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 3).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
 
             var paxPostsAsc = selectedPaxPosts.OrderBy(p => p.Date).ToList();
-            (selectedPaxStreak, selectedPaxStreakStart) = CalculateStreak(paxPostsAsc);
+            (selectedPaxStreak, selectedPaxStreakStart) = CalculateStreak(paxPostsAsc, RegionInfo);
 
             showOtherLocations = false;
 
