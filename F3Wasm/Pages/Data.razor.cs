@@ -147,7 +147,7 @@ namespace F3Wasm.Pages
                 row.KotterDays = (DateTime.Now - row.LastPost.Value).Days;
 
                 // Ao Challenge. Find the number of unique aos for this pax, for this month
-                if (currentView == OverallView.AoChallenge)
+                if (currentView == OverallView.AoChallenge || currentView == OverallView.AoList)
                 {
                     row.AoPosts = pax.Value.GroupBy(p => p.Site).Select(g => g.Key).Count();
                     row.AoPercent = (double)row.AoPosts / RegionInfo.AoList.Count * 100;
@@ -160,7 +160,7 @@ namespace F3Wasm.Pages
             {
                 currentRows = currentRows.OrderBy(r => r.KotterDays).ToList();
             }
-            else if (currentView == OverallView.AoChallenge)
+            else if (currentView == OverallView.AoChallenge || currentView == OverallView.AoList)
             {
                 currentRows = currentRows.OrderByDescending(r => r.AoPosts).ToList();
             }
@@ -444,7 +444,7 @@ namespace F3Wasm.Pages
             }
 
             var now = DateTime.Now;
-            var hasPosted = selectedPaxPosts.Where(x => x.Date.Year == now.Year && x.Date.Month == now.Month).Any(x => x.Site == location.Name);
+            var hasPosted = selectedPaxPosts.Where(x => x.Date.Year == now.Year && x.Date.Month == (currentView == OverallView.AoChallenge ? 11 : now.Month)).Any(x => x.Site == location.Name);
 
             if (hasPosted)
             {
