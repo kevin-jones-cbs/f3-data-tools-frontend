@@ -64,7 +64,7 @@ namespace F3Wasm.Pages
         private static List<string> OptedOutPax = new List<string>();
         [Inject]
         private IJSRuntime JSRuntime { get; set; }
-        
+
         protected override async Task OnInitializedAsync()
         {
             RegionInfo = RegionList.All.FirstOrDefault(x => x.QueryStringValue == Region);
@@ -188,7 +188,7 @@ namespace F3Wasm.Pages
                     currentStreak = 1;
                     currentStreakStart = workoutDay.Date;
                 }
-                else if (workoutDay.Date == lastWorkoutDate.Value.AddDays(0)) 
+                else if (workoutDay.Date == lastWorkoutDate.Value.AddDays(0))
                 {
                     // Do nothing. Duplicate day.
                 }
@@ -308,6 +308,22 @@ namespace F3Wasm.Pages
             await Task.Delay(1);
             currentView = OverallView.AoChallenge;
 
+            var posts = allData.Posts.Where(p => p.Date.Month == 11 && p.Date.Year == DateTime.Now.Year).ToList();
+
+            var firstDay = new DateTime(DateTime.Now.Year, 11, 1);
+            var lastDay = DateTime.Now;
+            SetCurrentRows(posts, firstDay, lastDay);
+
+            loading = false;
+            await RefreshDropdowns();
+        }
+
+        private async Task ShowAoList()
+        {
+            loading = true;
+            await Task.Delay(1);
+            currentView = OverallView.AoList;
+
             var posts = allData.Posts.Where(p => p.Date.Month == DateTime.Now.Month && p.Date.Year == DateTime.Now.Year).ToList();
 
             var firstDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
@@ -317,6 +333,7 @@ namespace F3Wasm.Pages
             loading = false;
             await RefreshDropdowns();
         }
+
 
         private async Task RefreshDropdowns()
         {
