@@ -116,22 +116,7 @@ else
             <Button>Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
         }
     </Column>
-    </Row>
-    @if (currentView == OverallView.AoChallenge && RegionInfo.DisplayName == "South Fork")
-    {
-        <Row>   
-            <Column style="font-style:italic;">
-                Earn a patch by posting at every AO in November! Tap your name to see which AOs you've posted at. 
-                @if (DateTime.Now.Month == 10) 
-                { 
-                    <span>
-                        The numbers below are from October. 
-                    </span>
-                }
-            </Column>
-        </Row>
-    }
-    
+    </Row>    
 
     @if (loading)
     {
@@ -158,7 +143,7 @@ else
          <DataGridColumns>
              <DataGridColumn Field="@nameof(DisplayRow.PaxName)" Caption="Name" SortField="@nameof(DisplayRow.PaxName)" />
 
-                @if (currentView != OverallView.AoChallenge)
+                @if (currentView != OverallView.AoChallenge && currentView != OverallView.AoList)
                 {
                     <DataGridColumn Field="@nameof(DisplayRow.PostCount)" Caption="Posts" Filterable="false" />
                     <DataGridColumn Field="@nameof(DisplayRow.QCount)" Caption="Q" Filterable="false" />
@@ -170,7 +155,7 @@ else
                         DisplayFormat="{0:M/d/yy}" />
                     <DataGridColumn Field="@nameof(DisplayRow.KotterDays)" Caption="Days Since" Filterable="false" />
                 }
-                else if (currentView == OverallView.AoChallenge)
+                else if (currentView == OverallView.AoChallenge || currentView == OverallView.AoList)
                 {
                     <DataGridColumn Field="@nameof(DisplayRow.PostCount)" Caption="Posts" Filterable="false" />
                     <DataGridColumn Field="@nameof(DisplayRow.AoPosts)" Caption="AOs Posted" Filterable="false" />
@@ -198,7 +183,7 @@ else
                      <CloseButton />
                  </ModalHeader>
                  <ModalBody>
-                     @if (currentView == OverallView.AoChallenge)
+                     @if (currentView == OverallView.AoChallenge || currentView == OverallView.AoList)
                     {
                         <Column>
                             @if (RegionInfo.DisplayName == "South Fork")
