@@ -40,6 +40,13 @@ namespace F3Wasm.Pages
         private ApexChart<AoDisplay> chart;
         private ApexChartOptions<AoDisplay> options;
 
+        Dropdown yearDropdown;
+        Dropdown monthDropdown;
+        public List<int> validYears { get; set; }
+        public List<string> validMonths { get; set; } = new List<string> { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+        public int currentYear { get; set; }
+        public string currentMonth { get; set; }
+
         public OverallView currentView { get; set; } = OverallView.AllTime;
         public SortView currentSort { get; set; } = SortView.DayOfWeek;
 
@@ -48,7 +55,10 @@ namespace F3Wasm.Pages
             RegionInfo = RegionList.All.FirstOrDefault(x => x.QueryStringValue == Region);
             allData = await LambdaHelper.GetAllDataAsync(Http, Region);
 
-            UpdateDisplay();
+            validYears = allData.Posts.Select(p => p.Date.Year).Distinct().OrderByDescending(x => x).Where(x => x <= DateTime.Now.Year).ToList();
+            validMonths = validMonths.OrderByDescending(x => DateTime.ParseExact(x, "MMM", System.Globalization.CultureInfo.InvariantCulture).Month).ToList();
+
+            await UpdateDisplay();
 
             options = new ApexChartOptions<AoDisplay>
             {
@@ -67,7 +77,7 @@ namespace F3Wasm.Pages
             };
         }
 
-        private void UpdateDisplay(OverallView overallView = OverallView.UNSET, SortView sortView = SortView.UNSET)
+        private async Task UpdateDisplay(OverallView overallView = OverallView.UNSET, int year = 0, string month = "")
         {
             // Handle currentViews
             if (overallView == OverallView.UNSET)
@@ -79,37 +89,28 @@ namespace F3Wasm.Pages
                 currentView = overallView;
             }
 
-            if (sortView == SortView.UNSET)
-            {
-                sortView = currentSort;
-            }
-            else
-            {
-                currentSort = sortView;
-            }
+            await Task.Delay(1);
 
             // Get all of the allData.Posts where the site exists in RegionInfo.AoList
             var validSites = RegionInfo.AoList.Select(x => x.Name).ToList();
             var allPosts = allData.Posts.Where(x => validSites.Contains(x.Site)).ToList();
 
-            switch (overallView)
+            if (overallView == OverallView.Year)
             {
-                case OverallView.AllTime:
-                    break;
-                // case OverallView.LastYear:
-                //     allPosts = allPosts.Where(x => x.Date >= new DateTime(DateTime.Now.Year - 1, 1, 1) && x.Date <= new DateTime(DateTime.Now.Year, 1, 1).AddDays(-1)).ToList();
-                //     break;
-                // case OverallView.ThisYear:
-                //     allPosts = allPosts.Where(x => x.Date >= new DateTime(DateTime.Now.Year, 1, 1)).ToList();
-                //     break;
-                // case OverallView.LastMonth:
-                //     allPosts = allPosts.Where(x => x.Date >= new DateTime(DateTime.Now.Year, DateTime.Now.Month - 1, 1) && x.Date <= new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddDays(-1)).ToList();
-                //     break;
-                // case OverallView.ThisMonth:
-                //     allPosts = allPosts.Where(x => x.Date >= new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1)).ToList();
-                //     break;
-                default:
-                    break;
+                currentYear = year;
+                allPosts = allPosts.Where(x => x.Date.Year == year).ToList();
+            }
+            else if (overallView == OverallView.Month)
+            {
+                currentMonth = month;
+                if (currentYear == 0)
+                {
+                    currentYear = DateTime.Now.Year;
+                }
+
+                var monthInt = DateTime.ParseExact(month, "MMM", System.Globalization.CultureInfo.InvariantCulture).Month;
+
+                allPosts = allPosts.Where(x => x.Date.Year == currentYear && x.Date.Month == monthInt).ToList();                
             }
 
             // Group the posts by ao
@@ -126,15 +127,7 @@ namespace F3Wasm.Pages
                 }
             }
 
-            // Sort by count
-            if (sortView == SortView.Count)
-            {
-                aoCounts = aoCounts.OrderByDescending(x => x.Count).ToList();
-            }
-            else
-            {
-                aoCounts = aoCounts.OrderBy(x => x.Ao.DayOfWeek).ToList();
-            }
+            aoCounts = aoCounts.OrderByDescending(x => x.Count).ToList();
         }
 
         private async Task Render()
