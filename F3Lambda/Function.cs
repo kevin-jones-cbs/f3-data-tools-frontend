@@ -142,7 +142,7 @@ public class Function
             {
                 Name = x[0].ToString(),
                 DateJoined = x.Count == 2 && x[1].ToString().Contains("/") ? DateTime.Parse(x[1].ToString()).ToShortDateString() : string.Empty,
-                NamingRegion = x[3].ToString()
+                NamingRegion = x.Count > 3 ? x[3].ToString() : string.Empty,
             }).ToList();
 
             var rtn = new AllData
