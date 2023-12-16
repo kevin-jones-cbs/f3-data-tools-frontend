@@ -193,7 +193,7 @@ namespace F3Wasm.Pages
                     // Do nothing. Duplicate day.
                 }
                 else if (workoutDay.Date == lastWorkoutDate.Value.AddDays(1) ||
-                    (workoutDay.Date.DayOfWeek == DayOfWeek.Monday && (workoutDay.Date < firstSundayOpp || region.DisplayName == "Asgard") && workoutDay.Date == lastWorkoutDate.Value.AddDays(2))) // Handle before we had Sundays
+                    (workoutDay.Date.DayOfWeek == DayOfWeek.Monday && (workoutDay.Date < firstSundayOpp || region.DisplayName == "Asgard" || region.DisplayName == "Delta") && workoutDay.Date == lastWorkoutDate.Value.AddDays(2))) // Handle before we had Sundays
                 {
                     currentStreak++;
                 }

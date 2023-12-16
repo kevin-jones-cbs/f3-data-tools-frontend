@@ -5,7 +5,8 @@ namespace F3Core.Regions
         public static List<Region> All = new List<Region>
         {
             new SouthFork(),
-            new Asgard()
+            new Asgard(),
+            new Delta()
         };
 
         // Get the region by the query string value
