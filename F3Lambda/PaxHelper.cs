@@ -89,7 +89,7 @@ namespace F3Lambda.Data
                 p.UnknownName = string.Empty;
             }
 
-            var regexHotwordPattern = @"\b(VQ|Q|QIC|Former FNGs|FNG|Former FMG|PAX List|PAX|The Ditch|Stargate|Greyhound|The Linkz|tRuck Stop|Denali|Everest|The Cut|The S.A.K.|The Sak|The Public|Butcher's Block|The Claim|Powerhouse|The Grid|The Break|The Way|(\d*))\b";
+            var regexHotwordPattern = @"\b(VQ|Q|QIC|Former FNGs|FNG|Former FMG|PAX List|PAX|The Ditch|Stargate|Greyhound|The Linkz|Parliament|tRuck Stop|Denali|Everest|The Cut|The S.A.K.|The Sak|The Public|Butcher's Block|The Claim|Powerhouse|The Grid|The Break|The Way|(\d*))\b";
             // Trim the comment, remove any @'s, then string split on spaces, 
             comment = comment.Replace("@", string.Empty).Trim();
             var commentSplit = Regex.Replace(comment, regexHotwordPattern, string.Empty, RegexOptions.IgnoreCase)
