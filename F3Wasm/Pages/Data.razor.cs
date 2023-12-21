@@ -167,7 +167,7 @@ namespace F3Wasm.Pages
                 currentRows.Add(row);
             }
 
-            if (currentView == OverallView.Kotter || currentView == OverallView.QKoxtter)
+            if (currentView == OverallView.Kotter || currentView == OverallView.QKotter)
             {
                 currentRows = currentRows.OrderBy(r => r.KotterDays).ToList();
             }
