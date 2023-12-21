@@ -8,6 +8,7 @@ namespace F3Wasm.Models
         Kotter,
         AoChallenge,
         AoList,
+        QKotter,
         UNSET
     }
 }

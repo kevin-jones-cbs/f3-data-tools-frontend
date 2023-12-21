@@ -143,8 +143,19 @@ namespace F3Wasm.Pages
                 row.Streak = streak;
 
                 // Kotter
-                row.LastPost = pax.Value.Max(p => p.Date);
-                row.KotterDays = (DateTime.Now - row.LastPost.Value).Days;
+                if (currentView == OverallView.Kotter)
+                {
+                    row.LastPost = pax.Value.Max(p => p.Date);
+                    row.KotterDays = (DateTime.Now - row.LastPost.Value).Days;
+                }
+
+                // Q Kotter
+                if (currentView == OverallView.QKotter)
+                {
+                    row.LastPost = pax.Value.Where(x => x.IsQ).Max(p => p.Date);
+                    row.KotterDays = (DateTime.Now - row.LastPost.Value).Days;
+                }
+                
 
                 // Ao Challenge. Find the number of unique aos for this pax, for this month
                 if (currentView == OverallView.AoChallenge || currentView == OverallView.AoList)
@@ -156,7 +167,7 @@ namespace F3Wasm.Pages
                 currentRows.Add(row);
             }
 
-            if (currentView == OverallView.Kotter)
+            if (currentView == OverallView.Kotter || currentView == OverallView.QKotter)
             {
                 currentRows = currentRows.OrderBy(r => r.KotterDays).ToList();
             }
@@ -295,6 +306,25 @@ namespace F3Wasm.Pages
                                             x.MaxDate < DateTime.Now.AddDays(-14) &&
                                             x.MaxDate > DateTime.Now.AddDays(-365) &&
                                             x.Region == RegionInfo.DisplayName)).ToList();
+
+            var firstDay = new DateTime(DateTime.Now.Year, 1, 1);
+            var lastDay = DateTime.Now;
+            SetCurrentRows(posts, firstDay, lastDay);
+            await RefreshDropdowns();
+        }
+
+        private async Task ShowQKotter()
+        {
+            loading = true;
+            await Task.Delay(1);
+            currentView = OverallView.QKotter;
+            var paxLastQPostDates = allData.Posts.Where(p => p.IsQ).GroupBy(p => p.Pax).Select(g => new { Name = g.Key, MaxDate = g.Max(x => x.Date), Region = allData.Pax.FirstOrDefault(p => p.Name == g.Key)?.NamingRegion }).ToList();
+
+            // Only show pax who haven't posted in the last 14 days, less than a year ago, where this is their home region.
+            var posts = allData.Posts.Where(p => paxLastQPostDates.Any(x =>
+                                            x.Name == p.Pax &&
+                                            x.MaxDate < DateTime.Now.AddDays(-14) &&
+                                            x.MaxDate > DateTime.Now.AddDays(-365))).ToList();
 
             var firstDay = new DateTime(DateTime.Now.Year, 1, 1);
             var lastDay = DateTime.Now;

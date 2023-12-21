@@ -103,6 +103,7 @@ else
     <Row style="margin-top:6px;">
     <Column>
         <Button Color="currentView == OverallView.Kotter ? Color.Primary : Color.Light" Clicked="ShowKotter">Kotter</Button>
+        <Button Color="currentView == OverallView.QKotter ? Color.Primary : Color.Light" Clicked="ShowQKotter">Q Kotter</Button>
 
         @if (RegionInfo.DisplayName == "South Fork")
         {
@@ -152,6 +153,12 @@ else
                 @if (currentView == OverallView.Kotter)
                 {
                     <DataGridColumn Field="@nameof(DisplayRow.LastPost)" Caption="Last Post" Filterable="false"
+                        DisplayFormat="{0:M/d/yy}" />
+                    <DataGridColumn Field="@nameof(DisplayRow.KotterDays)" Caption="Days Since" Filterable="false" />
+                }
+                else @if (currentView == OverallView.QKotter)
+                {
+                    <DataGridColumn Field="@nameof(DisplayRow.LastPost)" Caption="Last Q" Filterable="false"
                         DisplayFormat="{0:M/d/yy}" />
                     <DataGridColumn Field="@nameof(DisplayRow.KotterDays)" Caption="Days Since" Filterable="false" />
                 }

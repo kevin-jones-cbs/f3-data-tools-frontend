@@ -20,7 +20,24 @@ namespace F3Wasm.Tests
             foreach (var ao in postsByAo)
             {
                 Console.WriteLine($"{ao.Key} - {ao.Count()}");
-            }            
+            }
+        }
+
+        [Fact]
+        public async Task GetAllFullMoonRucks()
+        {
+            var client = new HttpClient();
+            var allData = await LambdaHelper.GetAllDataAsync(client, "southfork");
+            var rucks = allData.Posts.Where(x => x.Site == "Full Moon Ruck").ToList();
+
+            // Group by pax
+            var pax = rucks.GroupBy(r => r.Pax).OrderByDescending(g => g.Count()).ToList();
+
+            // Print to console
+            foreach (var p in pax)
+            {
+                Console.WriteLine($"{p.Key} - {p.Count()}");
+            }
         }
 
         [Fact]
