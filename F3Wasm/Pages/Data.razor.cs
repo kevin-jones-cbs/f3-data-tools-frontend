@@ -167,7 +167,7 @@ namespace F3Wasm.Pages
                 currentRows.Add(row);
             }
 
-            if (currentView == OverallView.Kotter || currentView == OverallView.QKotter)
+            if (currentView == OverallView.Kotter || currentView == OverallView.QKoxtter)
             {
                 currentRows = currentRows.OrderBy(r => r.KotterDays).ToList();
             }
@@ -320,10 +320,10 @@ namespace F3Wasm.Pages
             currentView = OverallView.QKotter;
             var paxLastQPostDates = allData.Posts.Where(p => p.IsQ).GroupBy(p => p.Pax).Select(g => new { Name = g.Key, MaxDate = g.Max(x => x.Date), Region = allData.Pax.FirstOrDefault(p => p.Name == g.Key)?.NamingRegion }).ToList();
 
-            // Only show pax who haven't posted in the last 14 days, less than a year ago, where this is their home region.
+            // Only show pax who haven't posted in the last 30 days, less than a year ago, where this is their home region.
             var posts = allData.Posts.Where(p => paxLastQPostDates.Any(x =>
                                             x.Name == p.Pax &&
-                                            x.MaxDate < DateTime.Now.AddDays(-14) &&
+                                            x.MaxDate < DateTime.Now.AddDays(-30) &&
                                             x.MaxDate > DateTime.Now.AddDays(-365))).ToList();
 
             var firstDay = new DateTime(DateTime.Now.Year, 1, 1);
