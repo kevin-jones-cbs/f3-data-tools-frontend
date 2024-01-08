@@ -41,26 +41,26 @@ namespace F3Wasm.Components
             var posts = PaxPosts.OrderBy(x => x.Date).ToList();
             var qs = posts.Where(x => x.IsQ).ToList();
 
-            KeyPostDates.Add(new KeyDateDisplay { Date = posts.FirstOrDefault().Date, PostCount = 1});
+            KeyPostDates.Add(new KeyDateDisplay { Date = posts.FirstOrDefault().Date, PostCount = 1 });
 
             if (qs.Count > 0)
             {
-                KeyQDates.Add(new KeyDateDisplay { Date = qs.FirstOrDefault().Date, PostCount = 1});
+                KeyQDates.Add(new KeyDateDisplay { Date = qs.FirstOrDefault().Date, PostCount = 1 });
             }
 
             // Add each 100th post
             for (var i = 100; i < posts.Count; i += 100)
             {
-                KeyPostDates.Add(new KeyDateDisplay { Date = posts[i - 1].Date, PostCount = i});
+                KeyPostDates.Add(new KeyDateDisplay { Date = posts[i - 1].Date, PostCount = i });
             }
 
             // Add the last post
-            KeyPostDates.Add(new KeyDateDisplay { Date = posts.LastOrDefault().Date, PostCount = posts.Count});
+            KeyPostDates.Add(new KeyDateDisplay { Date = posts.LastOrDefault().Date, PostCount = posts.Count });
 
             // Add each 10th Q
             for (var i = 10; i < qs.Count; i += 10)
             {
-                KeyQDates.Add(new KeyDateDisplay { Date = qs[i - 1].Date, PostCount = i});
+                KeyQDates.Add(new KeyDateDisplay { Date = qs[i - 1].Date, PostCount = i });
             }
 
             await Task.Delay(10);

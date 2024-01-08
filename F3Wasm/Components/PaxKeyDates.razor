@@ -1,13 +1,11 @@
 @using ApexCharts
 
-<div style="min-height:215px;">
-    <ApexChart TItem="KeyDateDisplay" Title="PAX Key Dates" Options="options">
+<ApexChart TItem="KeyDateDisplay" Title="PAX Key Dates" Options="options">
 
-        <ApexPointSeries TItem="KeyDateDisplay" Items="KeyPostDates" Name="Posts" SeriesType="SeriesType.Scatter"
-            XValue="@(e => e.Date)" YValue="@(e => e.PostCount)" OrderBy="e => DateTime.Parse(e.X.ToString())" ShowDataLabels Color="#007bff" />
+    <ApexPointSeries TItem="KeyDateDisplay" Items="KeyPostDates" Name="Posts" SeriesType="SeriesType.Scatter"
+        XValue="@(e => e.Date)" YValue="@(e => e.PostCount)" OrderBy="e => DateTime.Parse(e.X.ToString())" ShowDataLabels Color="#007bff" />
 
-        <ApexPointSeries TItem="KeyDateDisplay" Items="KeyQDates" Name="Q's" SeriesType="SeriesType.Scatter"
-            XValue="@(e => e.Date)" YValue="@(e => e.PostCount)" OrderBy="e => DateTime.Parse(e.X.ToString())" ShowDataLabels Color="#28a745" />
+    <ApexPointSeries TItem="KeyDateDisplay" Items="KeyQDates" Name="Q's" SeriesType="SeriesType.Scatter"
+        XValue="@(e => e.Date)" YValue="@(e => e.PostCount)" OrderBy="e => DateTime.Parse(e.X.ToString())" ShowDataLabels Color="#28a745" />
 
-    </ApexChart>
-</div>
+</ApexChart>

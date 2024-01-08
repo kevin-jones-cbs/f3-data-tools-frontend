@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Blazor-ApexCharts" Version="0.9.21-beta" />
+    <PackageReference Include="Blazor-ApexCharts" Version="2.2.1" />
     <PackageReference Include="Blazorise.DataGrid" Version="1.1.6" />
     <PackageReference Include="Blazorise.SpinKit" Version="1.1.6" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.13" />
