@@ -26,8 +26,16 @@ namespace F3Core.Regions
         public override string RealSpreadsheetId => "1lMvACqxqatH-lyJg2DrAhePFAgzPX-uErNvhaG9j0d4";
 
         public override int MasterDataSheetId => 729344821;
+        public override string MasterDataSheetName => "Master Data";
+
 
         public override int RosterSheetId => 437240319;
+        public override string RosterSheetName => "Roster";
+        public override string RosterNameColumn => "B";
+        public override List<RosterSheetColumn> RosterSheetColumns => new List<RosterSheetColumn>
+        {
+            RosterSheetColumn.Formula, RosterSheetColumn.PaxName, RosterSheetColumn.JoinDate, RosterSheetColumn.Empty, RosterSheetColumn.NamingRegionName
+        };
 
         public override string RangeForGettingRowCount => "B2400:K";
 

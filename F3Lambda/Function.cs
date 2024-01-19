@@ -17,6 +17,7 @@ using Momento.Sdk.Responses;
 using F3Core;
 using F3Core.Regions;
 using F3Lambda.Data;
+using System.Globalization;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -30,6 +31,7 @@ public class Function
     private TimeSpan DEFAULT_TTL = TimeSpan.FromHours(24);
     const string cacheName = "F3Data";
     private Region region;
+    private bool isTesting;
 
     public async Task<object> FunctionHandler(APIGatewayHttpApiV2ProxyRequest request, ILambdaContext context)
     {
@@ -46,24 +48,18 @@ public class Function
 
             // Get the region
             region = RegionList.GetRegion(functionInput.Region);
+            isTesting = functionInput.IsTesting;
 
             if (region == null)
             {
                 return "Error, no region specified";
             }
 
-            // Set testing spreadsheet id if testing
-            var spreadsheetId = region.RealSpreadsheetId;
-            if (functionInput.IsTesting)
-            {
-                spreadsheetId = region.TestingSpreadsheetId;
-            }
-
             // Get recent posts
             if (functionInput.Action == "GetMissingAos")
             {
                 var sheetsService = GetSheetsService();
-                var recentPosts = await GetMissingAosAsync(sheetsService, spreadsheetId);
+                var recentPosts = await GetMissingAosAsync(sheetsService);
                 return recentPosts;
             }
 
@@ -71,7 +67,7 @@ public class Function
             if (functionInput.Action == "GetPax")
             {
                 var sheetsService = GetSheetsService();
-                var paxNames = await GetPaxNamesAsync(sheetsService, spreadsheetId);
+                var paxNames = await GetPaxNamesAsync(sheetsService);
                 return paxNames;
             }
 
@@ -79,7 +75,7 @@ public class Function
             if (functionInput.Action == "AddPax")
             {
                 var sheetsService = GetSheetsService();
-                await AddPaxToSheetAsync(sheetsService, spreadsheetId, functionInput.Pax, functionInput.QDate, functionInput.AoName, functionInput.IsTesting);
+                await AddPaxToSheetAsync(sheetsService, functionInput.Pax, functionInput.QDate, functionInput.AoName);
                 return "Pax Added";
             }
 
@@ -87,7 +83,7 @@ public class Function
             if (functionInput.Action == "GetAllPosts")
             {
                 var sheetsService = GetSheetsService();
-                var allPosts = await GetAllDataAsync(sheetsService, spreadsheetId, functionInput.IsTesting);
+                var allPosts = await GetAllDataAsync(sheetsService);
                 return allPosts;
             }
 
@@ -95,7 +91,7 @@ public class Function
             if (functionInput.Action == "GetPaxFromComment")
             {
                 var sheetsService = GetSheetsService();
-                var pax = await GetPaxFromCommentAsync(sheetsService, spreadsheetId, functionInput.Comment);
+                var pax = await GetPaxFromCommentAsync(sheetsService, functionInput.Comment);
                 return pax;
             }
 
@@ -108,15 +104,15 @@ public class Function
         }
     }
 
-    private async Task<List<Pax>> GetPaxFromCommentAsync(SheetsService sheetsService, string spreadsheetId, string comment)
+    private async Task<List<Pax>> GetPaxFromCommentAsync(SheetsService sheetsService, string comment)
     {
-        var allPax = await GetPaxNamesAsync(sheetsService, spreadsheetId);
+        var allPax = await GetPaxNamesAsync(sheetsService);
         var pax = PaxHelper.GetPaxFromComment(comment, allPax);
 
         return pax;
     }
 
-    private async Task<string> GetAllDataAsync(SheetsService sheetsService, string spreadsheetId, bool isTesting)
+    private async Task<string> GetAllDataAsync(SheetsService sheetsService)
     {
         using (SimpleCacheClient client = new SimpleCacheClient(Configurations.Laptop.Latest(), authProvider, DEFAULT_TTL))
         {
@@ -127,7 +123,7 @@ public class Function
                 return hitResponse.ValueString;
             }
 
-            var valueRange = await sheetsService.Spreadsheets.Values.Get(spreadsheetId, "Master Data!B2:O").ExecuteAsync();
+            var valueRange = await sheetsService.Spreadsheets.Values.Get(region.GetSpreadsheetId(isTesting), $"{region.MasterDataSheetName}!B2:O").ExecuteAsync();
             var posts = valueRange.Values.Select(x => new Post
             {
                 Date = DateTime.Parse(x[0].ToString()),
@@ -137,12 +133,17 @@ public class Function
             }).ToList();
 
             // Get the roster
-            var result = await sheetsService.Spreadsheets.Values.Get(spreadsheetId, "Roster!B4:E").ExecuteAsync();
+            var result = await sheetsService.Spreadsheets.Values.Get(region.GetSpreadsheetId(isTesting), $"{region.RosterSheetName}!A4:F").ExecuteAsync();
+
+            var paxNameIndex = region.RosterSheetColumns.IndexOf(RosterSheetColumn.PaxName);
+            var joinDateIndex = region.RosterSheetColumns.IndexOf(RosterSheetColumn.JoinDate);
+            var namingRegionNameIndex = region.RosterSheetColumns.IndexOf(RosterSheetColumn.NamingRegionName) == -1 ? region.RosterSheetColumns.IndexOf(RosterSheetColumn.NamingRegionYN) : region.RosterSheetColumns.IndexOf(RosterSheetColumn.NamingRegionName);
+            
             var pax = result.Values.Select(x => new Pax
             {
-                Name = x[0].ToString(),
-                DateJoined = x.Count == 2 && x[1].ToString().Contains("/") ? DateTime.Parse(x[1].ToString()).ToShortDateString() : string.Empty,
-                NamingRegion = x.Count > 3 ? x[3].ToString() : string.Empty,
+                Name = x[paxNameIndex].ToString(),
+                DateJoined = x[joinDateIndex].ToString().Contains("/") ? DateTime.Parse(x[joinDateIndex].ToString()).ToShortDateString() : string.Empty,
+                NamingRegion = x[namingRegionNameIndex].ToString()
             }).ToList();
 
             var rtn = new AllData
@@ -199,12 +200,12 @@ public class Function
         }
     }
 
-    private async Task<List<Ao>> GetMissingAosAsync(SheetsService sheetsService, string spreadsheetId)
+    private async Task<List<Ao>> GetMissingAosAsync(SheetsService sheetsService)
     {
         try
         {
             var rtn = new List<Ao>();
-            var valueRange = await sheetsService.Spreadsheets.Values.Get(spreadsheetId, $"Master Data!{region.RangeForGettingRowCount}").ExecuteAsync();
+            var valueRange = await sheetsService.Spreadsheets.Values.Get(region.GetSpreadsheetId(isTesting), $"{region.MasterDataSheetName}!{region.RangeForGettingRowCount}").ExecuteAsync();
 
             // Assign the first column to a DateTime and the last column to a string
             var qDates = valueRange.Values.Select(x => new { Dates = DateTime.Parse(x[0].ToString()), AoName = x[9].ToString() }).ToList();
@@ -246,9 +247,9 @@ public class Function
         }
     }
 
-    private async Task<List<string>> GetPaxNamesAsync(SheetsService sheetsService, string spreadsheetId)
+    private async Task<List<string>> GetPaxNamesAsync(SheetsService sheetsService)
     {
-        var result = await sheetsService.Spreadsheets.Values.Get(spreadsheetId, "Roster!B:B").ExecuteAsync();
+        var result = await sheetsService.Spreadsheets.Values.Get(region.GetSpreadsheetId(isTesting), $"{region.RosterSheetName}!{region.RosterNameColumn}:{region.RosterNameColumn}").ExecuteAsync();
         var paxMembers = result.Values.Select(x => x.FirstOrDefault().ToString()).Distinct().ToList();
 
         // Exclude any "archived" pax
@@ -257,10 +258,10 @@ public class Function
         return paxMembers;
     }
 
-    private async Task AddPaxToSheetAsync(SheetsService sheetsService, string spreadsheetId, List<Pax> pax, DateTime qDate, string ao, bool isTesting)
+    private async Task AddPaxToSheetAsync(SheetsService sheetsService, List<Pax> pax, DateTime qDate, string ao)
     {
         // Get the sheet to find out the row count
-        var masterDataCount = await GetSheetRowCountAsync(sheetsService, spreadsheetId, "Master Data!A:A");
+        var masterDataCount = await GetSheetRowCountAsync(sheetsService, region.GetSpreadsheetId(isTesting), $"{region.MasterDataSheetName}!A:A");
 
         // Add the date once for each pax
         var updateDateCellsRequest = new UpdateCellsRequest
@@ -341,11 +342,11 @@ public class Function
             }
         };
 
-        // If there are any fngs, do another UpdateCellsRequest
+        // If there are any fngs, do another UpdateCellsRequest for the roster sheet
         if (pax.Any(x => x.IsFng))
         {
             // Get the number of roster rows
-            var rosterCount = await GetSheetRowCountAsync(sheetsService, spreadsheetId, "Roster!A:A");
+            var rosterCount = await GetSheetRowCountAsync(sheetsService, region.GetSpreadsheetId(isTesting), $"{region.RosterSheetName}!A:A");
 
             var updateFngCellsRequest = new UpdateCellsRequest
             {
@@ -353,7 +354,7 @@ public class Function
                 {
                     SheetId = region.RosterSheetId,
                     RowIndex = rosterCount,
-                    ColumnIndex = 1
+                    ColumnIndex = 0
                 },
                 Rows = new List<RowData>(),
                 Fields = "userEnteredValue"
@@ -367,16 +368,35 @@ public class Function
                     namingRegion = RegionList.AllRegionValues.First(x => x.Key == member.NamingRegionIndex).Value;
                 }
 
-                updateFngCellsRequest.Rows.Add(new RowData
+                var rowData = new RowData();
+                rowData.Values = new List<CellData>();
+
+                foreach (var rosterColumn in region.RosterSheetColumns)
                 {
-                    Values = new List<CellData>
+                    switch (rosterColumn)
                     {
-                        new CellData { UserEnteredValue = new ExtendedValue { StringValue = member.Name } },
-                        new CellData { UserEnteredValue = new ExtendedValue { NumberValue = qDate.Date.ToOADate() } },
-                        new CellData { UserEnteredValue = new ExtendedValue { StringValue = string.Empty } },
-                        new CellData { UserEnteredValue = new ExtendedValue { StringValue = namingRegion } }
-                    }
-                });
+                        case RosterSheetColumn.Formula:
+                            rowData.Values.Add(new CellData { UserEnteredValue = null });
+                            break;
+                        case RosterSheetColumn.PaxName:
+                            rowData.Values.Add(new CellData { UserEnteredValue = new ExtendedValue { StringValue = member.Name } });
+                            break;
+                         case RosterSheetColumn.JoinDate:
+                            rowData.Values.Add(new CellData { UserEnteredValue = new ExtendedValue { NumberValue = qDate.Date.ToOADate() } });
+                            break;
+                        case RosterSheetColumn.Empty:
+                            rowData.Values.Add(new CellData { UserEnteredValue = new ExtendedValue { StringValue = string.Empty } });
+                            break;
+                        case RosterSheetColumn.NamingRegionName:
+                            rowData.Values.Add(new CellData { UserEnteredValue = new ExtendedValue { StringValue = namingRegion } });
+                            break;
+                        case RosterSheetColumn.NamingRegionYN:
+                            rowData.Values.Add(new CellData { UserEnteredValue = new ExtendedValue { StringValue = member.IsDr ? "Y" : "N" } });
+                            break;
+                    }                      
+                }
+
+                updateFngCellsRequest.Rows.Add(rowData);
             }
 
             batchUpdateRequest.Requests.Add(new Request
@@ -385,7 +405,7 @@ public class Function
             });
         }
 
-        var batchUpdateResponse = await sheetsService.Spreadsheets.BatchUpdate(batchUpdateRequest, spreadsheetId).ExecuteAsync();
+        var batchUpdateResponse = await sheetsService.Spreadsheets.BatchUpdate(batchUpdateRequest, region.GetSpreadsheetId(isTesting)).ExecuteAsync();
 
         try
         {
