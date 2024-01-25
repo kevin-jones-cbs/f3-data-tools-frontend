@@ -104,11 +104,6 @@ else
     <Column>
         <Button Color="currentView == OverallView.Kotter ? Color.Primary : Color.Light" Clicked="ShowKotter">Kotter</Button>
         <Button Color="currentView == OverallView.QKotter ? Color.Primary : Color.Light" Clicked="ShowQKotter">Q Kotter</Button>
-
-        @if (RegionInfo.DisplayName == "South Fork")
-        {
-            <Button Color="Color.Success" Outline="currentView != OverallView.AoChallenge" Clicked="ShowAoChallenge">AO Challenge</Button>
-        }
             
         <Button Color="currentView == OverallView.AoList ? Color.Primary : Color.Light" Clicked="ShowAoList">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture) AOs</Button>
 
@@ -193,14 +188,7 @@ else
                      @if (currentView == OverallView.AoChallenge || currentView == OverallView.AoList)
                     {
                         <Column>
-                            @if (RegionInfo.DisplayName == "South Fork")
-                            {
-                                <h4>AO Challenge</h4>
-                            }
-                            else
-                            {
-                                <h4>AOs Posted This Month</h4>
-                            }
+                            <h4>AOs Posted This Month</h4>
                             <div class="aoChallengeContainer">
                                 @foreach (var location in RegionInfo.AoList)
                                 {
