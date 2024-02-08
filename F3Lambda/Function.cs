@@ -95,12 +95,76 @@ public class Function
                 return pax;
             }
 
+            // CheckClose100s
+            if (functionInput.Action == "CheckClose100s")
+            {
+                var sheetsService = GetSheetsService();
+                await CheckClose100sAsync(sheetsService);
+                return "Done";
+            }
+
             return "Error, unknown action";
         }
         catch (System.Exception ex)
         {
             Console.WriteLine(ex.Message);
             return "Error" + ex.Message;
+        }
+    }
+
+    private async Task CheckClose100sAsync(SheetsService sheetsService)
+    {
+        var allDataCompressed = await GetAllDataAsync(sheetsService, compress: false);
+
+        var options = new JsonSerializerOptions
+        {
+            IgnoreNullValues = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = false
+        };
+        var allData = JsonSerializer.Deserialize<AllData>(allDataCompressed, options);
+
+        // Group by pax post count
+        var paxPostCount = allData.Posts.GroupBy(x => x.Pax).Select(x => new Close100 { Name = x.Key, PostCount = x.Count() }).ToList();
+
+        // The abyss pax names
+        var abyssPax = new List<string> { "Bandwagon" };
+        paxPostCount = paxPostCount.Where(x => !abyssPax.Contains(x.Name)).ToList();
+
+        // Find anyone with 95, 195, etc posts
+        var close100s = paxPostCount.Where(x => x.PostCount % 100 >= 95).ToList();
+        var notify100s = close100s;
+
+        // If there are any, check the cache to see if we've already notified
+        using (SimpleCacheClient client = new SimpleCacheClient(Configurations.Laptop.Latest(), authProvider, DEFAULT_TTL))
+        {
+            var close100Key = $"Close100s-{region.DisplayName}";
+            CacheGetResponse getResponse = await client.GetAsync(cacheName, close100Key);
+            if (getResponse is CacheGetResponse.Hit hitResponse)
+            {
+                var last100s = JsonSerializer.Deserialize<List<Close100>>(hitResponse.ValueString);
+                notify100s = close100s.Where(x => !last100s.Any(y => y.Name == x.Name)).ToList();
+            }
+
+            // If there are any, notify
+            if (notify100s.Any())
+            {
+                var message = $"Close 100s:{Environment.NewLine}";
+                foreach (var pax in notify100s)
+                {
+                    message += $"{pax.Name} - {pax.PostCount}{Environment.NewLine}";
+                }
+
+                // Send an email
+                EmailPeacock.Send("Close 100s", message);
+            }
+
+            // Save to cache
+            var setResponse = await client.SetAsync(cacheName, close100Key, JsonSerializer.Serialize(close100s));
+            if (setResponse is CacheSetResponse.Error setError)
+            {
+                Console.WriteLine($"Error setting cache value: {setError.Message}.");
+            }
         }
     }
 
@@ -112,12 +176,12 @@ public class Function
         return pax;
     }
 
-    private async Task<string> GetAllDataAsync(SheetsService sheetsService)
+    private async Task<string> GetAllDataAsync(SheetsService sheetsService, bool compress = true)
     {
         using (SimpleCacheClient client = new SimpleCacheClient(Configurations.Laptop.Latest(), authProvider, DEFAULT_TTL))
         {
             CacheGetResponse getResponse = await client.GetAsync(cacheName, region.GetCacheKey(isTesting));
-            if (getResponse is CacheGetResponse.Hit hitResponse)
+            if (getResponse is CacheGetResponse.Hit hitResponse && compress)
             {
                 Console.WriteLine("Cache Hit");
                 return hitResponse.ValueString;
@@ -177,7 +241,7 @@ public class Function
             }
 
             // Deserialize the json
-            return compressedJson;
+            return compress ? compressedJson : json;
         }
 
         // Inline Functions
