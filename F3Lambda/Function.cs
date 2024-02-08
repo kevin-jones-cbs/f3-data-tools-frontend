@@ -159,6 +159,9 @@ public class Function
                 EmailPeacock.Send("Close 100s", message);
             }
 
+            // Wait 10 seconds to save to cache to ensure it's picked up 24 hours later.
+            await Task.Delay(10000);
+
             // Save to cache
             var setResponse = await client.SetAsync(cacheName, close100Key, JsonSerializer.Serialize(close100s));
             if (setResponse is CacheSetResponse.Error setError)
