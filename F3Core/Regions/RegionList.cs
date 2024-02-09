@@ -6,7 +6,8 @@ namespace F3Core.Regions
         {
             new SouthFork(),
             new Asgard(),
-            new Delta()
+            new Delta(),
+            new CapValleyIpssa()
         };
 
         // Get the region by the query string value
