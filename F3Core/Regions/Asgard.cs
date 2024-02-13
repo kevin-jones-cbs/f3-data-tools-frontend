@@ -11,7 +11,6 @@ namespace F3Core.Regions
             new Ao { Name = "The Boneyard", City = "Sacramento", DayOfWeek = DayOfWeek.Monday },
             new Ao { Name = "Training Ground", City = "Antelope", DayOfWeek = DayOfWeek.Monday },
             new Ao { Name = "Airstrip", City = "Rancho Cordova", DayOfWeek = DayOfWeek.Tuesday },
-            new Ao { Name = "Bifrost", City = "Citrus Heights", DayOfWeek = DayOfWeek.Tuesday },
             new Ao { Name = "Pow Wow - T", City = "Orangevale", DayOfWeek = DayOfWeek.Tuesday },
             new Ao { Name = "The Mammoth", City = "Sacramento", DayOfWeek = DayOfWeek.Wednesday },
             new Ao { Name = "The Pound - W", City = "Citrus Heights", DayOfWeek = DayOfWeek.Wednesday },
