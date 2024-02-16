@@ -9,7 +9,6 @@ namespace F3Lambda.Data
         private static Dictionary<string, string> NameMapping = new Dictionary<string, string>
         {
             { "Manny Pedi", "Mani Pedi" },
-            { "Roxbury", "ROXBURY mike c" },
             { "SweatShop", "SweatShop - Hernan C" },
             { "Mr. Meanor", "Mr. Meaner" },
             { "Linguini", "Linguine" },
@@ -23,6 +22,9 @@ namespace F3Lambda.Data
             { "Top Bunk", "Top Bunk" },
             { "Nail'd It", "Nailed It" },
             { "A-Dudle-Doo", "A Doodle Doo" },
+            { "Kick-Stand", "Kickstand" },
+            { "Demogorgon", "DemiGorgon" },
+            { "S'mores", "Smores" },
         };  
 
         public static List<Pax> GetPaxFromComment(string comment, List<string> allPax)
