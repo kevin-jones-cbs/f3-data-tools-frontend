@@ -421,7 +421,7 @@ public class Function
                 {
                     SheetId = region.RosterSheetId,
                     RowIndex = rosterCount,
-                    ColumnIndex = 0
+                    ColumnIndex = 1
                 },
                 Rows = new List<RowData>(),
                 Fields = "userEnteredValue"
