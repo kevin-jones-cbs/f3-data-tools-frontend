@@ -15,6 +15,7 @@ namespace F3Core.Regions
             new Ao { Name = "Oasis", City = "Elk Grove", DayOfWeek = DayOfWeek.Wednesday },
             new Ao { Name = "Mainline", City = "Elk Grove", DayOfWeek = DayOfWeek.Wednesday },
             new Ao { Name = "The American", City = "Sacramento", DayOfWeek = DayOfWeek.Wednesday },
+            new Ao { Name = "The Oak", City = "Sacramento", DayOfWeek = DayOfWeek.Wednesday },
             new Ao { Name = "The Stage", City = "Elk Grove", DayOfWeek = DayOfWeek.Thursday },
             new Ao { Name = "The River", City = "Sacramento", DayOfWeek = DayOfWeek.Thursday },
             new Ao { Name = "Camp West", City = "Sacramento", DayOfWeek = DayOfWeek.Thursday },
