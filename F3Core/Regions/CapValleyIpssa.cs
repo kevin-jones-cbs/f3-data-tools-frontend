@@ -30,7 +30,7 @@
 
         public override List<RosterSheetColumn> RosterSheetColumns => new List<RosterSheetColumn>
         {
-            RosterSheetColumn.PaxName, RosterSheetColumn.JoinDate, RosterSheetColumn.Empty, RosterSheetColumn.NamingRegionName
+            RosterSheetColumn.Formula, RosterSheetColumn.PaxName, RosterSheetColumn.JoinDate, RosterSheetColumn.Empty, RosterSheetColumn.NamingRegionName
         };
     }
 }
