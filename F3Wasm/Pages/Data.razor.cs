@@ -301,11 +301,13 @@ namespace F3Wasm.Pages
 
             // Only show pax who haven't posted in the last 14 days, less than a year ago, where this is their home region.
             var posts = allData.Posts.Where(p => paxLastPostDates.Any(x =>
-                                            x.Name == p.Pax &&
-                                            !p.Pax.Contains("2.0") &&
-                                            x.MaxDate < DateTime.Now.AddDays(-14) &&
-                                            x.MaxDate > DateTime.Now.AddDays(-365) &&
-                                            x.Region == RegionInfo.DisplayName)).ToList();
+                        x.Name == p.Pax &&
+                        !p.Pax.Contains("2.0") &&
+                        x.MaxDate < DateTime.Now.AddDays(-14) &&
+                        x.MaxDate > DateTime.Now.AddDays(-365) &&
+                        (RegionInfo.RosterSheetColumns.Contains(RosterSheetColumn.NamingRegionName) ? 
+                            x.Region == RegionInfo.DisplayName : 
+                            x.Region == "N"))).ToList();
 
             var firstDay = new DateTime(DateTime.Now.Year, 1, 1);
             var lastDay = DateTime.Now;
