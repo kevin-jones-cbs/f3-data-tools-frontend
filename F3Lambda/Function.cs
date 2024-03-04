@@ -103,6 +103,13 @@ public class Function
                 return "Done";
             }
 
+            // ClearCache
+            if (functionInput.Action == "ClearCache")
+            {
+                await ClearAllDataCache();
+                return "Cache Cleared";
+            }
+
             return "Error, unknown action";
         }
         catch (System.Exception ex)
@@ -477,15 +484,20 @@ public class Function
         try
         {
             // Purge the cache
-            using (SimpleCacheClient client = new SimpleCacheClient(Configurations.Laptop.Latest(), authProvider, DEFAULT_TTL))
-            {
-                await client.DeleteAsync(cacheName, region.GetCacheKey(isTesting));
-            }
+            await ClearAllDataCache();
         }
         catch (Exception ex)
         {
             // Log it but don't throw
             Console.WriteLine("Error purging cache " + ex.Message);
+        }
+    }
+
+    private async Task ClearAllDataCache()
+    {
+        using (SimpleCacheClient client = new SimpleCacheClient(Configurations.Laptop.Latest(), authProvider, DEFAULT_TTL))
+        {
+            await client.DeleteAsync(cacheName, region.GetCacheKey(isTesting));
         }
     }
 
