@@ -470,6 +470,9 @@ public class Function
                     }                      
                 }
 
+                // Remove the first column.
+                rowData.Values.RemoveAt(0);
+
                 updateFngCellsRequest.Rows.Add(rowData);
             }
 
