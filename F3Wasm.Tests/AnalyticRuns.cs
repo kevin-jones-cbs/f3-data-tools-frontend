@@ -208,6 +208,30 @@ namespace F3Wasm.Tests
 
             File.WriteAllText("asgard_kotter.csv", csv.ToString());
         }
+
+        [Fact]
+        public async Task GetTopPostCountsPerLocation()
+        {
+            var client = new HttpClient();
+            var allData = await LambdaHelper.GetAllDataAsync(client, "southfork");
+            var pax = allData.Pax;
+            var posts = allData.Posts;
+
+            var aoPosts = posts.Where(p => p.Site == "Cougar's Den").ToList();
+
+            // Gropu each one by day to find the most posts in a day
+            var postsByDay = aoPosts.GroupBy(p => p.Date.Date).OrderByDescending(g => g.Count()).ToList();
+
+            // Write to File
+            var csv = new StringBuilder();
+            csv.AppendLine("Date,Post Count");
+            foreach (var p in postsByDay)
+            {
+                csv.AppendLine($"{p.Key} - {p.Count()}");
+            }
+
+            File.WriteAllText("cougars_den.csv", csv.ToString());
+        }
     }
 
     public class Kotter
