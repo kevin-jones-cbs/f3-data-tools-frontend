@@ -46,6 +46,12 @@ namespace F3Wasm.Data
             return DecompressAll(response);
         }
 
+        // ClearCache
+        public static async Task ClearCacheAsync(HttpClient client, string region)
+        {
+            await CallF3LambdaAsync(client, new FunctionInput { Action = "ClearCache", Region = region });
+        }
+
         // Decompress All
         public static AllData DecompressAll(string compressedString)
         {

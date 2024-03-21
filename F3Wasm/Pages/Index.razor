@@ -25,6 +25,7 @@
 
 <div class="one-row" style="padding-bottom:12px">
     <Button Color="Color.Primary" Clicked="OnMissingAoButtonClicked">Check for Missing Data</Button>
+    <Button Color="Color.Primary" Clicked="ClearCache" style="margin-left:12px;">Clear Cache</Button>
     @if (isMissingDataLoading)
     {
         <SpinKit Type="SpinKitType.Bounce" />

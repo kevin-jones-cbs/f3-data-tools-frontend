@@ -48,6 +48,8 @@ namespace F3Wasm.Pages
             {
                 throw new Exception("Invalid Region");
             }
+
+            await OnMissingAoButtonClicked();
         }
 
         private string ShowOrHideAo(Ao ao)
@@ -68,6 +70,14 @@ namespace F3Wasm.Pages
             {
                 showNoMissingAoMessage = true;
             }
+
+            isMissingDataLoading = false;
+        }
+
+        private async Task ClearCache()
+        {
+            isMissingDataLoading = true;
+            await LambdaHelper.ClearCacheAsync(Http, Region);
 
             isMissingDataLoading = false;
         }
