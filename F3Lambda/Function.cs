@@ -191,19 +191,19 @@ public class Function
         using (SimpleCacheClient client = new SimpleCacheClient(Configurations.Laptop.Latest(), authProvider, DEFAULT_TTL))
         {
             CacheGetResponse getResponse = await client.GetAsync(cacheName, region.GetCacheKey(isTesting));
-            if (getResponse is CacheGetResponse.Hit hitResponse && compress)
+            if (false && getResponse is CacheGetResponse.Hit hitResponse && compress)
             {
                 Console.WriteLine("Cache Hit");
                 return hitResponse.ValueString;
             }
 
-            var valueRange = await sheetsService.Spreadsheets.Values.Get(region.GetSpreadsheetId(isTesting), $"{region.MasterDataSheetName}!B2:O").ExecuteAsync();
+            var valueRange = await sheetsService.Spreadsheets.Values.Get(region.GetSpreadsheetId(isTesting), $"{region.MasterDataSheetName}!A2:O").ExecuteAsync();
             var posts = valueRange.Values.Select(x => new Post
             {
-                Date = DateTime.Parse(x[0].ToString()),
-                Site = x.Count > 9 ? x[9].ToString() : string.Empty,
-                Pax = x.Count > 10 ? x[10].ToString() : string.Empty,
-                IsQ = x.Count > 13 ? x[13].ToString() == "1" : false,
+                Date = DateTime.Parse(x[region.MasterDataColumnIndicies.Date].ToString()),
+                Site = x.Count > region.MasterDataColumnIndicies.Location ? x[region.MasterDataColumnIndicies.Location].ToString() : string.Empty,
+                Pax = x.Count > region.MasterDataColumnIndicies.PaxName ? x[region.MasterDataColumnIndicies.PaxName].ToString() : string.Empty,
+                IsQ = x.Count > region.MasterDataColumnIndicies.Q ? x[region.MasterDataColumnIndicies.Q].ToString() == "1" : false,
             }).ToList();
 
             // Get the roster
@@ -212,7 +212,7 @@ public class Function
             var paxNameIndex = region.RosterSheetColumns.IndexOf(RosterSheetColumn.PaxName);
             var joinDateIndex = region.RosterSheetColumns.IndexOf(RosterSheetColumn.JoinDate);
             var namingRegionNameIndex = region.RosterSheetColumns.IndexOf(RosterSheetColumn.NamingRegionName) == -1 ? region.RosterSheetColumns.IndexOf(RosterSheetColumn.NamingRegionYN) : region.RosterSheetColumns.IndexOf(RosterSheetColumn.NamingRegionName);
-            
+
             var pax = result.Values.Select(x => new Pax
             {
                 Name = x[paxNameIndex].ToString(),
@@ -279,10 +279,11 @@ public class Function
         try
         {
             var rtn = new List<Ao>();
-            var valueRange = await sheetsService.Spreadsheets.Values.Get(region.GetSpreadsheetId(isTesting), $"{region.MasterDataSheetName}!{region.RangeForGettingRowCount}").ExecuteAsync();
+            var valueRange = await sheetsService.Spreadsheets.Values.Get(region.GetSpreadsheetId(isTesting), $"{region.MasterDataSheetName}!A{region.MissingDataRowOffset}:K").ExecuteAsync();
 
-            // Assign the first column to a DateTime and the last column to a string
-            var qDates = valueRange.Values.Select(x => new { Dates = DateTime.Parse(x[0].ToString()), AoName = x[9].ToString() }).ToList();
+            var dateIndex = region.MasterDataColumnIndicies.Date;
+            var aoIndex = region.MasterDataColumnIndicies.Location;
+            var qDates = valueRange.Values.Select(x => new { Dates = DateTime.Parse(x[dateIndex].ToString()), AoName = x[aoIndex].ToString() }).ToList();
 
             // Foreach loop for the last 7 days
             for (int i = 7; i >= 0; i--)
@@ -334,58 +335,91 @@ public class Function
 
     private async Task AddPaxToSheetAsync(SheetsService sheetsService, List<Pax> pax, DateTime qDate, string ao)
     {
+        var batchUpdateRequest = new BatchUpdateSpreadsheetRequest
+        {
+            Requests = new List<Request>()
+        };
+
         // Get the sheet to find out the row count
         var masterDataCount = await GetSheetRowCountAsync(sheetsService, region.GetSpreadsheetId(isTesting), $"{region.MasterDataSheetName}!A:A");
 
-        // Add the date once for each pax
-        var updateDateCellsRequest = new UpdateCellsRequest
-        {
-            Start = new GridCoordinate
-            {
-                SheetId = region.MasterDataSheetId,
-                RowIndex = masterDataCount,
-                ColumnIndex = 1
-            },
-            Rows = new List<RowData>(),
-
-            Fields = "userEnteredValue"
-        };
-
+        // Date
+        var dateUpdate = GetDefaultUpdateCellsRequest();
+        dateUpdate.Start.ColumnIndex = region.MasterDataColumnIndicies.Date;
         foreach (var member in pax)
         {
-            updateDateCellsRequest.Rows.Add(new RowData
+            dateUpdate.Rows.Add(new RowData
             {
                 Values = new List<CellData> { new CellData { UserEnteredValue = new ExtendedValue { NumberValue = qDate.Date.ToOADate() } } }
             });
         }
 
-        // Add each pax
-        var updatePaxCellsRequest = new UpdateCellsRequest
-        {
-            Start = new GridCoordinate
-            {
-                SheetId = region.MasterDataSheetId,
-                RowIndex = masterDataCount,
-                ColumnIndex = 10
-            },
-            Rows = new List<RowData>(),
-            Fields = "userEnteredValue"
-        };
+        batchUpdateRequest.Requests.Add(new Request { UpdateCells = dateUpdate });
 
+        // Location
+        var locationUpdate = GetDefaultUpdateCellsRequest();
+        locationUpdate.Start.ColumnIndex = region.MasterDataColumnIndicies.Location;
         foreach (var member in pax)
         {
-            updatePaxCellsRequest.Rows.Add(new RowData
+            locationUpdate.Rows.Add(new RowData
             {
-                Values = new List<CellData>
-                {
-                    new CellData { UserEnteredValue = new ExtendedValue { StringValue = ao } },
-                    new CellData { UserEnteredValue = new ExtendedValue { StringValue = member.Name } },
-                    new CellData { UserEnteredValue = new ExtendedValue { NumberValue = member.IsFng && !member.IsDr ? 1 : (double?)null } },
-                    new CellData { UserEnteredValue = new ExtendedValue { NumberValue = 1 } },
-                    new CellData { UserEnteredValue = new ExtendedValue { NumberValue = member.IsQ ? 1 : (double?)null } }
-                }
+                Values = new List<CellData> { new CellData { UserEnteredValue = new ExtendedValue { StringValue = ao } } }
             });
         }
+
+        batchUpdateRequest.Requests.Add(new Request { UpdateCells = locationUpdate });
+
+        // Pax Name
+        var paxNameUpdate = GetDefaultUpdateCellsRequest();
+        paxNameUpdate.Start.ColumnIndex = region.MasterDataColumnIndicies.PaxName;
+        foreach (var member in pax)
+        {
+            paxNameUpdate.Rows.Add(new RowData
+            {
+                Values = new List<CellData> { new CellData { UserEnteredValue = new ExtendedValue { StringValue = member.Name } } }
+            });
+        }
+
+        batchUpdateRequest.Requests.Add(new Request { UpdateCells = paxNameUpdate });
+
+        // FNG Column
+        var fngUpdate = GetDefaultUpdateCellsRequest();
+        fngUpdate.Start.ColumnIndex = region.MasterDataColumnIndicies.Fng;
+        foreach (var member in pax)
+        {
+            fngUpdate.Rows.Add(new RowData
+            {
+                Values = new List<CellData> { new CellData { UserEnteredValue = new ExtendedValue { NumberValue = member.IsFng && !member.IsDr ? 1 : (double?)null } } }
+            });
+        }
+
+        batchUpdateRequest.Requests.Add(new Request { UpdateCells = fngUpdate });
+
+        // Post Column
+        var postUpdate = GetDefaultUpdateCellsRequest();
+        postUpdate.Start.ColumnIndex = region.MasterDataColumnIndicies.Post;
+        foreach (var member in pax)
+        {
+            postUpdate.Rows.Add(new RowData
+            {
+                Values = new List<CellData> { new CellData { UserEnteredValue = new ExtendedValue { NumberValue = 1 } } }
+            });
+        }
+
+        batchUpdateRequest.Requests.Add(new Request { UpdateCells = postUpdate });
+
+        // Q Column
+        var qUpdate = GetDefaultUpdateCellsRequest();
+        qUpdate.Start.ColumnIndex = region.MasterDataColumnIndicies.Q;
+        foreach (var member in pax)
+        {
+            qUpdate.Rows.Add(new RowData
+            {
+                Values = new List<CellData> { new CellData { UserEnteredValue = new ExtendedValue { NumberValue = member.IsQ ? 1 : (double?)null } } }
+            });
+        }
+
+        batchUpdateRequest.Requests.Add(new Request { UpdateCells = qUpdate });
 
         // Use the Google Sheets API to regex find the text Updated followed by the date and replace the date with the current date. Only search on the Master Data sheet
         var findReplaceRequest = new FindReplaceRequest
@@ -400,21 +434,12 @@ public class Function
                 SheetId = region.MasterDataSheetId,
                 StartRowIndex = 0,
                 EndRowIndex = int.MaxValue,
-                StartColumnIndex = 11,
-                EndColumnIndex = 12
+                StartColumnIndex = region.MasterDataColumnIndicies.PaxName,
+                EndColumnIndex = region.MasterDataColumnIndicies.PaxName + 1
             }
         };
 
-        // Do a BatchUpdate with the FindReplaceRequest
-        var batchUpdateRequest = new BatchUpdateSpreadsheetRequest
-        {
-            Requests = new List<Request>
-            {
-                new Request { FindReplace = findReplaceRequest },
-                new Request { UpdateCells = updateDateCellsRequest },
-                new Request { UpdateCells = updatePaxCellsRequest }
-            }
-        };
+        batchUpdateRequest.Requests.Add(new Request { FindReplace = findReplaceRequest });
 
         // If there are any fngs, do another UpdateCellsRequest for the roster sheet
         if (pax.Any(x => x.IsFng))
@@ -455,7 +480,7 @@ public class Function
                         case RosterSheetColumn.PaxName:
                             rowData.Values.Add(new CellData { UserEnteredValue = new ExtendedValue { StringValue = member.Name } });
                             break;
-                         case RosterSheetColumn.JoinDate:
+                        case RosterSheetColumn.JoinDate:
                             rowData.Values.Add(new CellData { UserEnteredValue = new ExtendedValue { NumberValue = qDate.Date.ToOADate() } });
                             break;
                         case RosterSheetColumn.Empty:
@@ -467,7 +492,7 @@ public class Function
                         case RosterSheetColumn.NamingRegionYN:
                             rowData.Values.Add(new CellData { UserEnteredValue = new ExtendedValue { StringValue = member.IsDr ? "Y" : "N" } });
                             break;
-                    }                      
+                    }
                 }
 
                 // Remove the first column.
@@ -493,6 +518,22 @@ public class Function
         {
             // Log it but don't throw
             Console.WriteLine("Error purging cache " + ex.Message);
+        }
+
+        UpdateCellsRequest GetDefaultUpdateCellsRequest()
+        {
+            var updateCellsRequest = new UpdateCellsRequest
+            {
+                Start = new GridCoordinate
+                {
+                    SheetId = region.MasterDataSheetId,
+                    RowIndex = masterDataCount
+                },
+                Rows = new List<RowData>(),
+                Fields = "userEnteredValue"
+            };
+
+            return updateCellsRequest;
         }
     }
 

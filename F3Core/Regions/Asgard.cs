@@ -27,7 +27,17 @@ namespace F3Core.Regions
 
         public override int MasterDataSheetId => 729344821;
         public override string MasterDataSheetName => "Master Data";
+        public override int MissingDataRowOffset => 2400;
 
+        public override MasterDataColumnIndicies MasterDataColumnIndicies => new MasterDataColumnIndicies
+        {
+            Date = 1,
+            Location = 10,
+            PaxName = 11,
+            Fng = 12,
+            Post = 13,
+            Q = 14
+        };
 
         public override int RosterSheetId => 437240319;
         public override string RosterSheetName => "Roster";
@@ -36,8 +46,5 @@ namespace F3Core.Regions
         {
             RosterSheetColumn.Formula, RosterSheetColumn.PaxName, RosterSheetColumn.JoinDate, RosterSheetColumn.Empty, RosterSheetColumn.NamingRegionName
         };
-
-        public override string RangeForGettingRowCount => "B2400:K";
-
     }
 }

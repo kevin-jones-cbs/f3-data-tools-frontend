@@ -7,6 +7,7 @@ namespace F3Core.Regions
             new SouthFork(),
             new Asgard(),
             new Delta(),
+            new Rubicon(),
             new CapValleyIpssa()
         };
 

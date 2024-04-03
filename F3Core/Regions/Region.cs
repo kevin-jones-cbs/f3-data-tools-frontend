@@ -5,6 +5,16 @@ namespace F3Core.Regions
         PaxName, JoinDate, Empty, Formula, NamingRegionName, NamingRegionYN
     }
 
+    public class MasterDataColumnIndicies
+    {
+        public short Date { get; set; }
+        public short Location { get; set; }
+        public short PaxName { get; set; }
+        public short Fng { get; set; }
+        public short Post { get; set; }
+        public short Q { get; set; }
+    }
+
     public abstract class Region
     {
         public abstract string QueryStringValue { get; }
@@ -18,13 +28,14 @@ namespace F3Core.Regions
 
         public abstract int MasterDataSheetId { get; }
         public abstract string MasterDataSheetName { get; }
+        public abstract int MissingDataRowOffset { get; }
+        public abstract MasterDataColumnIndicies MasterDataColumnIndicies { get; }
 
         public abstract int RosterSheetId { get; }
         public abstract string RosterSheetName { get; }
         public abstract string RosterNameColumn { get; }
         public abstract List<RosterSheetColumn> RosterSheetColumns { get; }
 
-        public abstract string RangeForGettingRowCount { get; }
 
         // Function to return real or testing spreadsheet id depending on isTesting bool
         public string GetSpreadsheetId(bool isTesting)

@@ -17,10 +17,20 @@
         public override string RealSpreadsheetId => "1tHgi1AZQt5OnIoWVMOFqxyC5BqEYtSkACvmCP2fNNJU";
 
         public override int MasterDataSheetId => 729344821;
+        public override int MissingDataRowOffset => 1;
+
+        public override MasterDataColumnIndicies MasterDataColumnIndicies => new MasterDataColumnIndicies
+        {
+            Date = 1,
+            Location = 10,
+            PaxName = 11,
+            Fng = 12,
+            Post = 13,
+            Q = 14
+        };
+
 
         public override int RosterSheetId => 437240319;
-
-        public override string RangeForGettingRowCount => "B1:K";
 
         public override string MasterDataSheetName => "Master Data";
 
