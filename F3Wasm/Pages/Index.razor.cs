@@ -48,8 +48,6 @@ namespace F3Wasm.Pages
             {
                 throw new Exception("Invalid Region");
             }
-
-            await OnMissingAoButtonClicked();
         }
 
         private string ShowOrHideAo(Ao ao)

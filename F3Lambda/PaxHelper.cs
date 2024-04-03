@@ -33,7 +33,7 @@ namespace F3Lambda.Data
             allPax = allPax.Distinct().Reverse().ToList();
 
             // Pax dictionary where value is .StringEscaped
-            var paxDictionary = allPax.ToDictionary(x => x, x => x.NewStringEscaped().Trim().Replace(" ", @"\s?"));
+            var paxDictionary = allPax.ToDictionary(x => x, x => x.NewStringEscaped().Trim().Replace(" ", @"\s?").Replace("(GR))", "(GR)"));
             
             // Combine with the Name Mapping, replace key if it exists
             foreach (var nameMapping in NameMapping)
