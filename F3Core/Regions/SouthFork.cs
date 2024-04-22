@@ -10,6 +10,7 @@ namespace F3Core.Regions
             new Ao { Name = "The Ditch", City = "El Dorado Hills", DayOfWeek = DayOfWeek.Monday },
             new Ao { Name = "Stargate", City = "Placerville", DayOfWeek = DayOfWeek.Monday },
             new Ao { Name = "The Rack", City = "El Dorado Hills", DayOfWeek = DayOfWeek.Monday },
+            new Ao { Name = "Riot Whig", City = "Folsom", DayOfWeek = DayOfWeek.Monday },
             new Ao { Name = "Greyhound", City = "Folsom", DayOfWeek = DayOfWeek.Tuesday },
             new Ao { Name = "The Linkz", City = "Cameron Park", DayOfWeek = DayOfWeek.Tuesday },
             new Ao { Name = "Parliament", City = "Placerville", DayOfWeek = DayOfWeek.Tuesday },
