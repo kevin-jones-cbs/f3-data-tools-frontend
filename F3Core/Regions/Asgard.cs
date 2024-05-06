@@ -19,7 +19,7 @@ namespace F3Core.Regions
             new Ao { Name = "The Iron Jungle - Fr", City = "Sacramento", DayOfWeek = DayOfWeek.Friday },
             new Ao { Name = "Beavertown", City = "Sacramento", DayOfWeek = DayOfWeek.Friday },
             new Ao { Name = "The Break", City = "Sacramento", DayOfWeek = DayOfWeek.Saturday },
-            new Ao { Name = "The Yard", City = "Folsom", DayOfWeek = DayOfWeek.Saturday }
+            new Ao { Name = "The Yard - S", City = "Folsom", DayOfWeek = DayOfWeek.Saturday }
         };
 
         public override string TestingSpreadsheetId => "1lyFtAFDJExSb9pIqh-hJ4AsOHxwR1i84UrjHVNf4bgc";
