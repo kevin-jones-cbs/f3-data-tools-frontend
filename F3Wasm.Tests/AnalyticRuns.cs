@@ -1,4 +1,5 @@
 using System.Text;
+using F3Core.Regions;
 using F3Wasm.Data;
 using Xunit;
 
@@ -217,9 +218,12 @@ namespace F3Wasm.Tests
             var pax = allData.Pax;
             var posts = allData.Posts;
 
-            var aoPosts = posts.Where(p => p.Site == "Cougar's Den").ToList();
+            var aoPosts = posts.Where(p => p.Site == "The Cut").ToList();
 
-            // Gropu each one by day to find the most posts in a day
+            // Only show this year
+            aoPosts = aoPosts.Where(p => p.Date.Year == DateTime.Now.Year).ToList();
+
+            // Group each one by day to find the most posts in a day
             var postsByDay = aoPosts.GroupBy(p => p.Date.Date).OrderByDescending(g => g.Count()).ToList();
 
             // Write to File
@@ -230,7 +234,68 @@ namespace F3Wasm.Tests
                 csv.AppendLine($"{p.Key} - {p.Count()}");
             }
 
-            File.WriteAllText("cougars_den.csv", csv.ToString());
+            File.WriteAllText("the_pit.csv", csv.ToString());
+        }
+
+        [Fact]
+        public async Task GetTopPostersPerLocation()
+        {
+            var client = new HttpClient();
+            var allData = await LambdaHelper.GetAllDataAsync(client, "southfork");
+            var pax = allData.Pax;
+            var posts = allData.Posts;
+
+            var aoPosts = posts.Where(p => p.Site == "The Cut").ToList();
+
+            // Only show this year
+            aoPosts = aoPosts.Where(p => p.Date.Year == DateTime.Now.Year).ToList();
+
+            // Group each one by pax 
+            var postsByDay = aoPosts.GroupBy(p => p.Pax).OrderByDescending(g => g.Count()).ToList();
+
+            // Write to File
+            var csv = new StringBuilder();
+            csv.AppendLine("Pax,Post Count");
+            foreach (var p in postsByDay)
+            {
+                csv.AppendLine($"{p.Key} - {p.Count()}");
+            }
+
+            File.WriteAllText("top_posters.csv", csv.ToString());
+        }
+
+        [Fact]
+        public async Task GetTopPostersForAllLocations()
+        {
+            var client = new HttpClient();
+            var allData = await LambdaHelper.GetAllDataAsync(client, "southfork");
+            var pax = allData.Pax;
+            var posts = allData.Posts;
+
+            // Only show this year
+            posts = posts.Where(p => p.Date.Year == DateTime.Now.Year).ToList();
+
+            var region = new SouthFork();
+
+            await File.WriteAllTextAsync("top_posters_all.csv", "");
+            foreach (var location in region.AoList)
+            {
+                var regionPosts = posts.Where(p => p.Site == location.Name).ToList();
+                // Group each one by pax 
+                var postsByDay = regionPosts.GroupBy(p => p.Pax).OrderByDescending(g => g.Count()).Take(10).ToList();
+
+                // Write to File
+                var csv = new StringBuilder();
+                csv.AppendLine($"\n\n{location.Name}:");
+                foreach (var p in postsByDay)
+                {
+                    csv.AppendLine($"{p.Key} - {p.Count()}");
+                }
+
+                await File.AppendAllTextAsync("top_posters_all.csv", csv.ToString());
+            }
+
+
         }
     }
 
