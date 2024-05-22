@@ -305,9 +305,10 @@ namespace F3Wasm.Pages
                         !p.Pax.Contains("2.0") &&
                         x.MaxDate < DateTime.Now.AddDays(-14) &&
                         x.MaxDate > DateTime.Now.AddDays(-365) &&
-                        (RegionInfo.RosterSheetColumns.Contains(RosterSheetColumn.NamingRegionName) ? 
-                            x.Region == RegionInfo.DisplayName : 
-                            x.Region == "N"))).ToList();
+                        (RegionInfo.RosterSheetColumns.Contains(RosterSheetColumn.NamingRegionName) ? x.Region == RegionInfo.DisplayName : 
+                         RegionInfo.RosterSheetColumns.Contains(RosterSheetColumn.NamingRegionYN) ? x.Region == "N" :
+                         true) 
+                           )).ToList();
 
             var firstDay = new DateTime(DateTime.Now.Year, 1, 1);
             var lastDay = DateTime.Now;
