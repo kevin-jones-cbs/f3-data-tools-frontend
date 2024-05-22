@@ -217,7 +217,7 @@ public class Function
             {
                 Name = x[paxNameIndex].ToString(),
                 DateJoined = x[joinDateIndex].ToString().Contains("/") ? DateTime.Parse(x[joinDateIndex].ToString()).ToShortDateString() : string.Empty,
-                NamingRegion = x[namingRegionNameIndex].ToString()
+                NamingRegion = namingRegionNameIndex == -1 ? string.Empty : x[namingRegionNameIndex].ToString()
             }).ToList();
 
             var rtn = new AllData
