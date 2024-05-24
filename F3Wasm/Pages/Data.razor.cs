@@ -142,6 +142,8 @@ namespace F3Wasm.Pages
                 (var streak, var streakStart) = CalculateStreak(pax.Value, RegionInfo);
                 row.Streak = streak;
 
+                row.QRatio = row.QCount == 0 ? 0 : (double)row.QCount / row.PostCount * 100;
+
                 // Kotter
                 if (currentView == OverallView.Kotter)
                 {

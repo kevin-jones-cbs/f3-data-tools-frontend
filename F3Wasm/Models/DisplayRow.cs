@@ -8,6 +8,7 @@ namespace F3Wasm.Models
         public DateTime? FirstPost { get; set; }
         public double PostPercent { get; set; }
         public int Streak { get; set; }
+        public double QRatio { get; set; }
 
         // Kotter
         public DateTime? LastPost { get; set; }

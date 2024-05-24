@@ -137,7 +137,7 @@ else
             Responsive
         >
          <DataGridColumns>
-             <DataGridColumn Field="@nameof(DisplayRow.PaxName)" Caption="Name" SortField="@nameof(DisplayRow.PaxName)" />
+                <DataGridColumn Field="@nameof(DisplayRow.PaxName)" Caption="Name" SortField="@nameof(DisplayRow.PaxName)" />
 
                 @if (currentView != OverallView.AoChallenge && currentView != OverallView.AoList)
                 {
@@ -161,8 +161,7 @@ else
                 {
                     <DataGridColumn Field="@nameof(DisplayRow.PostCount)" Caption="Posts" Filterable="false" />
                     <DataGridColumn Field="@nameof(DisplayRow.AoPosts)" Caption="AOs Posted" Filterable="false" />
-                    <DataGridColumn Field="@nameof(DisplayRow.AoPercent)" Caption="AO Percent" Filterable="false"
-                    DisplayFormat="{0:0}%" />
+                    <DataGridColumn Field="@nameof(DisplayRow.AoPercent)" Caption="AO Percent" Filterable="false" DisplayFormat="{0:0}%" />
                 }
                 else
                 {
@@ -171,6 +170,7 @@ else
                         <DataGridColumn Field="@nameof(DisplayRow.FirstPost)" Caption="1st Post" Filterable="false" DisplayFormat="{0:M/d/yy}" />
                         <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="Post %" Filterable="false" DisplayFormat="{0:0}%" />
                         <DataGridColumn Field="@nameof(DisplayRow.Streak)" Caption="Daily Streak" Filterable="false" />
+                        <DataGridColumn Field="@nameof(DisplayRow.QRatio)" Caption="Q Ratio" Filterable="true" DisplayFormat="{0:0}%" />
                     }
                     else
                     {
@@ -252,19 +252,22 @@ else
                                      </TableRow>
                                      <TableRow>
                                          <TableRowHeader>Post Percent</TableRowHeader>
-                                         <TableRowCell>@(((double)selectedPaxPosts.Count / (double)selectedPaxPossibleCount *
-                                          100).ToString("0.00"))%</TableRowCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableRowHeader>Best Daily Streak</TableRowHeader>
-                                            <TableRowCell>@(selectedPaxStreak)</TableRowCell>
-                                            </TableRow>
-                                            <TableRow>
-                                                <TableRowHeader>Streak Start</TableRowHeader>
-                                                <TableRowCell>@(selectedPaxStreakStart.ToShortDateString())</TableRowCell>
-                                            </TableRow>
-                                        </TableBody>
-                                    </Table>
+                                         <TableRowCell>@(((double)selectedPaxPosts.Count / (double)selectedPaxPossibleCount * 100).ToString("0.00"))%</TableRowCell>
+                                    </TableRow>
+                                    <TableRow>
+                                         <TableRowHeader>Q Percent</TableRowHeader>
+                                         <TableRowCell>@(((double)@selectedPaxPosts.Count(x => x.IsQ == true) / (double)selectedPaxPosts.Count * 100).ToString("0.00"))%</TableRowCell>
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableRowHeader>Best Daily Streak</TableRowHeader>
+                                        <TableRowCell>@(selectedPaxStreak)</TableRowCell>
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableRowHeader>Streak Start</TableRowHeader>
+                                        <TableRowCell>@(selectedPaxStreakStart.ToShortDateString())</TableRowCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
 
                                     <DatePicker TValue="DateTime?" Inline SelectionMode="DateInputSelectionMode.Multiple"
                                      Dates="@selectedPaxDates" DatesChanged="@OnDatesChanged" DisabledDates="@disabledPaxQDates" />
