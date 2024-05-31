@@ -191,7 +191,7 @@ public class Function
         using (SimpleCacheClient client = new SimpleCacheClient(Configurations.Laptop.Latest(), authProvider, DEFAULT_TTL))
         {
             CacheGetResponse getResponse = await client.GetAsync(cacheName, region.GetCacheKey(isTesting));
-            if (false && getResponse is CacheGetResponse.Hit hitResponse && compress)
+            if (getResponse is CacheGetResponse.Hit hitResponse && compress)
             {
                 Console.WriteLine("Cache Hit");
                 return hitResponse.ValueString;
