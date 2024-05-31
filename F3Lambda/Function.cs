@@ -27,7 +27,7 @@ namespace F3Lambda;
 public class Function
 {
     // Cache
-    private ICredentialProvider authProvider = new EnvMomentoTokenProvider("F3_MOMENTO_AUTH_TOKEN");
+    private ICredentialProvider authProvider = new EnvMomentoTokenProvider("F3_MOMENTO_TOKEN");
     private TimeSpan DEFAULT_TTL = TimeSpan.FromHours(24);
     const string cacheName = "F3Data";
     private Region region;
@@ -195,6 +195,11 @@ public class Function
             {
                 Console.WriteLine("Cache Hit");
                 return hitResponse.ValueString;
+            }
+
+            if (getResponse is CacheGetResponse.Error errorResponse)
+            {
+                Console.WriteLine($"Error getting cache value: {errorResponse.Message}.");
             }
 
             var valueRange = await sheetsService.Spreadsheets.Values.Get(region.GetSpreadsheetId(isTesting), $"{region.MasterDataSheetName}!A2:O").ExecuteAsync();
