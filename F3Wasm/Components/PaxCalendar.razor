@@ -1,0 +1,40 @@
+﻿@using F3Wasm.Models
+<DatePicker TValue="DateTime?" Inline SelectionMode="DateInputSelectionMode.Multiple"
+            Dates="@selectedPaxDates" DisabledDates="@disabledPaxQDates" />
+
+<div style="text-align:center; margin-top:6px;">
+    <Badge Color="Color.Primary">Post</Badge>
+    <Badge Color="Color.Success" style="width:36px;">Q</Badge>
+    <Badge style="background:linear-gradient(to right, #007bff 50%, #3013b7 50%)">2 Posts</Badge>
+    <Badge style="background:linear-gradient(to right, #007bff 33.33%, #3013b7 33.33%, #3013b7 66.66%, #7e80f9 66.66%)">3 Posts</Badge>
+</div>
+
+@code {
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; }
+
+    [Parameter]
+    public List<Post> SelectedPaxPosts { get; set; } = new();
+
+    public IReadOnlyList<DateTime?> selectedPaxDates { get; set; }
+    public IReadOnlyList<DateTime?> disabledPaxQDates { get; set; }
+
+    // Oninit
+    protected override async Task OnInitializedAsync()
+    {
+        selectedPaxDates = SelectedPaxPosts.Select(p => (DateTime?)p.Date).ToList();
+        disabledPaxQDates = SelectedPaxPosts.Where(p => p.IsQ).Select(p => (DateTime?)p.Date).ToList();
+
+        // Get the dates that were posted two and three times
+        var dates2 = SelectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 2).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
+        var dates3 = SelectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 3).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
+
+        await SetupDuplicateDates(dates2, dates3);
+    }
+
+    private async Task SetupDuplicateDates(string[] dates2, string[] dates3)
+    {
+        // Use JSInterop to setup the duplicate date calendar colors
+        await JSRuntime.InvokeVoidAsync("setupDuplicateDates", dates2, dates3);
+    }
+}

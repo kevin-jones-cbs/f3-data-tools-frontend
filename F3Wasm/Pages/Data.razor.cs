@@ -1,25 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Components;
-using System.Net.Http;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.AspNetCore.Components.Routing;
-using Microsoft.AspNetCore.Components.Web;
-using Microsoft.AspNetCore.Components.Web.Virtualization;
-using Microsoft.JSInterop;
-using F3Wasm;
 using Blazorise;
-using Blazorise.Components;
-using F3Wasm.Models;
-using F3Wasm.Data;
+using Blazorise.DataGrid;
 using F3Core;
 using F3Core.Regions;
-using System.Web;
-using Blazorise.DataGrid;
+using F3Wasm.Data;
 using F3Wasm.Helpers;
+using F3Wasm.Models;
+using Microsoft.AspNetCore.Components;
+using System.Web;
 
 namespace F3Wasm.Pages
 {
@@ -40,8 +27,6 @@ namespace F3Wasm.Pages
         public Pax selectedPax { get; set; }
         public List<Post> selectedPaxPosts { get; set; }
         public int selectedPax100Count { get; set; }
-        public IReadOnlyList<DateTime?> selectedPaxDates { get; set; }
-        public IReadOnlyList<DateTime?> disabledPaxQDates { get; set; }
         public string selectedPaxPostWithView { get; set; } = null;
         public Dictionary<string, int> selectedPaxPostedWith { get; set; }
         public bool showOtherLocations { get; set; } = false;
@@ -60,8 +45,7 @@ namespace F3Wasm.Pages
 
         // Don't show the modal for these PAX
         private static List<string> OptedOutPax = new List<string>();
-        [Inject]
-        private IJSRuntime JSRuntime { get; set; }
+
 
         protected override async Task OnInitializedAsync()
         {
@@ -93,11 +77,6 @@ namespace F3Wasm.Pages
             }
 
             await ShowAllTime();
-        }
-
-        private async Task SetupDuplicateDates(string[] dates2, string[] dates3)
-        {
-            await JSRuntime.InvokeVoidAsync("setupDuplicateDates", dates2, dates3);
         }
 
         public void SetCurrentRows(List<Post> posts, DateTime? firstDay, DateTime lastDay)
@@ -384,26 +363,15 @@ namespace F3Wasm.Pages
             }
 
             selectedPaxPosts = allData.Posts.Where(p => p.Pax == row.PaxName).OrderByDescending(x => x.Date).ToList();
-            selectedPaxDates = selectedPaxPosts.Select(p => (DateTime?)p.Date).ToList();
-            disabledPaxQDates = selectedPaxPosts.Where(p => p.IsQ).Select(p => (DateTime?)p.Date).ToList();
             selectedPaxPostedWith = new Dictionary<string, int>();
             selectedPax100Count = selectedPaxPosts.Count / 100;
             selectedPaxPostWithView = null;
             selectedPax = allData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
 
-            // Get the dates that were posted two and three times
-            var dates2 = selectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 2).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
-            var dates3 = selectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 3).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
 
             showOtherLocations = false;
 
             await ShowModal();
-            await SetupDuplicateDates(dates2, dates3);
-        }
-
-        private Task OnDatesChanged(IReadOnlyList<DateTime?> date)
-        {
-            return Task.CompletedTask;
         }
 
         private string GetPaxLocationColor(Ao location)

@@ -222,15 +222,8 @@ else
                                 >
                                 </PaxSummaryTable>
 
-                                <DatePicker TValue="DateTime?" Inline SelectionMode="DateInputSelectionMode.Multiple"
-                                     Dates="@selectedPaxDates" DatesChanged="@OnDatesChanged" DisabledDates="@disabledPaxQDates" />
-                                     
-                                    <div style="text-align:center; margin-top:6px;">
-                                        <Badge Color="Color.Primary">Post</Badge>
-                                        <Badge Color="Color.Success" style="width:36px;">Q</Badge>
-                                        <Badge style="background:linear-gradient(to right, #007bff 50%, #3013b7 50%)">2 Posts</Badge>
-                                        <Badge style="background:linear-gradient(to right, #007bff 33.33%, #3013b7 33.33%, #3013b7 66.66%, #7e80f9 66.66%)">3 Posts</Badge>
-                                    </div>
+                                <PaxCalendar SelectedPaxPosts="@selectedPaxPosts"></PaxCalendar>
+           
                                 <F3Wasm.Components.PaxKeyDates PaxPosts="selectedPaxPosts"></F3Wasm.Components.PaxKeyDates>
                              </Column>
 
