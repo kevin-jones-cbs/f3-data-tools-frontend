@@ -1,0 +1,138 @@
+@using F3Core.Regions
+@using F3Wasm.Helpers
+@using F3Wasm.Models
+<Table Narrow Striped>
+     <TableBody>
+         <TableRow>
+             <TableRowHeader>Posts</TableRowHeader>
+             <TableRowCell>@SelectedPaxPosts.Count</TableRowCell>
+         </TableRow>
+         <TableRow>
+             <TableRowHeader>Qs</TableRowHeader>
+             <TableRowCell>@SelectedPaxPosts.Count(x => x.IsQ == true)</TableRowCell>
+         </TableRow>
+         <TableRow>
+             <TableRowHeader>First Post</TableRowHeader>
+             <TableRowCell>@SelectedPaxPosts.Min(x => x.Date).ToShortDateString()</TableRowCell>
+         </TableRow>
+         <TableRow>
+             <TableRowHeader>Named By</TableRowHeader>
+             <TableRowCell>@GetNamedBy()</TableRowCell>
+         </TableRow>
+         <TableRow>
+             <TableRowHeader>VQ</TableRowHeader>
+             <TableRowCell>@SelectedPaxPosts.LastOrDefault(x => x.IsQ)?.Date.ToShortDateString()
+             </TableRowCell>
+         </TableRow>
+         <TableRow>
+             <TableRowHeader>F3 Days to 100</TableRowHeader>
+             <TableRowCell>@GetDaysTo100()
+             </TableRowCell>
+         </TableRow>
+         <TableRow>
+             <TableRowHeader>Calendar Days to 100</TableRowHeader>
+             <TableRowCell>@GetCalDaysTo100()
+             </TableRowCell>
+         </TableRow>
+         <TableRow>
+             <TableRowHeader>Last Post</TableRowHeader>
+             <TableRowCell>@SelectedPaxPosts.Max(x => x.Date).ToShortDateString()</TableRowCell>
+         </TableRow>
+         <TableRow>
+             <TableRowHeader>Post Percent</TableRowHeader>
+            <TableRowCell>@(((double)SelectedPaxPosts.Count / GetSelectedPaxPossibleCount() * 100).ToString("0.00"))%</TableRowCell>
+        </TableRow>
+        <TableRow>
+             <TableRowHeader>Q Percent</TableRowHeader>
+             <TableRowCell>@(((double)SelectedPaxPosts.Count(x => x.IsQ == true) / (double)SelectedPaxPosts.Count * 100).ToString("0.00"))%</TableRowCell>
+        </TableRow>
+        <TableRow>
+            <TableRowHeader>Best Daily Streak</TableRowHeader>
+            <TableRowCell>@(selectedPaxStreak)</TableRowCell>
+        </TableRow>
+        <TableRow>
+            <TableRowHeader>Streak Start</TableRowHeader>
+            <TableRowCell>@(selectedPaxStreakStart.ToShortDateString())</TableRowCell>
+        </TableRow>
+    </TableBody>
+</Table>
+
+@code {
+    [Parameter]
+    public Region RegionInfo { get; set; }
+    [Parameter]
+    public List<Post> SelectedPaxPosts { get; set; } = new();
+    [Parameter]
+    public List<Post> AllPosts { get; set; } = new();
+    [Parameter]
+    public List<WorkoutDay> AllPossibleWorkoutDays { get; set; } = new();
+
+    private int selectedPaxStreak;
+    private DateTime selectedPaxStreakStart;
+
+    protected override void OnInitialized()
+    {
+        var paxPostsAsc = SelectedPaxPosts.OrderBy(p => p.Date).ToList();
+        (selectedPaxStreak, selectedPaxStreakStart) = StreakHelpers.CalculateStreak(paxPostsAsc, RegionInfo);
+    }
+
+    private double GetSelectedPaxPossibleCount()
+    {
+        return AllPossibleWorkoutDays.Where(x => x.Date >= SelectedPaxPosts.LastOrDefault().Date).Count();
+    }
+
+
+    public string GetNamedBy()
+    {
+        var paxFirstPost = SelectedPaxPosts.LastOrDefault();
+        if (paxFirstPost == null)
+            return "";
+
+        var namedBy = AllPosts.Where(p => p.Site == paxFirstPost.Site && p.IsQ && p.Date == paxFirstPost.Date).FirstOrDefault();
+
+        if (namedBy == null)
+            return "";
+
+        return namedBy.Pax;
+    }
+
+    public string GetDaysTo100()
+    {
+        // Get the 100th post for the selected pax
+        var pax100thPost = SelectedPaxPosts.OrderBy(x => x.Date).Skip(99).FirstOrDefault();
+        var notYet = false;
+        if (pax100thPost == null)
+        {
+            // No 100 yet, so just count today
+            pax100thPost = new Post() { Date = DateTime.Now };
+            notYet = true;
+        }
+
+        var pax1stPost = SelectedPaxPosts.LastOrDefault();
+
+        // Get the number of days since their first post
+        var days = AllPossibleWorkoutDays.Where(x => x.Date >= pax1stPost.Date && x.Date <= pax100thPost.Date).ToList();
+        return days.Count.ToString() + (notYet ? " (so far)" : "");
+    }
+
+    public string GetCalDaysTo100()
+    {
+        // Get the 100th post for the selected pax
+        var pax100thPost = SelectedPaxPosts.OrderBy(x => x.Date).Skip(99).FirstOrDefault();
+        var notYet = false;
+        if (pax100thPost == null)
+        {
+            // No 100 yet, so just count today
+            pax100thPost = new Post() { Date = DateTime.Now };
+            notYet = true;
+        }
+
+        var pax1stPost = SelectedPaxPosts.LastOrDefault();
+
+        // Get the number of days between their first post and 100th post
+        var days = (pax100thPost.Date - pax1stPost.Date).Days;
+
+        // Get the number of days since their first post
+        return days.ToString() + (notYet ? " (so far)" : "");
+    }
+}

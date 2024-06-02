@@ -19,6 +19,7 @@ using F3Core;
 using F3Core.Regions;
 using System.Web;
 using Blazorise.DataGrid;
+using F3Wasm.Helpers;
 
 namespace F3Wasm.Pages
 {
@@ -39,13 +40,10 @@ namespace F3Wasm.Pages
         public Pax selectedPax { get; set; }
         public List<Post> selectedPaxPosts { get; set; }
         public int selectedPax100Count { get; set; }
-        public int selectedPaxPossibleCount { get; set; }
         public IReadOnlyList<DateTime?> selectedPaxDates { get; set; }
         public IReadOnlyList<DateTime?> disabledPaxQDates { get; set; }
         public string selectedPaxPostWithView { get; set; } = null;
         public Dictionary<string, int> selectedPaxPostedWith { get; set; }
-        public DateTime selectedPaxStreakStart { get; set; }
-        public int selectedPaxStreak { get; set; }
         public bool showOtherLocations { get; set; } = false;
 
         Dropdown yearDropdown;
@@ -55,7 +53,7 @@ namespace F3Wasm.Pages
         public int currentYear { get; set; }
         public string currentMonth { get; set; }
 
-        public List<WorkoutDay> AllPossibleWorkoutDays { get; set; }
+        public List<WorkoutDay> allPossibleWorkoutDays { get; set; }
         private string customFilterValue;
 
         public bool loading { get; set; }
@@ -81,7 +79,7 @@ namespace F3Wasm.Pages
                 allData.Posts.Remove(lastUpdateItem);
             }
 
-            AllPossibleWorkoutDays = GetCurrentPossibleWorkoutDays(allData.Posts);
+            allPossibleWorkoutDays = GetCurrentPossibleWorkoutDays(allData.Posts);
 
             // Get IsEmbed from the query string
             var uri = new Uri(NavigationManager.Uri);
@@ -107,7 +105,7 @@ namespace F3Wasm.Pages
             var currentUniqueWorkoutDayCount = -1;
             if (firstDay != null)
             {
-                currentUniqueWorkoutDayCount = AllPossibleWorkoutDays.Where(x => x.Date >= firstDay && x.Date <= lastDay).Count();
+                currentUniqueWorkoutDayCount = allPossibleWorkoutDays.Where(x => x.Date >= firstDay && x.Date <= lastDay).Count();
             }
 
             // Group the posts by pax name
@@ -127,7 +125,7 @@ namespace F3Wasm.Pages
 
                 if (firstDay == null)
                 {
-                    currentUniqueWorkoutDayCount = AllPossibleWorkoutDays.Where(x => x.Date >= paxFirstDate).Count();
+                    currentUniqueWorkoutDayCount = allPossibleWorkoutDays.Where(x => x.Date >= paxFirstDate).Count();
                 }
 
                 if (paxFirstDate != DateTime.MinValue)
@@ -139,7 +137,7 @@ namespace F3Wasm.Pages
                 // Get the Q count
                 row.QCount = pax.Value.Where(p => p.IsQ).Count();
 
-                (var streak, var streakStart) = CalculateStreak(pax.Value, RegionInfo);
+                (var streak, var streakStart) = StreakHelpers.CalculateStreak(pax.Value, RegionInfo);
                 row.Streak = streak;
 
                 row.QRatio = row.QCount == 0 ? 0 : (double)row.QCount / row.PostCount * 100;
@@ -183,50 +181,6 @@ namespace F3Wasm.Pages
             }
 
             loading = false;
-        }
-
-        private static (int, DateTime) CalculateStreak(List<Post> posts, Region region)
-        {
-            int currentStreak = 0;
-            int longestStreak = 0;
-            DateTime? lastWorkoutDate = null;
-            DateTime currentStreakStart = DateTime.MinValue;
-            DateTime longestStreakStart = DateTime.MinValue;
-            DateTime firstSundayOpp = new DateTime(2023, 4, 16);
-
-            foreach (var workoutDay in posts)
-            {
-                if (lastWorkoutDate == null)
-                {
-                    currentStreak = 1;
-                    currentStreakStart = workoutDay.Date;
-                }
-                else if (workoutDay.Date == lastWorkoutDate.Value.AddDays(0))
-                {
-                    // Do nothing. Duplicate day.
-                }
-                else if (workoutDay.Date == lastWorkoutDate.Value.AddDays(1) ||
-                    (workoutDay.Date.DayOfWeek == DayOfWeek.Monday && (workoutDay.Date < firstSundayOpp || region.DisplayName == "Asgard" || region.DisplayName == "Delta") && workoutDay.Date == lastWorkoutDate.Value.AddDays(2))) // Handle before we had Sundays
-                {
-                    currentStreak++;
-                }
-                else
-                {
-                    // If the dates are not consecutive, reset the streak
-                    currentStreak = 1;
-                    currentStreakStart = workoutDay.Date;
-                }
-
-                longestStreak = Math.Max(longestStreak, currentStreak);
-                if (longestStreak == currentStreak)
-                {
-                    longestStreakStart = currentStreakStart;
-                }
-
-                lastWorkoutDate = workoutDay.Date;
-            }
-
-            return (longestStreak, longestStreakStart);
         }
 
         public static List<WorkoutDay> GetCurrentPossibleWorkoutDays(List<Post> posts)
@@ -434,16 +388,12 @@ namespace F3Wasm.Pages
             disabledPaxQDates = selectedPaxPosts.Where(p => p.IsQ).Select(p => (DateTime?)p.Date).ToList();
             selectedPaxPostedWith = new Dictionary<string, int>();
             selectedPax100Count = selectedPaxPosts.Count / 100;
-            selectedPaxPossibleCount = AllPossibleWorkoutDays.Where(x => x.Date >= selectedPaxPosts.LastOrDefault().Date).Count();
             selectedPaxPostWithView = null;
             selectedPax = allData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
 
             // Get the dates that were posted two and three times
             var dates2 = selectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 2).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
             var dates3 = selectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 3).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
-
-            var paxPostsAsc = selectedPaxPosts.OrderBy(p => p.Date).ToList();
-            (selectedPaxStreak, selectedPaxStreakStart) = CalculateStreak(paxPostsAsc, RegionInfo);
 
             showOtherLocations = false;
 
@@ -500,59 +450,9 @@ namespace F3Wasm.Pages
             showOtherLocations = !showOtherLocations;
         }
 
-        public string GetNamedBy()
-        {
-            var paxFirstPost = selectedPaxPosts.LastOrDefault();
-            if (paxFirstPost == null)
-                return "";
+       
 
-            var namedBy = allData.Posts.Where(p => p.Site == paxFirstPost.Site && p.IsQ && p.Date == paxFirstPost.Date).FirstOrDefault();
-
-            if (namedBy == null)
-                return "";
-
-            return namedBy.Pax;
-        }
-
-        public string GetDaysTo100()
-        {
-            // Get the 100th post for the selected pax
-            var pax100thPost = selectedPaxPosts.OrderBy(x => x.Date).Skip(99).FirstOrDefault();
-            var notYet = false;
-            if (pax100thPost == null)
-            {
-                // No 100 yet, so just count today
-                pax100thPost = new Post() { Date = DateTime.Now };
-                notYet = true;
-            }
-
-            var pax1stPost = selectedPaxPosts.LastOrDefault();
-
-            // Get the number of days since their first post
-            var days = AllPossibleWorkoutDays.Where(x => x.Date >= pax1stPost.Date && x.Date <= pax100thPost.Date).ToList();
-            return days.Count.ToString() + (notYet ? " (so far)" : "");
-        }
-
-        public string GetCalDaysTo100()
-        {
-            // Get the 100th post for the selected pax
-            var pax100thPost = selectedPaxPosts.OrderBy(x => x.Date).Skip(99).FirstOrDefault();
-            var notYet = false;
-            if (pax100thPost == null)
-            {
-                // No 100 yet, so just count today
-                pax100thPost = new Post() { Date = DateTime.Now };
-                notYet = true;
-            }
-
-            var pax1stPost = selectedPaxPosts.LastOrDefault();
-
-            // Get the number of days between their first post and 100th post
-            var days = (pax100thPost.Date - pax1stPost.Date).Days;
-
-            // Get the number of days since their first post
-            return days.ToString() + (notYet ? " (so far)" : "");
-        }
+       
 
         public static Dictionary<string, int> GetAllTimePaxPostWith(string index, List<Post> selectedPaxPosts, AllData allData, int selectedPax100Count)
         {

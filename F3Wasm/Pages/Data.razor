@@ -1,4 +1,5 @@
 @page "/data/{region}"
+@using F3Wasm.Components
 @using F3Wasm.Models
 @using F3Wasm.Data
 @using F3Core
@@ -213,63 +214,15 @@ else
                     {
                         <Row VerticalGutter="16">
                             <Column>
-                                <Table Narrow Striped>
-                                 <TableBody>
-                                     <TableRow>
-                                         <TableRowHeader>Posts</TableRowHeader>
-                                         <TableRowCell>@selectedPaxPosts.Count</TableRowCell>
-                                     </TableRow>
-                                     <TableRow>
-                                         <TableRowHeader>Qs</TableRowHeader>
-                                         <TableRowCell>@selectedPaxPosts.Count(x => x.IsQ == true)</TableRowCell>
-                                     </TableRow>
-                                     <TableRow>
-                                         <TableRowHeader>First Post</TableRowHeader>
-                                         <TableRowCell>@selectedPaxPosts.Min(x => x.Date).ToShortDateString()</TableRowCell>
-                                     </TableRow>
-                                     <TableRow>
-                                         <TableRowHeader>Named By</TableRowHeader>
-                                         <TableRowCell>@GetNamedBy()</TableRowCell>
-                                     </TableRow>
-                                     <TableRow>
-                                         <TableRowHeader>VQ</TableRowHeader>
-                                         <TableRowCell>@selectedPaxPosts.LastOrDefault(x => x.IsQ)?.Date.ToShortDateString()
-                                         </TableRowCell>
-                                     </TableRow>
-                                     <TableRow>
-                                         <TableRowHeader>F3 Days to 100</TableRowHeader>
-                                         <TableRowCell>@GetDaysTo100()
-                                         </TableRowCell>
-                                     </TableRow>
-                                     <TableRow>
-                                         <TableRowHeader>Calendar Days to 100</TableRowHeader>
-                                         <TableRowCell>@GetCalDaysTo100()
-                                         </TableRowCell>
-                                     </TableRow>
-                                     <TableRow>
-                                         <TableRowHeader>Last Post</TableRowHeader>
-                                         <TableRowCell>@selectedPaxPosts.Max(x => x.Date).ToShortDateString()</TableRowCell>
-                                     </TableRow>
-                                     <TableRow>
-                                         <TableRowHeader>Post Percent</TableRowHeader>
-                                         <TableRowCell>@(((double)selectedPaxPosts.Count / (double)selectedPaxPossibleCount * 100).ToString("0.00"))%</TableRowCell>
-                                    </TableRow>
-                                    <TableRow>
-                                         <TableRowHeader>Q Percent</TableRowHeader>
-                                         <TableRowCell>@(((double)@selectedPaxPosts.Count(x => x.IsQ == true) / (double)selectedPaxPosts.Count * 100).ToString("0.00"))%</TableRowCell>
-                                    </TableRow>
-                                    <TableRow>
-                                        <TableRowHeader>Best Daily Streak</TableRowHeader>
-                                        <TableRowCell>@(selectedPaxStreak)</TableRowCell>
-                                    </TableRow>
-                                    <TableRow>
-                                        <TableRowHeader>Streak Start</TableRowHeader>
-                                        <TableRowCell>@(selectedPaxStreakStart.ToShortDateString())</TableRowCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
+                                <PaxSummaryTable 
+                                    RegionInfo="@RegionInfo"
+                                    SelectedPaxPosts="@selectedPaxPosts"
+                                    AllPosts="@allData.Posts"
+                                    AllPossibleWorkoutDays="@allPossibleWorkoutDays"
+                                >
+                                </PaxSummaryTable>
 
-                                    <DatePicker TValue="DateTime?" Inline SelectionMode="DateInputSelectionMode.Multiple"
+                                <DatePicker TValue="DateTime?" Inline SelectionMode="DateInputSelectionMode.Multiple"
                                      Dates="@selectedPaxDates" DatesChanged="@OnDatesChanged" DisabledDates="@disabledPaxQDates" />
                                      
                                     <div style="text-align:center; margin-top:6px;">

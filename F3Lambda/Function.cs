@@ -18,6 +18,7 @@ using F3Core;
 using F3Core.Regions;
 using F3Lambda.Data;
 using System.Globalization;
+using System.Diagnostics.CodeAnalysis;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
