@@ -23,57 +23,61 @@
     }
 </style>
 
-<div class="one-row" style="padding-bottom:12px">
-    <Button Color="Color.Primary" Clicked="OnMissingAoButtonClicked">Check for Missing Data</Button>
-    <Button Color="Color.Primary" Clicked="ClearCache" style="margin-left:12px;">Clear Cache</Button>
-    @if (isMissingDataLoading)
-    {
-        <SpinKit Type="SpinKitType.Bounce" />
-    }
-</div>
-
-@if (missingAos.Count > 0)
+@if (aoList == null)
 {
-    <ListGroup style="padding-bottom:12px">
-        @foreach (var missing in missingAos)
+    <p>Loading...</p>
+}
+else
+{
+    <div class="one-row" style="padding-bottom:12px">
+        <Button Color="Color.Primary" Clicked="OnMissingAoButtonClicked">Check for Missing Data</Button>
+        <Button Color="Color.Primary" Clicked="ClearCache" style="margin-left:12px;">Clear Cache</Button>
+        @if (isMissingDataLoading)
         {
-            <ListGroupItem class="custom-link" Clicked="@(x => OnMissingAoSelected(missing))">@missing.Name -
-                @missing.DayOfWeek.ToString() @missing.Date.ToShortDateString()</ListGroupItem>
+            <SpinKit Type="SpinKitType.Bounce" />
         }
-    </ListGroup>
-}
-
-
-@if (showNoMissingAoMessage)
-{
-    <Alert Color="Color.Success" ShowIcon Visible>
-    All up to date!
-    <CloseButton />
-</Alert>
-}
-
-<DatePicker TValue="DateTime?" Placeholder="Q Date" Date="@qDate" DateChanged="@OnDateChanged" DisplayFormat="M/d/yyy" />
-<RadioGroup TValue="string" Name="ao" CheckedValue="@ao" CheckedValueChanged="@OnAoChanged" Buttons Orientation="Orientation.Vertical" style="margin-top:12px;">
-    @foreach (var ao in aoList)
-    {
-        <div style="@ShowOrHideAo(ao)" class="radio-group-item">
-            <Radio Value="@(ao.Name)" style="appearance:none">@ao.Name (@ao.City)</Radio>
-        </div>
-    }
-    <div style="margin-bottom:6px;" class="radio-group-item">
-        <Radio Value="@AoOtherValue" style="appearance:none">Other</Radio>
     </div>
-</RadioGroup>
 
-@if (ao == AoOtherValue)
-{
-    <TextEdit @bind-Text="@otherAoName" style="margin-bottom:12px" Placeholder="Other Location Name (Feb Moon Ruck, etc.)"></TextEdit>
+    @if (missingAos.Count > 0)
+    {
+        <ListGroup style="padding-bottom:12px">
+            @foreach (var missing in missingAos)
+            {
+                <ListGroupItem class="custom-link" Clicked="@(x => OnMissingAoSelected(missing))">@missing.Name -
+                    @missing.DayOfWeek.ToString() @missing.Date.ToShortDateString()</ListGroupItem>
+            }
+        </ListGroup>
+    }
+
+    @if (showNoMissingAoMessage)
+    {
+        <Alert Color="Color.Success" ShowIcon Visible>
+            All up to date!
+            <CloseButton />
+        </Alert>
+    }
+
+    <DatePicker TValue="DateTime?" Placeholder="Q Date" Date="@qDate" DateChanged="@OnDateChanged" DisplayFormat="M/d/yyy" />
+    <RadioGroup TValue="string" Name="ao" CheckedValue="@ao" CheckedValueChanged="@OnAoChanged" Buttons Orientation="Orientation.Vertical" style="margin-top:12px;">
+        @foreach (var ao in aoList)
+        {
+            <div style="@ShowOrHideAo(ao)" class="radio-group-item">
+                <Radio Value="@(ao.Name)" style="appearance:none">@ao.Name (@ao.City)</Radio>
+            </div>
+        }
+        <div style="margin-bottom:6px;" class="radio-group-item">
+            <Radio Value="@AoOtherValue" style="appearance:none">Other</Radio>
+        </div>
+    </RadioGroup>
+
+    @if (ao == AoOtherValue)
+    {
+        <TextEdit @bind-Text="@otherAoName" style="margin-bottom:12px" Placeholder="Other Location Name (Feb Moon Ruck, etc.)"></TextEdit>
+    }
+
+    <MemoEdit Rows="5" Placeholder="Paste the Pax Comment from Band" @bind-Text="@comment" style="margin-bottom:12px"></MemoEdit>
+    <Button Color="Color.Primary" Clicked="@OnCommentButtonClicked">Submit</Button>
 }
-
-<MemoEdit Rows="5" Placeholder="Paste the Pax Comment from Band" @bind-Text="@comment" style="margin-bottom:12px">
-</MemoEdit>
-<Button Color="Color.Primary" Clicked="@OnCommentButtonClicked">Submit</Button>
-
 @if (pax.Count > 0)
 {
     <Table Narrow>
@@ -130,9 +134,9 @@
                         else
                         {
                             <Autocomplete TItem="String" TValue="string" Data="@allNames" TextField="@(( item ) => item)"
-                    ValueField="@(( item ) => item)" @bind-SelectedValue="@p.Name" @bind-SelectedText="@p.UnknownName" 
-                    Placeholder="Search..." Filter="AutocompleteFilter.StartsWith" FreeTyping
-                    CustomFilter="@(( item, searchValue ) => item.IndexOf( searchValue, 0, StringComparison.CurrentCultureIgnoreCase ) >= 0 )">
+                                ValueField="@(( item ) => item)" @bind-SelectedValue="@p.Name" @bind-SelectedText="@p.UnknownName" 
+                                Placeholder="Search..." Filter="AutocompleteFilter.StartsWith" FreeTyping
+                                CustomFilter="@(( item, searchValue ) => item.IndexOf( searchValue, 0, StringComparison.CurrentCultureIgnoreCase ) >= 0 )">
                             <NotFoundContent> Sorry... @context was not found! :( </NotFoundContent>
                             </Autocomplete>
                         }
