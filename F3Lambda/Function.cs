@@ -111,6 +111,14 @@ public class Function
                 return "Cache Cleared";
             }
 
+            // GetLocations
+            if (functionInput.Action == "GetLocations")
+            {
+                var sheetsService = GetSheetsService();
+                var locations = await GetLocationsAsync(sheetsService);
+                return locations;
+            }
+
             return "Error, unknown action";
         }
         catch (System.Exception ex)
@@ -337,6 +345,25 @@ public class Function
         paxMembers = paxMembers.Where(x => !x.Contains("(Archived)")).ToList();
 
         return paxMembers;
+    }
+
+    private async Task<List<Ao>> GetLocationsAsync(SheetsService sheetsService)
+    {
+        var result = await sheetsService.Spreadsheets.Values.Get(region.GetSpreadsheetId(isTesting), $"{region.AosSheetName}!A2:O").ExecuteAsync();
+        var aos = result.Values
+            .Where(x => Enum.TryParse(x[region.AoColumnIndicies.DayOfWeek].ToString(), out DayOfWeek _) &&
+                       (x.Count < region.AoColumnIndicies.Retired || x[region.AoColumnIndicies.Retired].ToString() == region.AosRetiredIndicator)) // Ensure it's not retired
+            .Select(x => 
+            {
+                return new Ao
+                {
+                    Name = x[region.AoColumnIndicies.Name].ToString(),
+                    City = x[region.AoColumnIndicies.City].ToString(),
+                    DayOfWeek = (DayOfWeek) Enum.Parse(typeof(DayOfWeek), x[region.AoColumnIndicies.DayOfWeek].ToString())
+                };
+            }).ToList();
+    
+        return aos;
     }
 
     private async Task AddPaxToSheetAsync(SheetsService sheetsService, List<Pax> pax, DateTime qDate, string ao)

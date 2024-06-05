@@ -5,6 +5,14 @@ namespace F3Core.Regions
         PaxName, JoinDate, Empty, Formula, NamingRegionName, NamingRegionYN
     }
 
+    public class AoColumnIndicies
+    {
+        public short Name { get; set; }
+        public short City { get; set; }
+        public short DayOfWeek { get; set; }
+        public short Retired { get; set; }
+    }
+
     public class MasterDataColumnIndicies
     {
         public short Date { get; set; }
@@ -35,6 +43,10 @@ namespace F3Core.Regions
         public abstract string RosterSheetName { get; }
         public abstract string RosterNameColumn { get; }
         public abstract List<RosterSheetColumn> RosterSheetColumns { get; }
+
+        public abstract string AosSheetName { get; }
+        public abstract AoColumnIndicies AoColumnIndicies { get; }
+        public abstract string AosRetiredIndicator { get; }
 
 
         // Function to return real or testing spreadsheet id depending on isTesting bool

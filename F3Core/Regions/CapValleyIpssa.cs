@@ -42,5 +42,11 @@
         {
             RosterSheetColumn.Formula, RosterSheetColumn.PaxName, RosterSheetColumn.JoinDate, RosterSheetColumn.Empty, RosterSheetColumn.NamingRegionName
         };
+
+
+        public override string AosSheetName => throw new NotImplementedException();
+
+        public override AoColumnIndicies AoColumnIndicies => throw new NotImplementedException();
+        public override string AosRetiredIndicator => throw new NotImplementedException();
     }
 }

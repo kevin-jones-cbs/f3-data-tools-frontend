@@ -55,5 +55,18 @@ namespace F3Core.Regions
         {
             RosterSheetColumn.Formula, RosterSheetColumn.PaxName, RosterSheetColumn.JoinDate, RosterSheetColumn.Empty, RosterSheetColumn.NamingRegionName
         };
+
+
+        public override string AosSheetName => "Sites";
+
+        public override AoColumnIndicies AoColumnIndicies => new AoColumnIndicies
+        {
+            Name = 1,
+            City = 3,
+            DayOfWeek = 2,
+            Retired = 14
+        };
+
+        public override string AosRetiredIndicator => string.Empty;
     }
 }

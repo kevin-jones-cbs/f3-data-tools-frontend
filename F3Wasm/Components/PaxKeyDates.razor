@@ -19,7 +19,7 @@
     }
 
     [Parameter]
-    public List<Post> PaxPosts { get; set; } = new();
+    public List<Post> SelectedPaxPosts { get; set; } = new();
 
     private ApexChartOptions<KeyDateDisplay> options = new();
 
@@ -43,7 +43,7 @@
         };
 
         // Chart Series
-        var posts = PaxPosts.OrderBy(x => x.Date).ToList();
+        var posts = SelectedPaxPosts.OrderBy(x => x.Date).ToList();
         var qs = posts.Where(x => x.IsQ).ToList();
 
         KeyPostDates.Add(new KeyDateDisplay { Date = posts.FirstOrDefault().Date, PostCount = 1 });

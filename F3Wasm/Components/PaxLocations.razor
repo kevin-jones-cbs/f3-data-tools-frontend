@@ -1,0 +1,73 @@
+﻿@using F3Core
+@using F3Core.Regions
+@using F3Wasm.Data
+@using F3Wasm.Models
+<Table Narrow Bordered>
+    <TableHeader>
+        <TableRow>
+            <TableHeaderCell>Location</TableHeaderCell>
+            <TableHeaderCell>Post Count</TableHeaderCell>
+        </TableRow>
+    </TableHeader>
+    <TableBody>
+        @foreach (var location in RegionInfo.AoList)
+        {
+            <TableRow>
+                <TableRowCell>
+                    <span class="dot"
+                          style="@GetPaxLocationColor(location)"></span>@location.Name
+                </TableRowCell>
+                <TableRowCell>
+                    @SelectedPaxPosts.Count(x => x.Site == location.Name)
+                </TableRowCell>
+            </TableRow>
+        }
+        <TableRow>
+            <TableRowCell Clicked="@OnShowOtherLocationsClicked" class="link">
+                <span class="dot"
+                      style="background-color:white">
+                  </span>
+                  Other
+            </TableRowCell>
+            <TableRowCell>
+                @SelectedPaxPosts.Count(x => !RegionInfo.AoList.Select(x => x.Name).Contains(x.Site))
+            </TableRowCell>
+        </TableRow>
+
+        @if (showOtherLocations)
+        {
+            @foreach (var group in SelectedPaxPosts.Where(x => !RegionInfo.AoList.Select(x =>
+           x.Name).Contains(x.Site)).GroupBy(x => x.Site).OrderByDescending(x => x.Count()))
+            {
+                <TableRow style="background-color:#eae9e9">
+                    <TableRowCell>
+                        <span class="dot" style="background-color:white"></span> @group.Key
+                    </TableRowCell>
+                    <TableRowCell>@group.Count()</TableRowCell>
+                </TableRow>
+            }
+        }
+    </TableBody>
+</Table>
+
+@code {
+    [Parameter]
+    public Region RegionInfo { get; set; }
+    [Parameter]
+    public List<Post> SelectedPaxPosts { get; set; } = new();
+
+    public bool showOtherLocations { get; set; } = false;
+
+    private async Task OnShowOtherLocationsClicked()
+    {
+        showOtherLocations = !showOtherLocations;
+    }
+
+    private string GetPaxLocationColor(Ao location)
+    {
+        string hex = ColorHelpers.GetAoHex(location);
+
+        return $"background-color: {hex};";
+    }
+}
+

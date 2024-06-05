@@ -29,7 +29,6 @@ namespace F3Wasm.Pages
         public int selectedPax100Count { get; set; }
         public string selectedPaxPostWithView { get; set; } = null;
         public Dictionary<string, int> selectedPaxPostedWith { get; set; }
-        public bool showOtherLocations { get; set; } = false;
 
         Dropdown yearDropdown;
         Dropdown monthDropdown;
@@ -368,18 +367,10 @@ namespace F3Wasm.Pages
             selectedPaxPostWithView = null;
             selectedPax = allData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
 
-
-            showOtherLocations = false;
-
             await ShowModal();
         }
 
-        private string GetPaxLocationColor(Ao location)
-        {
-            string hex = ColorHelpers.GetAoHex(location);
 
-            return $"background-color: {hex};";
-        }
 
         public string FullMoonRuckName = "Full Moon Ruck";
         public Ao FullMoonRuckAo = new Ao() { Name = "Full Moon Ruck" };
@@ -413,10 +404,7 @@ namespace F3Wasm.Pages
             selectedPaxPostWithView = index;
         }
 
-        private async Task OnShowOtherLocationsClicked()
-        {
-            showOtherLocations = !showOtherLocations;
-        }
+
 
        
 
