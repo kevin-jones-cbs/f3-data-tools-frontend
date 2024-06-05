@@ -25,6 +25,7 @@ namespace F3Wasm.Pages
         [Parameter]
         public string Region { get; set; }
         public Region RegionInfo { get; set; }
+        public List<Ao> aoList { get; set; }
 
         private string comment = string.Empty;
         private List<string> allNames = new List<string>();
@@ -48,6 +49,8 @@ namespace F3Wasm.Pages
             {
                 throw new Exception("Invalid Region");
             }
+
+            aoList = await LambdaHelper.GetAllLocationsAsync(Http, Region);
         }
 
         private string ShowOrHideAo(Ao ao)

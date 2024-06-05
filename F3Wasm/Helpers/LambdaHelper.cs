@@ -46,13 +46,18 @@ namespace F3Wasm.Data
             return DecompressAll(response);
         }
 
-        // ClearCache
+        public static async Task<List<Ao>> GetAllLocationsAsync(HttpClient client, string region)
+        {
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetLocations", Region = region });
+            var locations = JsonSerializer.Deserialize<List<Ao>>(response);
+            return locations;
+        }
+
         public static async Task ClearCacheAsync(HttpClient client, string region)
         {
             await CallF3LambdaAsync(client, new FunctionInput { Action = "ClearCache", Region = region });
         }
 
-        // Decompress All
         public static AllData DecompressAll(string compressedString)
         {
             var decompressed = Decompress(compressedString);

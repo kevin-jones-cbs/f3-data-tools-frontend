@@ -92,7 +92,7 @@ namespace F3Wasm.Pages
             await Task.Delay(1);
 
             // Get all of the allData.Posts where the site exists in RegionInfo.AoList
-            var validSites = RegionInfo.AoList.Select(x => x.Name).ToList();
+            var validSites = allData.Aos.Select(x => x.Name).ToList();
             var allPosts = allData.Posts.Where(x => validSites.Contains(x.Site)).ToList();
 
             if (overallView == OverallView.Year)
@@ -120,7 +120,7 @@ namespace F3Wasm.Pages
             aoCounts = new List<AoDisplay>();
             foreach (var aoGroup in aoGroups)
             {
-                var ao = RegionInfo.AoList.FirstOrDefault(x => x.Name == aoGroup.Key);
+                var ao = allData.Aos.FirstOrDefault(x => x.Name == aoGroup.Key);
                 if (ao != null)
                 {
                     aoCounts.Add(new AoDisplay { Ao = ao, Count = aoGroup.Count(), HexColor = ColorHelpers.GetAoHex(ao) });

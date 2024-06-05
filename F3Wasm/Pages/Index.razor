@@ -54,7 +54,7 @@
 
 <DatePicker TValue="DateTime?" Placeholder="Q Date" Date="@qDate" DateChanged="@OnDateChanged" DisplayFormat="M/d/yyy" />
 <RadioGroup TValue="string" Name="ao" CheckedValue="@ao" CheckedValueChanged="@OnAoChanged" Buttons Orientation="Orientation.Vertical" style="margin-top:12px;">
-    @foreach (var ao in RegionInfo.AoList)
+    @foreach (var ao in aoList)
     {
         <div style="@ShowOrHideAo(ao)" class="radio-group-item">
             <Radio Value="@(ao.Name)" style="appearance:none">@ao.Name (@ao.City)</Radio>

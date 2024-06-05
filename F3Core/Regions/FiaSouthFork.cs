@@ -5,7 +5,7 @@ namespace F3Core.Regions
         public override string QueryStringValue => "fiasouthfork";
         public override string DisplayName => "FiA South Fork";
 
-        public override List<Ao> AoList => new List<Ao>
+        public List<Ao> AoList => new List<Ao>
         {
             new Ao { Name = "The Climb", City = "Cameron Park", DayOfWeek = DayOfWeek.Monday },
             new Ao { Name = "The Bank", City = "Placerville", DayOfWeek = DayOfWeek.Monday },
@@ -17,9 +17,9 @@ namespace F3Core.Regions
             new Ao { Name = "The Grid", City = "Shingle Springs", DayOfWeek = DayOfWeek.Saturday }
         };
 
-        public override string TestingSpreadsheetId => "1wlc9khMeTuTxd9KS5WP-AGUVWUE8PIkOsvpXfiC7h34";
+        
 
-        public override string RealSpreadsheetId => "1GwwtHY1AW-h5c-PSQ1uX-YIvU1HFSZ-ksS7TstQR-yc";
+        public override string SpreadsheetId => "1GwwtHY1AW-h5c-PSQ1uX-YIvU1HFSZ-ksS7TstQR-yc";
 
         public override int MasterDataSheetId => 511807761;
         public override string MasterDataSheetName => "Master Data";

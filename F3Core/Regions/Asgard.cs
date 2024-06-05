@@ -6,7 +6,7 @@ namespace F3Core.Regions
 
         public override string DisplayName => "Asgard";
 
-        public override List<Ao> AoList => new List<Ao>
+        public List<Ao> AoList => new List<Ao>
         {
             new Ao { Name = "The Boneyard", City = "Sacramento", DayOfWeek = DayOfWeek.Monday },
             new Ao { Name = "Pow Wow - M", City = "Orangevale", DayOfWeek = DayOfWeek.Monday },
@@ -22,9 +22,8 @@ namespace F3Core.Regions
             new Ao { Name = "The Yard - S", City = "Folsom", DayOfWeek = DayOfWeek.Saturday }
         };
 
-        public override string TestingSpreadsheetId => "1lyFtAFDJExSb9pIqh-hJ4AsOHxwR1i84UrjHVNf4bgc";
 
-        public override string RealSpreadsheetId => "1lMvACqxqatH-lyJg2DrAhePFAgzPX-uErNvhaG9j0d4";
+        public override string SpreadsheetId => "1lMvACqxqatH-lyJg2DrAhePFAgzPX-uErNvhaG9j0d4";
 
         public override int MasterDataSheetId => 729344821;
         public override string MasterDataSheetName => "Master Data";

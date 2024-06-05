@@ -28,11 +28,8 @@ namespace F3Core.Regions
         public abstract string QueryStringValue { get; }
         public abstract string DisplayName { get; }
         
-        public abstract List<Ao> AoList { get; }
-
         // Sheets
-        public abstract string TestingSpreadsheetId { get; }
-        public abstract string RealSpreadsheetId { get; }
+        public abstract string SpreadsheetId { get; }
 
         public abstract int MasterDataSheetId { get; }
         public abstract string MasterDataSheetName { get; }
@@ -47,18 +44,5 @@ namespace F3Core.Regions
         public abstract string AosSheetName { get; }
         public abstract AoColumnIndicies AoColumnIndicies { get; }
         public abstract string AosRetiredIndicator { get; }
-
-
-        // Function to return real or testing spreadsheet id depending on isTesting bool
-        public string GetSpreadsheetId(bool isTesting)
-        {
-            return isTesting ? TestingSpreadsheetId : RealSpreadsheetId;
-        }
-
-        // Function for getting CacheKey, accepting an isTesting bool
-        public string GetCacheKey(bool isTesting)
-        {
-            return $"{DisplayName}-{isTesting}";
-        }
     }
 }

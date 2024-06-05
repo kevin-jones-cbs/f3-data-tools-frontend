@@ -1,4 +1,4 @@
-namespace F3Wasm.Models
+namespace F3Core
 {
     public class Post
     {

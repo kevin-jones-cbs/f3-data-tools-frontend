@@ -5,7 +5,7 @@ namespace F3Core.Regions
         public override string QueryStringValue => "rubicon";
         public override string DisplayName => "Rubicon";
 
-        public override List<Ao> AoList => new List<Ao>
+        public List<Ao> AoList => new List<Ao>
         {
             new Ao { Name = "Redwall", City = "Auburn", DayOfWeek = DayOfWeek.Monday },
             new Ao { Name = "Descent", City = "Auburn", DayOfWeek = DayOfWeek.Monday },
@@ -31,9 +31,9 @@ namespace F3Core.Regions
             new Ao { Name = "Canyonz", City = "Auburn", DayOfWeek = DayOfWeek.Saturday },
         };
 
-        public override string TestingSpreadsheetId => "1wlc9khMeTuTxd9KS5WP-AGUVWUE8PIkOsvpXfiC7h34";
+        
 
-        public override string RealSpreadsheetId => "13iHs_ljdejKaV4UTmCO4v2yAuFxMFvytIvdvXUs7R2c";
+        public override string SpreadsheetId => "13iHs_ljdejKaV4UTmCO4v2yAuFxMFvytIvdvXUs7R2c";
 
         public override int MasterDataSheetId => 729344821;
         public override string MasterDataSheetName => "Master Data";

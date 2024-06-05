@@ -6,7 +6,7 @@ namespace F3Core.Regions
 
         public override string DisplayName => "Delta";
 
-        public override List<Ao> AoList => new List<Ao>
+        public List<Ao> AoList => new List<Ao>
         {
             new Ao { Name = "Shasta", City = "Elk Grove", DayOfWeek = DayOfWeek.Monday },
             new Ao { Name = "Statehouse", City = "Sacramento", DayOfWeek = DayOfWeek.Monday },
@@ -29,9 +29,9 @@ namespace F3Core.Regions
             new Ao { Name = "EGP", City = "Elk Grove", DayOfWeek = DayOfWeek.Saturday }
         };
 
-        public override string TestingSpreadsheetId => "1lyFtAFDJExSb9pIqh-hJ4AsOHxwR1i84UrjHVNf4bgc";
+        
 
-        public override string RealSpreadsheetId => "1hKQvESiXvfIHmisEY_PZn2RJ-aW_yCGsO7GSULAbZ-Y";
+        public override string SpreadsheetId => "1hKQvESiXvfIHmisEY_PZn2RJ-aW_yCGsO7GSULAbZ-Y";
 
         public override int MasterDataSheetId => 729344821;
         public override string MasterDataSheetName => "Master Data";

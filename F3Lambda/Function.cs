@@ -10,10 +10,6 @@ using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
-using Momento.Sdk;
-using Momento.Sdk.Auth;
-using Momento.Sdk.Config;
-using Momento.Sdk.Responses;
 using F3Core;
 using F3Core.Regions;
 using F3Lambda.Data;
@@ -27,12 +23,7 @@ namespace F3Lambda;
 
 public class Function
 {
-    // Cache
-    private ICredentialProvider authProvider = new EnvMomentoTokenProvider("F3_MOMENTO_TOKEN");
-    private TimeSpan DEFAULT_TTL = TimeSpan.FromHours(24);
-    const string cacheName = "F3Data";
     private Region region;
-    private bool isTesting;
 
     public async Task<object> FunctionHandler(APIGatewayHttpApiV2ProxyRequest request, ILambdaContext context)
     {
@@ -49,17 +40,17 @@ public class Function
 
             // Get the region
             region = RegionList.GetRegion(functionInput.Region);
-            isTesting = functionInput.IsTesting;
 
             if (region == null)
             {
                 return "Error, no region specified";
             }
 
+            var sheetsService = GetSheetsService();
+
             // Get recent posts
             if (functionInput.Action == "GetMissingAos")
             {
-                var sheetsService = GetSheetsService();
                 var recentPosts = await GetMissingAosAsync(sheetsService);
                 return recentPosts;
             }
@@ -67,7 +58,6 @@ public class Function
             // Get The Pax
             if (functionInput.Action == "GetPax")
             {
-                var sheetsService = GetSheetsService();
                 var paxNames = await GetPaxNamesAsync(sheetsService);
                 return paxNames;
             }
@@ -75,7 +65,6 @@ public class Function
             // Add Pax
             if (functionInput.Action == "AddPax")
             {
-                var sheetsService = GetSheetsService();
                 await AddPaxToSheetAsync(sheetsService, functionInput.Pax, functionInput.QDate, functionInput.AoName);
                 return "Pax Added";
             }
@@ -83,7 +72,6 @@ public class Function
             // Get all posts
             if (functionInput.Action == "GetAllPosts")
             {
-                var sheetsService = GetSheetsService();
                 var allPosts = await GetAllDataAsync(sheetsService);
                 return allPosts;
             }
@@ -91,7 +79,6 @@ public class Function
             // GetPaxFromComment
             if (functionInput.Action == "GetPaxFromComment")
             {
-                var sheetsService = GetSheetsService();
                 var pax = await GetPaxFromCommentAsync(sheetsService, functionInput.Comment);
                 return pax;
             }
@@ -99,7 +86,6 @@ public class Function
             // CheckClose100s
             if (functionInput.Action == "CheckClose100s")
             {
-                var sheetsService = GetSheetsService();
                 await CheckClose100sAsync(sheetsService);
                 return "Done";
             }
@@ -107,14 +93,13 @@ public class Function
             // ClearCache
             if (functionInput.Action == "ClearCache")
             {
-                await ClearAllDataCache();
+                await CacheHelper.ClearAllCachedDataAsync(region);
                 return "Cache Cleared";
             }
 
             // GetLocations
             if (functionInput.Action == "GetLocations")
             {
-                var sheetsService = GetSheetsService();
                 var locations = await GetLocationsAsync(sheetsService);
                 return locations;
             }
@@ -152,39 +137,32 @@ public class Function
         var notify100s = close100s;
 
         // If there are any, check the cache to see if we've already notified
-        using (SimpleCacheClient client = new SimpleCacheClient(Configurations.Laptop.Latest(), authProvider, DEFAULT_TTL))
+        var last100s = await CacheHelper.GetCachedDataAsync<List<Close100>>(region, CacheKeyType.Close100s);
+
+        if (last100s != null)
         {
-            var close100Key = $"Close100s-{region.DisplayName}";
-            CacheGetResponse getResponse = await client.GetAsync(cacheName, close100Key);
-            if (getResponse is CacheGetResponse.Hit hitResponse)
-            {
-                var last100s = JsonSerializer.Deserialize<List<Close100>>(hitResponse.ValueString);
-                notify100s = close100s.Where(x => !last100s.Any(y => y.Name == x.Name)).ToList();
-            }
-
-            // If there are any, notify
-            if (notify100s.Any())
-            {
-                var message = $"Close 100s:{Environment.NewLine}";
-                foreach (var pax in notify100s)
-                {
-                    message += $"{pax.Name} - {pax.PostCount}{Environment.NewLine}";
-                }
-
-                // Send an email
-                EmailPeacock.Send("Close 100s", message);
-            }
-
-            // Wait 10 seconds to save to cache to ensure it's picked up 24 hours later.
-            await Task.Delay(10000);
-
-            // Save to cache
-            var setResponse = await client.SetAsync(cacheName, close100Key, JsonSerializer.Serialize(close100s));
-            if (setResponse is CacheSetResponse.Error setError)
-            {
-                Console.WriteLine($"Error setting cache value: {setError.Message}.");
-            }
+            notify100s = close100s.Where(x => !last100s.Any(y => y.Name == x.Name)).ToList();
         }
+
+        // If there are any, notify
+        if (notify100s.Any())
+        {
+            var message = $"Close 100s:{Environment.NewLine}";
+            foreach (var pax in notify100s)
+            {
+                message += $"{pax.Name} - {pax.PostCount}{Environment.NewLine}";
+            }
+
+            // Send an email
+            EmailPeacock.Send("Close 100s", message);
+        }
+
+        // Wait 10 seconds to save to cache to ensure it's picked up 24 hours later.
+        await Task.Delay(10000);
+
+        // Save to cache
+        var serialized = JsonSerializer.Serialize(close100s);
+        await CacheHelper.SetCachedDataAsync(region, CacheKeyType.Close100s, serialized);
     }
 
     private async Task<List<Pax>> GetPaxFromCommentAsync(SheetsService sheetsService, string comment)
@@ -197,76 +175,69 @@ public class Function
 
     private async Task<string> GetAllDataAsync(SheetsService sheetsService, bool compress = true)
     {
-        using (SimpleCacheClient client = new SimpleCacheClient(Configurations.Laptop.Latest(), authProvider, DEFAULT_TTL))
+        var cacheKeyType = CacheKeyType.AllData;
+        var cachedData = await CacheHelper.GetCachedDataAsync<string>(region, cacheKeyType);
+
+        if (cachedData != null && compress)
         {
-            CacheGetResponse getResponse = await client.GetAsync(cacheName, region.GetCacheKey(isTesting));
-            if (getResponse is CacheGetResponse.Hit hitResponse && compress)
-            {
-                Console.WriteLine("Cache Hit");
-                return hitResponse.ValueString;
-            }
-
-            if (getResponse is CacheGetResponse.Error errorResponse)
-            {
-                Console.WriteLine($"Error getting cache value: {errorResponse.Message}.");
-            }
-
-            var valueRange = await sheetsService.Spreadsheets.Values.Get(region.GetSpreadsheetId(isTesting), $"{region.MasterDataSheetName}!A2:O").ExecuteAsync();
-            var posts = valueRange.Values.Select(x => new Post
-            {
-                Date = DateTime.Parse(x[region.MasterDataColumnIndicies.Date].ToString()),
-                Site = x.Count > region.MasterDataColumnIndicies.Location ? x[region.MasterDataColumnIndicies.Location].ToString() : string.Empty,
-                Pax = x.Count > region.MasterDataColumnIndicies.PaxName ? x[region.MasterDataColumnIndicies.PaxName].ToString() : string.Empty,
-                IsQ = x.Count > region.MasterDataColumnIndicies.Q ? x[region.MasterDataColumnIndicies.Q].ToString() == "1" : false,
-            }).ToList();
-
-            // Get the roster
-            var result = await sheetsService.Spreadsheets.Values.Get(region.GetSpreadsheetId(isTesting), $"{region.RosterSheetName}!A4:F").ExecuteAsync();
-
-            var paxNameIndex = region.RosterSheetColumns.IndexOf(RosterSheetColumn.PaxName);
-            var joinDateIndex = region.RosterSheetColumns.IndexOf(RosterSheetColumn.JoinDate);
-            var namingRegionNameIndex = region.RosterSheetColumns.IndexOf(RosterSheetColumn.NamingRegionName) == -1 ? region.RosterSheetColumns.IndexOf(RosterSheetColumn.NamingRegionYN) : region.RosterSheetColumns.IndexOf(RosterSheetColumn.NamingRegionName);
-
-            var pax = result.Values.Select(x => new Pax
-            {
-                Name = x[paxNameIndex].ToString(),
-                DateJoined = x[joinDateIndex].ToString().Contains("/") ? DateTime.Parse(x[joinDateIndex].ToString()).ToShortDateString() : string.Empty,
-                NamingRegion = namingRegionNameIndex == -1 ? string.Empty : x[namingRegionNameIndex].ToString()
-            }).ToList();
-
-            var rtn = new AllData
-            {
-                Posts = posts,
-                Pax = pax
-            };
-
-            // Exclude any "archived" pax
-            rtn.Pax = rtn.Pax.Where(x => !x.Name.Contains("(Archived)")).ToList();
-            rtn.Posts = rtn.Posts.Where(x => !x.Pax.Contains("(Archived)")).ToList();
-
-            // Json serialize the object as small in size as possible
-            var options = new JsonSerializerOptions
-            {
-                IgnoreNullValues = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                WriteIndented = false
-            };
-
-            var json = JsonSerializer.Serialize(rtn, options);
-
-            // Compress the json
-            var compressedJson = Compress(json);
-
-            // Save to cache
-            var setResponse = await client.SetAsync(cacheName, region.GetCacheKey(isTesting), compressedJson);
-            if (setResponse is CacheSetResponse.Error setError)
-            {
-                Console.WriteLine($"Error setting cache value: {setError.Message}.");
-            }
-
-            // Deserialize the json
-            return compress ? compressedJson : json;
+            return cachedData;
         }
+
+        var valueRange = await sheetsService.Spreadsheets.Values.Get(region.SpreadsheetId, $"{region.MasterDataSheetName}!A2:O").ExecuteAsync();
+        var posts = valueRange.Values.Select(x => new Post
+        {
+            Date = DateTime.Parse(x[region.MasterDataColumnIndicies.Date].ToString()),
+            Site = x.Count > region.MasterDataColumnIndicies.Location ? x[region.MasterDataColumnIndicies.Location].ToString() : string.Empty,
+            Pax = x.Count > region.MasterDataColumnIndicies.PaxName ? x[region.MasterDataColumnIndicies.PaxName].ToString() : string.Empty,
+            IsQ = x.Count > region.MasterDataColumnIndicies.Q ? x[region.MasterDataColumnIndicies.Q].ToString() == "1" : false,
+        }).ToList();
+
+        // Get the roster
+        var result = await sheetsService.Spreadsheets.Values.Get(region.SpreadsheetId, $"{region.RosterSheetName}!A4:F").ExecuteAsync();
+
+        var paxNameIndex = region.RosterSheetColumns.IndexOf(RosterSheetColumn.PaxName);
+        var joinDateIndex = region.RosterSheetColumns.IndexOf(RosterSheetColumn.JoinDate);
+        var namingRegionNameIndex = region.RosterSheetColumns.IndexOf(RosterSheetColumn.NamingRegionName) == -1 ? region.RosterSheetColumns.IndexOf(RosterSheetColumn.NamingRegionYN) : region.RosterSheetColumns.IndexOf(RosterSheetColumn.NamingRegionName);
+
+        var pax = result.Values.Select(x => new Pax
+        {
+            Name = x[paxNameIndex].ToString(),
+            DateJoined = x[joinDateIndex].ToString().Contains("/") ? DateTime.Parse(x[joinDateIndex].ToString()).ToShortDateString() : string.Empty,
+            NamingRegion = namingRegionNameIndex == -1 ? string.Empty : x[namingRegionNameIndex].ToString()
+        }).ToList();
+
+        var rtn = new AllData
+        {
+            Posts = posts,
+            Pax = pax
+        };
+
+        var aos = await GetLocationsAsync(sheetsService);
+        rtn.Aos = aos;
+
+        // Exclude any "archived" pax
+        rtn.Pax = rtn.Pax.Where(x => !x.Name.Contains("(Archived)")).ToList();
+        rtn.Posts = rtn.Posts.Where(x => !x.Pax.Contains("(Archived)")).ToList();
+
+        // Json serialize the object as small in size as possible
+        var options = new JsonSerializerOptions
+        {
+            IgnoreNullValues = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = false
+        };
+
+        var json = JsonSerializer.Serialize(rtn, options);
+
+        // Compress the json
+        var compressedJson = Compress(json);
+
+        // Save to cache
+        await CacheHelper.SetCachedDataAsync(region, cacheKeyType, compressedJson);
+
+        // Deserialize the json
+        return compress ? compressedJson : json;
+
 
         // Inline Functions
         static string Compress(string plainText)
@@ -293,11 +264,12 @@ public class Function
         try
         {
             var rtn = new List<Ao>();
-            var valueRange = await sheetsService.Spreadsheets.Values.Get(region.GetSpreadsheetId(isTesting), $"{region.MasterDataSheetName}!A{region.MissingDataRowOffset}:K").ExecuteAsync();
+            var valueRange = await sheetsService.Spreadsheets.Values.Get(region.SpreadsheetId, $"{region.MasterDataSheetName}!A{region.MissingDataRowOffset}:K").ExecuteAsync();
 
             var dateIndex = region.MasterDataColumnIndicies.Date;
             var aoIndex = region.MasterDataColumnIndicies.Location;
             var qDates = valueRange.Values.Select(x => new { Dates = DateTime.Parse(x[dateIndex].ToString()), AoName = x[aoIndex].ToString() }).ToList();
+            var aoList = await GetLocationsAsync(sheetsService);
 
             // Foreach loop for the last 7 days
             for (int i = 7; i >= 0; i--)
@@ -306,7 +278,7 @@ public class Function
                 var dayOfWeek = date.DayOfWeek;
 
                 // Get the AOs for the day of the week
-                var aos = region.AoList.Where(x => x.DayOfWeek == dayOfWeek).ToList();
+                var aos = aoList.Where(x => x.DayOfWeek == dayOfWeek).ToList();
                 foreach (var ao in aos)
                 {
                     // Check if there is a post for the date and AO
@@ -338,7 +310,7 @@ public class Function
 
     private async Task<List<string>> GetPaxNamesAsync(SheetsService sheetsService)
     {
-        var result = await sheetsService.Spreadsheets.Values.Get(region.GetSpreadsheetId(isTesting), $"{region.RosterSheetName}!{region.RosterNameColumn}:{region.RosterNameColumn}").ExecuteAsync();
+        var result = await sheetsService.Spreadsheets.Values.Get(region.SpreadsheetId, $"{region.RosterSheetName}!{region.RosterNameColumn}:{region.RosterNameColumn}").ExecuteAsync();
         var paxMembers = result.Values.Select(x => x.FirstOrDefault().ToString()).Distinct().ToList();
 
         // Exclude any "archived" pax
@@ -349,20 +321,32 @@ public class Function
 
     private async Task<List<Ao>> GetLocationsAsync(SheetsService sheetsService)
     {
-        var result = await sheetsService.Spreadsheets.Values.Get(region.GetSpreadsheetId(isTesting), $"{region.AosSheetName}!A2:O").ExecuteAsync();
+        var cacheKeyType = CacheKeyType.Locations;
+        var cachedData = await CacheHelper.GetCachedDataAsync<List<Ao>>(region, cacheKeyType);
+
+        if (cachedData != null)
+        {
+            return cachedData;
+        }
+
+        var result = await sheetsService.Spreadsheets.Values.Get(region.SpreadsheetId, $"{region.AosSheetName}!A2:O").ExecuteAsync();
         var aos = result.Values
             .Where(x => Enum.TryParse(x[region.AoColumnIndicies.DayOfWeek].ToString(), out DayOfWeek _) &&
                        (x.Count < region.AoColumnIndicies.Retired || x[region.AoColumnIndicies.Retired].ToString() == region.AosRetiredIndicator)) // Ensure it's not retired
-            .Select(x => 
+            .Select(x =>
             {
                 return new Ao
                 {
                     Name = x[region.AoColumnIndicies.Name].ToString(),
                     City = x[region.AoColumnIndicies.City].ToString(),
-                    DayOfWeek = (DayOfWeek) Enum.Parse(typeof(DayOfWeek), x[region.AoColumnIndicies.DayOfWeek].ToString())
+                    DayOfWeek = (DayOfWeek)Enum.Parse(typeof(DayOfWeek), x[region.AoColumnIndicies.DayOfWeek].ToString())
                 };
             }).ToList();
-    
+
+        // Save to Cache
+        var serialized = JsonSerializer.Serialize(aos);
+        await CacheHelper.SetCachedDataAsync(region, cacheKeyType, serialized);
+
         return aos;
     }
 
@@ -374,7 +358,7 @@ public class Function
         };
 
         // Get the sheet to find out the row count
-        var masterDataCount = await GetSheetRowCountAsync(sheetsService, region.GetSpreadsheetId(isTesting), $"{region.MasterDataSheetName}!A:A");
+        var masterDataCount = await GetSheetRowCountAsync(sheetsService, region.SpreadsheetId, $"{region.MasterDataSheetName}!A:A");
 
         // Date
         var dateUpdate = GetDefaultUpdateCellsRequest();
@@ -478,7 +462,7 @@ public class Function
         if (pax.Any(x => x.IsFng))
         {
             // Get the number of roster rows
-            var rosterCount = await GetSheetRowCountAsync(sheetsService, region.GetSpreadsheetId(isTesting), $"{region.RosterSheetName}!A:A");
+            var rosterCount = await GetSheetRowCountAsync(sheetsService, region.SpreadsheetId, $"{region.RosterSheetName}!A:A");
 
             var updateFngCellsRequest = new UpdateCellsRequest
             {
@@ -540,12 +524,12 @@ public class Function
             });
         }
 
-        var batchUpdateResponse = await sheetsService.Spreadsheets.BatchUpdate(batchUpdateRequest, region.GetSpreadsheetId(isTesting)).ExecuteAsync();
+        var batchUpdateResponse = await sheetsService.Spreadsheets.BatchUpdate(batchUpdateRequest, region.SpreadsheetId).ExecuteAsync();
 
         try
         {
             // Purge the cache
-            await ClearAllDataCache();
+            await CacheHelper.ClearAllCachedDataAsync(region);
         }
         catch (Exception ex)
         {
@@ -567,14 +551,6 @@ public class Function
             };
 
             return updateCellsRequest;
-        }
-    }
-
-    private async Task ClearAllDataCache()
-    {
-        using (SimpleCacheClient client = new SimpleCacheClient(Configurations.Laptop.Latest(), authProvider, DEFAULT_TTL))
-        {
-            await client.DeleteAsync(cacheName, region.GetCacheKey(isTesting));
         }
     }
 

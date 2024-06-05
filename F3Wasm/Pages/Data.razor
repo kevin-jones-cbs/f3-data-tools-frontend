@@ -197,7 +197,7 @@ else
                         <Column>
                             <h4>AOs Posted This Month</h4>
                             <div class="aoChallengeContainer">
-                                @foreach (var location in RegionInfo.AoList)
+                                @foreach (var location in allData.Aos)
                                 {
                                     <Button class="aoChallengeButton"
                                         style="@GetAoChallengeButtonColor(location)">@location.Name</Button>
@@ -231,6 +231,7 @@ else
                                  <PaxLocations 
                                      RegionInfo="@RegionInfo" 
                                      SelectedPaxPosts="@selectedPaxPosts"
+                                     AoList="@allData.Aos"
                                  >
                                  </PaxLocations>
                             </Column>
