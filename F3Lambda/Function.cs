@@ -25,7 +25,7 @@ public class Function
 {
     private Region region;
 
-    public async Task<APIGatewayProxyResponse> FunctionHandler(APIGatewayHttpApiV2ProxyRequest request, ILambdaContext context)
+    public async Task<object> FunctionHandler(APIGatewayHttpApiV2ProxyRequest request, ILambdaContext context)
     {
         try
         {
@@ -121,7 +121,7 @@ public class Function
                 }
             };
 
-            return response;
+            return result;
 
         }
         catch (System.Exception ex)
