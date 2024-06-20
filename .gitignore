@@ -480,3 +480,6 @@ $RECYCLE.BIN/
 F3Lambda/python/setup
 F3Wasm/Helpers/exicon.json
 /F3Lambda/Properties/launchSettings.json
+
+# SAM
+.aws-sam

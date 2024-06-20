@@ -25,17 +25,19 @@ public class Function
 {
     private Region region;
 
-    public async Task<object> FunctionHandler(APIGatewayHttpApiV2ProxyRequest request, ILambdaContext context)
+    public async Task<APIGatewayProxyResponse> FunctionHandler(APIGatewayHttpApiV2ProxyRequest request, ILambdaContext context)
     {
         try
         {
             // Deserialize the request body into a FunctionInput object
             var functionInput = System.Text.Json.JsonSerializer.Deserialize<FunctionInput>(request.Body);
+            object result = null;
+            Console.WriteLine("In Function Handler " + functionInput.Action + " " + request.Body);
 
             // For Cold Starts
             if (functionInput.Action == "Awake")
             {
-                return "Awake 2";
+                result = "Awake 2";
             }
 
             // Get the region
@@ -43,7 +45,7 @@ public class Function
 
             if (region == null)
             {
-                return "Error, no region specified";
+                result = "Error, no region specified";
             }
 
             var sheetsService = GetSheetsService();
@@ -52,64 +54,86 @@ public class Function
             if (functionInput.Action == "GetMissingAos")
             {
                 var recentPosts = await GetMissingAosAsync(sheetsService);
-                return recentPosts;
+                result = recentPosts;
             }
 
             // Get The Pax
             if (functionInput.Action == "GetPax")
             {
                 var paxNames = await GetPaxNamesAsync(sheetsService);
-                return paxNames;
+                result = paxNames;
             }
 
             // Add Pax
             if (functionInput.Action == "AddPax")
             {
                 await AddPaxToSheetAsync(sheetsService, functionInput.Pax, functionInput.QDate, functionInput.AoName);
-                return "Pax Added";
+                result = "Pax Added";
             }
 
             // Get all posts
             if (functionInput.Action == "GetAllPosts")
             {
                 var allPosts = await GetAllDataAsync(sheetsService);
-                return allPosts;
+                result = allPosts;
             }
 
             // GetPaxFromComment
             if (functionInput.Action == "GetPaxFromComment")
             {
                 var pax = await GetPaxFromCommentAsync(sheetsService, functionInput.Comment);
-                return pax;
+                result = pax;
             }
 
             // CheckClose100s
             if (functionInput.Action == "CheckClose100s")
             {
                 await CheckClose100sAsync(sheetsService);
-                return "Done";
+                result = "Done";
             }
 
             // ClearCache
             if (functionInput.Action == "ClearCache")
             {
                 await CacheHelper.ClearAllCachedDataAsync(region);
-                return "Cache Cleared";
+                result = "Cache Cleared";
             }
 
             // GetLocations
             if (functionInput.Action == "GetLocations")
             {
                 var locations = await GetLocationsAsync(sheetsService);
-                return locations;
+                result = locations;
             }
 
-            return "Error, unknown action";
+            if (result == null)
+            {
+                result = "Error, unknown action";
+            }
+
+            var response = new APIGatewayProxyResponse
+            {
+                StatusCode = 200,
+                Body = JsonSerializer.Serialize(result),
+                Headers = new Dictionary<string, string>
+                {
+                    { "Content-Type", "text/plain" }
+                }
+            };
+
+            return response;
+
         }
         catch (System.Exception ex)
         {
             Console.WriteLine(ex.Message);
-            return "Error" + ex.Message;
+            Console.WriteLine(ex.InnerException?.Message ?? string.Empty);
+            return new APIGatewayProxyResponse
+            {
+                StatusCode = 500,
+                Body = JsonSerializer.Serialize("Error" + ex.Message),
+                Headers = new Dictionary<string, string> { { "Content-Type", "text/plain" } }
+            };
         }
     }
 

@@ -1,3 +1,9 @@
+# SAM
+The Lambda can also be run using the SAM. Ensure Docker is installed. Then run the following commands to be able to hit the Lambda as an API locally on http://127.0.0.1:3000/.
+
+`sam build`
+`sam local start-api`
+
 # AWS Lambda Empty Function Project 
 
 This starter project consists of:
