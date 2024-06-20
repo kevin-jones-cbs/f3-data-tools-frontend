@@ -6,14 +6,6 @@
 
         public override string DisplayName => "Cap Valley Ipssa";
 
-        public List<Ao> AoList => new List<Ao>
-        {
-            new Ao { Name = "Monthly Meeting", City = "Fair Oaks", DayOfWeek = DayOfWeek.Wednesday },
-            new Ao { Name = "Board Meeting", City = "Elk Grove", DayOfWeek = DayOfWeek.Wednesday },
-        };
-
-        
-
         public override string SpreadsheetId => "1tHgi1AZQt5OnIoWVMOFqxyC5BqEYtSkACvmCP2fNNJU";
 
         public override int MasterDataSheetId => 729344821;
@@ -44,9 +36,16 @@
         };
 
 
-        public override string AosSheetName => throw new NotImplementedException();
+        public override string AosSheetName => "Sites";
 
-        public override AoColumnIndicies AoColumnIndicies => throw new NotImplementedException();
-        public override string AosRetiredIndicator => throw new NotImplementedException();
+        public override AoColumnIndicies AoColumnIndicies => new AoColumnIndicies
+        {
+            Name = 1,
+            City = 3,
+            DayOfWeek = 2,
+            Retired = 13
+        };
+
+        public override string AosRetiredIndicator => string.Empty;
     }
 }

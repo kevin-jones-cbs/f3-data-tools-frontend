@@ -356,7 +356,7 @@ public class Function
         var result = await sheetsService.Spreadsheets.Values.Get(region.SpreadsheetId, $"{region.AosSheetName}!A2:O").ExecuteAsync();
         var aos = result.Values
             .Where(x => Enum.TryParse(x[region.AoColumnIndicies.DayOfWeek].ToString(), out DayOfWeek _) &&
-                       (x.Count < region.AoColumnIndicies.Retired || x[region.AoColumnIndicies.Retired].ToString() == region.AosRetiredIndicator)) // Ensure it's not retired
+                       (x.Count <= region.AoColumnIndicies.Retired || x[region.AoColumnIndicies.Retired].ToString() == region.AosRetiredIndicator)) // Ensure it's not retired
             .Select(x =>
             {
                 return new Ao
