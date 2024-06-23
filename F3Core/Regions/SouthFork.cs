@@ -41,5 +41,7 @@ namespace F3Core.Regions
         };
 
         public override string AosRetiredIndicator => string.Empty;
+
+        public override bool SupportsDownrange => true;
     }
 }

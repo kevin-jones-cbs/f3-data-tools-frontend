@@ -1,0 +1,107 @@
+@page "/downrange/{region}"
+@using F3Core
+@using F3Core.Regions
+@using F3Wasm.Data
+@using F3Wasm.Helpers
+@using Blazorise
+@inject HttpClient Http
+@inject IServiceProvider ServiceProvider
+@inject NavigationManager NavManager
+
+<PageTitle>Add Downrange</PageTitle>
+
+<style>
+    .flatpickr-calendar.inline 
+    {
+        margin: auto;
+    }
+    .intro 
+    {
+        margin-bottom: 12px;
+        font-size: 14px;
+        color: #454444;
+    }
+</style>
+
+@if (paxNames == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <Container>
+        <div class="intro">Posting downrange is not only encouraged, but also counts for @RegionInfo.DisplayName post credit!</div>
+        <div class="intro">After posting a picture in Band, enter your F3 name and the date you posted Downrange below to get post credit for the day.</div>
+        <div class="intro">It is considered posting downrange if @RegionInfo.DisplayName is your home region, and you posted at an official F3 workout in another official region.</div>
+
+        <Autocomplete TItem="String" TValue="string" Data="@paxNames" TextField="@(( item ) => item)"
+            ValueField="@(( item ) => item)" @bind-SelectedValue="@selectedPaxName" @bind-SelectedText="@selectedPaxName" 
+            Placeholder="Search Your F3 Name..." Filter="AutocompleteFilter.StartsWith" FreeTyping
+            CustomFilter="@(( item, searchValue ) => item.IndexOf( searchValue, 0, StringComparison.CurrentCultureIgnoreCase ) >= 0 )">
+        <NotFoundContent> Sorry... @context was not found! :( </NotFoundContent>
+        </Autocomplete>
+
+        <DatePicker Placeholder="Select a Date Below" TValue="DateTime?" @bind-Date="@selectedDate" Min="@minDate" Max="@maxDate" Inline />
+
+        <Button Color="Color.Primary" Clicked="@OnSubmit" @bind-Disabled="@isLoading" Style="margin-top:12px;">Submit</Button>
+        @if (isLoading)
+        {
+            <SpinKit Type="SpinKitType.Bounce" />
+        }
+
+        <Alert Color="Color.Success" @bind-Visible="@showCompleteAlert">
+            <AlertMessage>
+                Done!
+            </AlertMessage>
+            <CloseButton />
+        </Alert>
+    </Container>
+}
+@code {
+    [Parameter]
+    public string Region { get; set; }
+    public Region RegionInfo { get; set; }
+    private string selectedPaxName;
+    private DateTime? selectedDate;
+    // June 10, 2024
+    private DateTimeOffset minDate = new DateTimeOffset(2024, 5, 31, 0, 0, 0, TimeSpan.Zero);
+    private DateTimeOffset maxDate = DateTimeOffset.Now;
+    private List<string> paxNames = new List<string>();
+    private bool isLoading = false;
+    private bool showCompleteAlert = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        RegionInfo = RegionList.All.FirstOrDefault(x => x.QueryStringValue == Region);
+        if (RegionInfo == null)
+        {
+            throw new Exception("Invalid Region");
+        }
+
+        if (!RegionInfo.SupportsDownrange)
+        {
+            // Redirect to the data page if the region doesn't support downrange
+            NavManager.NavigateTo($"/data/{RegionInfo.QueryStringValue}");            
+        }
+
+        paxNames = await LambdaHelper.GetPaxNamesAsync(Http, Region);
+    }
+
+    private async Task OnSubmit()
+    {
+        if (string.IsNullOrEmpty(selectedPaxName) || !selectedDate.HasValue)
+        {
+            return;
+        }
+
+        isLoading = true;
+
+        var pax = new List<Pax> { new Pax { Name = selectedPaxName, IsOfficial = true } };
+        var ao = "Downrange";
+
+        await LambdaHelper.UploadPaxAsync(Http, Region, pax, ao, selectedDate.Value);
+
+        isLoading = false;
+        showCompleteAlert = true;
+    }
+}

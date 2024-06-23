@@ -44,5 +44,7 @@ namespace F3Core.Regions
         public abstract string AosSheetName { get; }
         public abstract AoColumnIndicies AoColumnIndicies { get; }
         public abstract string AosRetiredIndicator { get; }
+
+        public virtual bool SupportsDownrange { get; } = false;
     }
 }
