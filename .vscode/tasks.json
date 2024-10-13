@@ -53,9 +53,9 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/F3Core/F3Core.csproj",
+                "${workspaceFolder}/f3-data-tools-core/F3Core.csproj",
                 "-o",
-                "F3Lambda/Packages/"
+                "f3-data-tools-backend/F3Lambda/Packages/"
             ],
             "problemMatcher": []
         },

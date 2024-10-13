@@ -60,6 +60,13 @@
         justify-content: center;
     }
 
+    .center-content {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+    }
+
     .aoChallengeButton {
         height: 75px;
     }
@@ -236,55 +243,9 @@ else
                                  </PaxLocations>
                             </Column>
                         </Row>
-                        <Row>
-                            <Column ColumnSize="ColumnSize.Is6">
-                                <span>Most PAX Posted With</span>
-                                <ListGroup Mode="ListGroupMode.Selectable" SelectedItem="@selectedPaxPostWithView"
-                                    SelectedItemChanged="@(async (r) => await OnSelectedPaxPostWithViewChange(r))">
-                                    <ListGroupItem Name="AllTime">All Time</ListGroupItem>
-                                    @for (int i = 0; i < selectedPax100Count; i++)
-                                    {
-                                        var local = i;
-                                        <ListGroupItem Name="@i.ToString()">@(local * 100)-@((local + 1) * 100)</ListGroupItem>
-                                    }
-                                    @if (selectedPax100Count > 0)
-                                    {
-                                        <ListGroupItem Name="Recent100">@(selectedPax100Count * 100)-@(selectedPaxPosts.Count)
-                                        </ListGroupItem>
-                                    }
 
-                                    <span style="margin-top:12px">Most Q'd By</span>
-                                    <ListGroupItem Name="QAllTime">All Time</ListGroupItem>
+                        <PaxPostedWith AllPosts="@allData.Posts" RegionInfo="@RegionInfo" SelectedPaxPosts="@selectedPaxPosts"></PaxPostedWith>
 
-                                    <span style="margin-top:12px">Most Q'd</span>
-                                    <ListGroupItem Name="QOthersAllTime">All Time</ListGroupItem>
-                                </ListGroup>
-
-                            </Column>
-                            @if (selectedPaxPostedWith != null && selectedPaxPostedWith.Count > 0)
-                            {
-                                <Column ColumnSize="ColumnSize.Is6">
-
-                                    <Table Narrow Bordered FixedHeader FixedHeaderTableHeight="440px" FixedHeaderTableMaxHeight="440px">
-                                         <TableHeader>
-                                             <TableRow>
-                                                 <TableHeaderCell>Pax (@selectedPaxPostedWith.Count)</TableHeaderCell>
-                                                 <TableHeaderCell>Count (@selectedPaxPostedWith.Sum(x => x.Value)) </TableHeaderCell>
-                                             </TableRow>
-                                         </TableHeader>
-                                         <TableBody>
-                                             @foreach (var paxPoster in selectedPaxPostedWith)
-                                            {
-                                                <TableRow>
-                                                    <TableRowCell>@paxPoster.Key</TableRowCell>
-                                                    <TableRowCell>@paxPoster.Value</TableRowCell>
-                                                </TableRow>
-                                            }
-                                        </TableBody>
-                                    </Table>
-                                </Column>
-                            }
-                        </Row>
                         <Row>
                             <Column id="privacy-note">
                                 If you see any errors, or would like to hide your data, contact Peacock or a Band admin.

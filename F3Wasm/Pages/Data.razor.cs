@@ -26,9 +26,6 @@ namespace F3Wasm.Pages
         public bool showPaxModal { get; set; }
         public Pax selectedPax { get; set; }
         public List<Post> selectedPaxPosts { get; set; }
-        public int selectedPax100Count { get; set; }
-        public string selectedPaxPostWithView { get; set; } = null;
-        public Dictionary<string, int> selectedPaxPostedWith { get; set; }
 
         Dropdown yearDropdown;
         Dropdown monthDropdown;
@@ -362,9 +359,6 @@ namespace F3Wasm.Pages
             }
 
             selectedPaxPosts = allData.Posts.Where(p => p.Pax == row.PaxName).OrderByDescending(x => x.Date).ToList();
-            selectedPaxPostedWith = new Dictionary<string, int>();
-            selectedPax100Count = selectedPaxPosts.Count / 100;
-            selectedPaxPostWithView = null;
             selectedPax = allData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
 
             await ShowModal();
@@ -398,64 +392,8 @@ namespace F3Wasm.Pages
             return $"border: solid 1px {hex}; color:{hex}";
         }
 
-        private async Task OnSelectedPaxPostWithViewChange(string index)
-        {
-            selectedPaxPostedWith = GetAllTimePaxPostWith(index, selectedPaxPosts, allData, selectedPax100Count);
-            selectedPaxPostWithView = index;
-        }
 
 
-
-       
-
-       
-
-        public static Dictionary<string, int> GetAllTimePaxPostWith(string index, List<Post> selectedPaxPosts, AllData allData, int selectedPax100Count)
-        {
-            List<Post> paxPosts = new List<Post>();
-            var newPaxPostedWith = new Dictionary<string, int>();
-
-            // All Time
-            if (index == "AllTime" || index == "QAllTime")
-            {
-                paxPosts = selectedPaxPosts.OrderBy(p => p.Date).ToList();
-            }
-            else if (index == "Recent100")
-            {
-                paxPosts = selectedPaxPosts.OrderBy(p => p.Date).Skip(selectedPax100Count * 100).ToList();
-            }
-            else if (index == "QOthersAllTime")
-            {
-                paxPosts = selectedPaxPosts.Where(x => x.IsQ).OrderBy(p => p.Date).ToList();
-            }
-            else
-            {
-                var intIndex = int.Parse(index);
-                paxPosts = selectedPaxPosts.OrderBy(p => p.Date).Skip(intIndex * 100).Take(intIndex + 1 * 100).ToList();
-            }
-
-            foreach (var paxPost in paxPosts)
-            {
-                var matched = allData.Posts.Where(p => p.Date == paxPost.Date && p.Site == paxPost.Site && p.Pax != paxPost.Pax).ToList();
-                if (index == "QAllTime")
-                {
-                    matched = matched.Where(p => p.IsQ).ToList();
-                }
-
-                foreach (var pax in matched)
-                {
-                    if (newPaxPostedWith.ContainsKey(pax.Pax))
-                    {
-                        newPaxPostedWith[pax.Pax]++;
-                    }
-                    else
-                    {
-                        newPaxPostedWith.Add(pax.Pax, 1);
-                    }
-                }
-            }
-
-            return newPaxPostedWith.OrderByDescending(p => p.Value).ToDictionary(p => p.Key, p => p.Value);
-        }
+        
     }
 }
