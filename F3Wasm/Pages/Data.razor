@@ -81,6 +81,10 @@
         grid-template-columns: repeat(3, 1fr);
         gap: 10px;
     }
+
+    .hyperlink {
+        color: #4A90E2;
+    }
 </style>
 
 @if (allData == null)
@@ -155,7 +159,14 @@ else
             Responsive
         >
          <DataGridColumns>
-                <DataGridColumn Field="@nameof(DisplayRow.PaxName)" Caption="Name" SortField="@nameof(DisplayRow.PaxName)" />
+                <DataGridColumn Field="@nameof(DisplayRow.PaxName)" Caption="Name" SortField="@nameof(DisplayRow.PaxName)">
+                     <DisplayTemplate > 
+                        @{
+                            var hyperlink = ">";
+                        }
+                        <span class="hyperlink">@context.PaxName</span>
+                    </DisplayTemplate> 
+                </DataGridColumn>
 
                 @if (currentView != OverallView.AoChallenge && currentView != OverallView.AoList)
                 {
@@ -183,7 +194,7 @@ else
                 }
                 else if (currentView == OverallView.QSource)
                 {
-                    @* Empty *@
+                    @* Empty except posts/Q above *@
                 }
                 else
                 {
