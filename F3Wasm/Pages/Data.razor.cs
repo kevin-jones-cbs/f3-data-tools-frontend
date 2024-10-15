@@ -19,6 +19,7 @@ namespace F3Wasm.Pages
         public bool IsEmbed { get; set; }
 
         public AllData allData { get; set; }
+        public DateTime? firstNonHistoricalDate { get; set; } // for regions with historical data, this is the first date available for processing
         public OverallView currentView { get; set; }
         private DataGrid<DisplayRow> dataGrid;
         public List<DisplayRow> currentRows { get; set; }
@@ -26,6 +27,7 @@ namespace F3Wasm.Pages
         public bool showPaxModal { get; set; }
         public Pax selectedPax { get; set; }
         public List<Post> selectedPaxPosts { get; set; }
+        public HistoricalData selectedPaxHistoricalData { get; set; }
 
         Dropdown yearDropdown;
         Dropdown monthDropdown;
@@ -47,6 +49,11 @@ namespace F3Wasm.Pages
         {
             RegionInfo = RegionList.All.FirstOrDefault(x => x.QueryStringValue == Region);
             allData = await LambdaHelper.GetAllDataAsync(Http, Region);
+
+            if (RegionInfo.HasHistoricalData)
+            {
+                firstNonHistoricalDate = allData.Posts.Min(x => x.Date);
+            }
 
             validYears = allData.Posts.Select(p => p.Date.Year).Distinct().OrderByDescending(x => x).Where(x => x <= DateTime.Now.Year).ToList();
             // Order the months by month number
@@ -75,7 +82,7 @@ namespace F3Wasm.Pages
             await ShowAllTime();
         }
 
-        public void SetCurrentRows(List<Post> posts, DateTime? firstDay, DateTime lastDay)
+        public void SetCurrentRows(List<Post> posts, DateTime? firstDay, DateTime lastDay, bool combineWithHistorical)
         {
             var currentUniqueWorkoutDayCount = -1;
             if (firstDay != null)
@@ -90,10 +97,27 @@ namespace F3Wasm.Pages
             // Add the pax to the display
             foreach (var pax in paxPosts)
             {
+                var historicalPosts = 0;
+                var historicalQs = 0;
+                var historicalFirstDate = (DateTime?)null;
+
+                if (RegionInfo.HasHistoricalData && combineWithHistorical)
+                {
+                    var matchingHistoricalPost = allData.HistoricalData.FirstOrDefault(x => x.PaxName == pax.Key);
+                    if (matchingHistoricalPost != null)
+                    {
+                        historicalPosts = matchingHistoricalPost.PostCount;
+                        historicalQs = matchingHistoricalPost.QCount;
+                        historicalFirstDate = matchingHistoricalPost.FirstPost;
+                    }
+                }
+
+                var paxPostsWithData = pax.Value.Count;
+
                 var row = new DisplayRow
                 {
                     PaxName = pax.Key,
-                    PostCount = pax.Value.Count,
+                    PostCount = paxPostsWithData + historicalPosts,
                 };
 
                 var paxFirstDate = pax.Value.Min(p => p.Date);
@@ -105,12 +129,12 @@ namespace F3Wasm.Pages
 
                 if (paxFirstDate != DateTime.MinValue)
                 {
-                    row.FirstPost = paxFirstDate;
-                    row.PostPercent = (double)row.PostCount / (double)currentUniqueWorkoutDayCount * 100;
+                    row.FirstPost = historicalFirstDate ?? paxFirstDate;
+                    row.PostPercent = (double)paxPostsWithData / (double)currentUniqueWorkoutDayCount * 100;
                 }
 
                 // Get the Q count
-                row.QCount = pax.Value.Where(p => p.IsQ).Count();
+                row.QCount = pax.Value.Where(p => p.IsQ).Count() + historicalQs;
 
                 (var streak, var streakStart) = StreakHelpers.CalculateStreak(pax.Value, RegionInfo);
                 row.Streak = streak;
@@ -185,7 +209,7 @@ namespace F3Wasm.Pages
             await Task.Delay(1);
             loading = true;
             currentView = OverallView.AllTime;
-            SetCurrentRows(allData.Posts, null, DateTime.Now);
+            SetCurrentRows(allData.Posts, null, DateTime.Now, true);
 
             await RefreshDropdowns();
         }
@@ -199,7 +223,7 @@ namespace F3Wasm.Pages
 
             var firstDay = new DateTime(DateTime.Now.Year - 1, 1, 1);
             var lastDay = new DateTime(DateTime.Now.Year, 1, 1).AddDays(-1);
-            SetCurrentRows(posts, firstDay, lastDay);
+            SetCurrentRows(posts, firstDay, lastDay, false);
             await RefreshDropdowns();
         }
 
@@ -219,7 +243,7 @@ namespace F3Wasm.Pages
 
             var firstDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month - 1, 1);
             var lastDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddDays(-1);
-            SetCurrentRows(posts, firstDay, lastDay);
+            SetCurrentRows(posts, firstDay, lastDay, false);
             await RefreshDropdowns();
         }
 
@@ -243,7 +267,7 @@ namespace F3Wasm.Pages
 
             var firstDay = new DateTime(DateTime.Now.Year, 1, 1);
             var lastDay = DateTime.Now;
-            SetCurrentRows(posts, firstDay, lastDay);
+            SetCurrentRows(posts, firstDay, lastDay, true);
             await RefreshDropdowns();
         }
 
@@ -262,7 +286,7 @@ namespace F3Wasm.Pages
 
             var firstDay = new DateTime(DateTime.Now.Year, 1, 1);
             var lastDay = DateTime.Now;
-            SetCurrentRows(posts, firstDay, lastDay);
+            SetCurrentRows(posts, firstDay, lastDay, true);
             await RefreshDropdowns();
         }
 
@@ -276,7 +300,7 @@ namespace F3Wasm.Pages
 
             var firstDay = new DateTime(DateTime.Now.Year, 11, 1);
             var lastDay = DateTime.Now;
-            SetCurrentRows(posts, firstDay, lastDay);
+            SetCurrentRows(posts, firstDay, lastDay, false);
 
             loading = false;
             await RefreshDropdowns();
@@ -292,7 +316,23 @@ namespace F3Wasm.Pages
 
             var firstDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
             var lastDay = DateTime.Now;
-            SetCurrentRows(posts, firstDay, lastDay);
+            SetCurrentRows(posts, firstDay, lastDay, false);
+
+            loading = false;
+            await RefreshDropdowns();
+        }
+
+        private async Task ShowQSource()
+        {
+            loading = true;
+            await Task.Delay(1);
+            currentView = OverallView.QSource;
+
+            var posts = allData.QSourcePosts;
+
+            var firstDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            var lastDay = DateTime.Now;
+            SetCurrentRows(posts, null, DateTime.Now, false);
 
             loading = false;
             await RefreshDropdowns();
@@ -359,6 +399,7 @@ namespace F3Wasm.Pages
             }
 
             selectedPaxPosts = allData.Posts.Where(p => p.Pax == row.PaxName).OrderByDescending(x => x.Date).ToList();
+            selectedPaxHistoricalData = allData.HistoricalData?.FirstOrDefault(p => p.PaxName == row.PaxName);
             selectedPax = allData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
 
             await ShowModal();

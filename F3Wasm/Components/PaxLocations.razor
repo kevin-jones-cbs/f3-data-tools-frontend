@@ -6,7 +6,7 @@
     <TableHeader>
         <TableRow>
             <TableHeaderCell>Location</TableHeaderCell>
-            <TableHeaderCell>Post Count</TableHeaderCell>
+            <TableHeaderCell>Post Count @(HasHistoricalData ? "*" : "")</TableHeaderCell>
         </TableRow>
     </TableHeader>
     <TableBody>
@@ -55,6 +55,8 @@
     public List<Post> SelectedPaxPosts { get; set; } = new();
     [Parameter]
     public List<Ao> AoList { get; set; } = new();
+    [Parameter]
+    public bool HasHistoricalData { get; set; }
 
     public bool showOtherLocations { get; set; } = false;
 

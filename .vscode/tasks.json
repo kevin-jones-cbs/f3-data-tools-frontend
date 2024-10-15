@@ -41,7 +41,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/F3Core/F3Core.csproj",
+                "${workspaceFolder}\\f3-data-tools-core\\F3Core.csproj",
                 "-o",
                 "F3Wasm/Packages/"
             ],

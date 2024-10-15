@@ -55,6 +55,11 @@
         text-align: center;
     }
 
+    #historical-note {
+        margin-top: 12px;
+        font-style: italic;
+    }
+
     #loader {
         display: flex;
         justify-content: center;
@@ -110,6 +115,11 @@ else
     </Row>
     <Row style="margin-top:6px;">
     <Column>
+        @if (RegionInfo.HasQSourcePosts)
+        {
+            <Button Color="currentView == OverallView.QSource ? Color.Primary : Color.Light" Clicked="ShowQSource">Q Source</Button>
+        }
+
         <Button Color="currentView == OverallView.Kotter ? Color.Primary : Color.Light" Clicked="ShowKotter">Kotter</Button>
         <Button Color="currentView == OverallView.QKotter ? Color.Primary : Color.Light" Clicked="ShowQKotter">Q Kotter</Button>
             
@@ -171,13 +181,17 @@ else
                     <DataGridColumn Field="@nameof(DisplayRow.AoPosts)" Caption="AOs Posted" Filterable="false" />
                     <DataGridColumn Field="@nameof(DisplayRow.AoPercent)" Caption="AO Percent" Filterable="false" DisplayFormat="{0:0}%" />
                 }
+                else if (currentView == OverallView.QSource)
+                {
+                    @* Empty *@
+                }
                 else
                 {
                     @if (RegionInfo.DisplayName != "Cap Valley Ipssa")
                     {
                         <DataGridColumn Field="@nameof(DisplayRow.FirstPost)" Caption="1st Post" Filterable="false" DisplayFormat="{0:M/d/yy}" />
-                        <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="Post %" Filterable="false" DisplayFormat="{0:0}%" />
-                        <DataGridColumn Field="@nameof(DisplayRow.Streak)" Caption="Daily Streak" Filterable="false" />
+                        <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="@(RegionInfo.HasHistoricalData ? "Post % *" : "Post %")" Filterable="false" DisplayFormat="{0:0}%" />                        
+                        <DataGridColumn Field="@nameof(DisplayRow.Streak)" Caption="@(RegionInfo.HasHistoricalData ? "Daily Streak *" : "Daily Streak")" Filterable="false" />
                         <DataGridColumn Field="@nameof(DisplayRow.QRatio)" Caption="Q Ratio" Filterable="true" DisplayFormat="{0:0}%" />
                     }
                     else
@@ -189,6 +203,11 @@ else
             </DataGridColumns>
 
         </DataGrid>
+
+        @if (RegionInfo.HasHistoricalData && firstNonHistoricalDate.HasValue)
+        {
+            <p>* Since @firstNonHistoricalDate.Value.ToString("M/d/yy")</p>
+        }
     }
     <Modal @bind-Visible="@showPaxModal" id="SelectedPaxModal" Closing="@OnModalClosing">
         @if (selectedPax != null)
@@ -226,12 +245,13 @@ else
                                     SelectedPaxPosts="@selectedPaxPosts"
                                     AllPosts="@allData.Posts"
                                     AllPossibleWorkoutDays="@allPossibleWorkoutDays"
+                                    SelectedPaxHistoricalData="@selectedPaxHistoricalData"
                                 >
                                 </PaxSummaryTable>
 
                                 <PaxCalendar SelectedPaxPosts="@selectedPaxPosts"></PaxCalendar>
            
-                                <PaxKeyDates SelectedPaxPosts="@selectedPaxPosts"></PaxKeyDates>
+                                @* <PaxKeyDates SelectedPaxPosts="@selectedPaxPosts"></PaxKeyDates> *@
                              </Column>
 
                              <Column>
@@ -239,12 +259,28 @@ else
                                      RegionInfo="@RegionInfo" 
                                      SelectedPaxPosts="@selectedPaxPosts"
                                      AoList="@allData.Aos"
+                                     HasHistoricalData="selectedPaxHistoricalData != null"
                                  >
                                  </PaxLocations>
                             </Column>
                         </Row>
 
-                        <PaxPostedWith AllPosts="@allData.Posts" RegionInfo="@RegionInfo" SelectedPaxPosts="@selectedPaxPosts"></PaxPostedWith>
+                        <PaxPostedWith 
+                            AllPosts="@allData.Posts" 
+                            RegionInfo="@RegionInfo" 
+                            SelectedPaxPosts="@selectedPaxPosts"
+                            SelectedPaxHistoricalData="@selectedPaxHistoricalData"
+                        >
+                        </PaxPostedWith>
+
+                        @if (selectedPaxHistoricalData != null)
+                        {
+                            <Row>
+                                <Column id="historical-note">
+                                    * Since @firstNonHistoricalDate.Value.ToString("M/d/yy")
+                                </Column>
+                            </Row>
+                        }
 
                         <Row>
                             <Column id="privacy-note">

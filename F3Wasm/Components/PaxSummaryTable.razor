@@ -4,52 +4,63 @@
 @using F3Wasm.Models
 
 <Table Narrow Striped>
-     <TableBody>
-         <TableRow>
-             <TableRowHeader>Posts</TableRowHeader>
-             <TableRowCell>@SelectedPaxPosts.Count</TableRowCell>
-         </TableRow>
-         <TableRow>
-             <TableRowHeader>Qs</TableRowHeader>
-             <TableRowCell>@SelectedPaxPosts.Count(x => x.IsQ == true)</TableRowCell>
-         </TableRow>
-         <TableRow>
-             <TableRowHeader>First Post</TableRowHeader>
-             <TableRowCell>@SelectedPaxPosts.Min(x => x.Date).ToShortDateString()</TableRowCell>
-         </TableRow>
-         <TableRow>
-             <TableRowHeader>Named By</TableRowHeader>
-             <TableRowCell>@GetNamedBy()</TableRowCell>
-         </TableRow>
-         <TableRow>
-             <TableRowHeader>VQ</TableRowHeader>
-             <TableRowCell>@SelectedPaxPosts.LastOrDefault(x => x.IsQ)?.Date.ToShortDateString()
-             </TableRowCell>
-         </TableRow>
-         <TableRow>
-             <TableRowHeader>F3 Days to 100</TableRowHeader>
-             <TableRowCell>@GetDaysTo100()
-             </TableRowCell>
-         </TableRow>
-         <TableRow>
-             <TableRowHeader>Calendar Days to 100</TableRowHeader>
-             <TableRowCell>@GetCalDaysTo100()
-             </TableRowCell>
-         </TableRow>
-         <TableRow>
-             <TableRowHeader>Last Post</TableRowHeader>
-             <TableRowCell>@SelectedPaxPosts.Max(x => x.Date).ToShortDateString()</TableRowCell>
-         </TableRow>
-         <TableRow>
-             <TableRowHeader>Post Percent</TableRowHeader>
+    <TableBody>
+        <TableRow>
+            <TableRowHeader>Posts</TableRowHeader>
+            <TableRowCell>@(SelectedPaxPosts.Count + (SelectedPaxHistoricalData?.PostCount ?? 0))</TableRowCell>
+        </TableRow>
+        <TableRow>
+            <TableRowHeader>Qs</TableRowHeader>
+            <TableRowCell>@(SelectedPaxPosts.Count(x => x.IsQ == true) + (@SelectedPaxHistoricalData?.QCount ?? 0))</TableRowCell>
+        </TableRow>
+        <TableRow>
+            <TableRowHeader>First Post</TableRowHeader>
+            <TableRowCell>
+                @(
+                    SelectedPaxHistoricalData?.FirstPost?.ToShortDateString()
+                    ?? SelectedPaxPosts.Min(x => x.Date).ToShortDateString()
+                )
+            </TableRowCell>
+        </TableRow>
+        @if (SelectedPaxHistoricalData == null)
+        {
+            <TableRow>
+                <TableRowHeader>Named By</TableRowHeader>
+                <TableRowCell>@GetNamedBy()</TableRowCell>
+            </TableRow>
+            <TableRow>
+                <TableRowHeader>VQ</TableRowHeader>
+                <TableRowCell>
+                    @SelectedPaxPosts.LastOrDefault(x => x.IsQ)?.Date.ToShortDateString()
+                </TableRowCell>
+            </TableRow>
+            <TableRow>
+                <TableRowHeader>F3 Days to 100</TableRowHeader>
+                <TableRowCell>
+                    @GetDaysTo100()
+                </TableRowCell>
+            </TableRow>
+            <TableRow>
+                <TableRowHeader>Calendar Days to 100</TableRowHeader>
+                <TableRowCell>
+                    @GetCalDaysTo100()
+                </TableRowCell>
+            </TableRow>
+        }
+        <TableRow>
+            <TableRowHeader>Last Post</TableRowHeader>
+            <TableRowCell>@SelectedPaxPosts.Max(x => x.Date).ToShortDateString()</TableRowCell>
+        </TableRow>
+        <TableRow>
+            <TableRowHeader>Post Percent @(SelectedPaxHistoricalData != null ? "*": "" )</TableRowHeader>
             <TableRowCell>@(((double)SelectedPaxPosts.Count / GetSelectedPaxPossibleCount() * 100).ToString("0.00"))%</TableRowCell>
         </TableRow>
         <TableRow>
-             <TableRowHeader>Q Percent</TableRowHeader>
-             <TableRowCell>@(((double)SelectedPaxPosts.Count(x => x.IsQ == true) / (double)SelectedPaxPosts.Count * 100).ToString("0.00"))%</TableRowCell>
+            <TableRowHeader>Q Percent</TableRowHeader>
+            <TableRowCell>@(((double)SelectedPaxPosts.Count(x => x.IsQ == true) / (double)SelectedPaxPosts.Count * 100).ToString("0.00"))%</TableRowCell>
         </TableRow>
         <TableRow>
-            <TableRowHeader>Best Daily Streak</TableRowHeader>
+            <TableRowHeader>Best Daily Streak @(SelectedPaxHistoricalData != null ? "*": "" )</TableRowHeader>
             <TableRowCell>@(selectedPaxStreak)</TableRowCell>
         </TableRow>
         <TableRow>
@@ -68,6 +79,8 @@
     public List<Post> AllPosts { get; set; } = new();
     [Parameter]
     public List<WorkoutDay> AllPossibleWorkoutDays { get; set; } = new();
+    [Parameter]
+    public HistoricalData SelectedPaxHistoricalData { get; set; }
 
     private int selectedPaxStreak;
     private DateTime selectedPaxStreakStart;

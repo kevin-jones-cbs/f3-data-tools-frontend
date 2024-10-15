@@ -7,26 +7,41 @@
     <Column ColumnSize="ColumnSize.Is6">
         <span>Most PAX Posted With</span>
         <ListGroup Mode="ListGroupMode.Selectable" SelectedItem="@selectedPaxPostWithView">
-            <ListGroupItem Name="AllTime" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange("AllTime"))">All Time</ListGroupItem>
-            @for (int i = 0; i < selectedPax100Count; i++)
-            {
-                var local = i;
-                <ListGroupItem Name="@local.ToString()" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange(local.ToString()))">@(local * 100)-@((local + 1) * 100)</ListGroupItem>
-            }
-            @if (selectedPax100Count > 0)
-            {
-                <ListGroupItem Name="Recent100" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange("Recent100"))">
-                    @(selectedPax100Count * 100)-@(SelectedPaxPosts.Count)
-                </ListGroupItem>
+            <ListGroupItem Name="AllTime" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange("AllTime"))">@allTimeWording</ListGroupItem>
+            @{
+                int currentStart = historicalPostCount;
+                int lastEnd = historicalPostCount;
+
+                for (int i = 0; currentStart < totalPostCount; i++)
+                {
+                    var local = i;
+                    var start = currentStart;
+                    var end = ((start / 100) + 1) * 100;
+                    end = Math.Min(end, totalPostCount);
+
+                    <ListGroupItem Name="@local.ToString()" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange(local.ToString()))">@start-@end</ListGroupItem>
+
+                    lastEnd = end;
+                    currentStart = end;
+                }
+
+                var recentStart = Math.Max(totalPostCount - 100, historicalPostCount);
+
+                // Only add "Recent100" if it doesn't overlap with the last range
+                if (recentStart > lastEnd)
+                {
+                    <ListGroupItem Name="Recent100" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange("Recent100"))">
+                        @recentStart-@totalPostCount
+                    </ListGroupItem>
+                }
             }
 
             <span style="margin-top:12px">Most Q'd By</span>
-            <ListGroupItem Name="QAllTime" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange("QAllTime"))">All Time</ListGroupItem>
+            <ListGroupItem Name="QAllTime" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange("QAllTime"))">@allTimeWording</ListGroupItem>
 
             <span style="margin-top:12px">Most Q'd</span>
-            <ListGroupItem Name="QOthersAllTime" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange("QOthersAllTime"))">All Time</ListGroupItem>
+            <ListGroupItem Name="QOthersAllTime" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange("QOthersAllTime"))">@allTimeWording</ListGroupItem>
         </ListGroup>
-
     </Column>
     @if (selectedPaxPostedWith != null && selectedPaxPostedWith.Count > 0 && !selectedPaxPostWithLoading)
     {
@@ -69,6 +84,8 @@
     public Region RegionInfo { get; set; }
     [Parameter]
     public List<Post> SelectedPaxPosts { get; set; } = new();
+    [Parameter]
+    public HistoricalData SelectedPaxHistoricalData { get; set; }
 
     public Dictionary<string, int> selectedPaxPostedWith { get; set; }
     public string selectedPaxPostWithView { get; set; } = null;
@@ -76,12 +93,20 @@
     public int selectedPaxPostWithLimit { get; set; } = 15;
     public int selectedPaxPostWithTotalCount { get; set; }
     public int selectedPax100Count { get; set; }
+    public DateTime? firstNonHistoricalDate { get; set; }
+    public string allTimeWording;
+    public int totalPostCount; // New property for total post count
+    public int historicalPostCount;
 
     protected override void OnInitialized()
     {
         selectedPaxPostedWith = new Dictionary<string, int>();
-        selectedPax100Count = SelectedPaxPosts.Count / 100;
+        historicalPostCount = SelectedPaxHistoricalData == null ? 0 : SelectedPaxHistoricalData.PostCount;
+        totalPostCount = historicalPostCount + SelectedPaxPosts.Count;
+        selectedPax100Count = (totalPostCount - historicalPostCount + 99) / 100;
         selectedPaxPostWithView = null;
+        firstNonHistoricalDate = AllPosts.Min(x => x.Date);
+        allTimeWording = SelectedPaxHistoricalData == null ? "All Time" : $"Since {firstNonHistoricalDate.Value.ToString("M/d/yy")}";
     }
 
     private async Task OnSelectedPaxPostWithViewChange(string index)
@@ -114,7 +139,7 @@
         else
         {
             var intIndex = int.Parse(index);
-            paxPosts = selectedPaxPosts.OrderBy(p => p.Date).Skip(intIndex * 100).Take(intIndex + 1 * 100).ToList();
+            paxPosts = selectedPaxPosts.OrderBy(p => p.Date).Skip(intIndex * 100).Take(100).ToList();
         }
 
         foreach (var paxPost in paxPosts)
