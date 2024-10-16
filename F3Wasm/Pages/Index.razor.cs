@@ -41,6 +41,7 @@ namespace F3Wasm.Pages
         public bool showCompleteAlert { get; set; }
         public bool isLoading { get; set; }
         public bool isMissingDataLoading { get; set; }
+        public bool isQSource { get; set; }
 
         protected override async Task OnInitializedAsync()
         {
@@ -168,7 +169,7 @@ namespace F3Wasm.Pages
             try
             {
                 isLoading = true;
-                await LambdaHelper.UploadPaxAsync(Http, Region, pax, ao == AoOtherValue ? otherAoName : ao, qDate.Value);
+                await LambdaHelper.UploadPaxAsync(Http, Region, pax, ao == AoOtherValue ? otherAoName : ao, qDate.Value, isQSource);
                 showCompleteAlert = true;
 
                 // Remove from missing list if it's there if ao and date match

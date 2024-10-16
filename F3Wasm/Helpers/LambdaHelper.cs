@@ -33,9 +33,9 @@ namespace F3Wasm.Data
         }
 
         // Upload Pax 
-        public static async Task UploadPaxAsync(HttpClient client, string region, List<Pax> pax, string ao, DateTime qDate)
+        public static async Task UploadPaxAsync(HttpClient client, string region, List<Pax> pax, string ao, DateTime qDate, bool isQSource)
         {
-            var input = new FunctionInput { Action = "AddPax", AoName = ao, QDate = qDate, Pax = pax, Region = region };
+            var input = new FunctionInput { Action = "AddPax", AoName = ao, QDate = qDate, Pax = pax, Region = region, IsQSource = isQSource };
             var json = JsonSerializer.Serialize(input);
             var response = await CallF3LambdaAsync(client, input);
         }

@@ -100,7 +100,7 @@ else
         var pax = new List<Pax> { new Pax { Name = selectedPaxName, IsOfficial = true } };
         var ao = "Downrange";
 
-        await LambdaHelper.UploadPaxAsync(Http, Region, pax, ao, selectedDate.Value);
+        await LambdaHelper.UploadPaxAsync(Http, Region, pax, ao, selectedDate.Value, isQSource: false);
 
         isLoading = false;
         showCompleteAlert = true;

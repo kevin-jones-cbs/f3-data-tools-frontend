@@ -75,6 +75,11 @@ else
         <TextEdit @bind-Text="@otherAoName" style="margin-bottom:12px" Placeholder="Other Location Name (Feb Moon Ruck, etc.)"></TextEdit>
     }
 
+    @if (RegionInfo.HasQSourcePosts)
+    {
+        <Check TValue="bool" @bind-Checked="@isQSource" style="margin-bottom:12px;color:#575859;font-weight:500">Q Source</Check>
+    }
+
     <MemoEdit Rows="5" Placeholder="Paste the Pax Comment from Band" @bind-Text="@comment" style="margin-bottom:12px"></MemoEdit>
     <Button Color="Color.Primary" Clicked="@OnCommentButtonClicked">Submit</Button>
 }
