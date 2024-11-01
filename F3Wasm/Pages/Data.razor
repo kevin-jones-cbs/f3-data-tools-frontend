@@ -129,6 +129,11 @@ else
             
         <Button Color="currentView == OverallView.AoList ? Color.Primary : Color.Light" Clicked="ShowAoList">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture) AOs</Button>
 
+        @if (RegionInfo.DisplayName == "South Fork")
+        {
+            <Button Color="Color.Success" Outline="currentView != OverallView.AoChallenge" Clicked="ShowAoChallenge">November AO Challenge</Button>
+        }
+
         @if (lastUpdatedDate != DateTime.MinValue)
         {
             <Button>Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
