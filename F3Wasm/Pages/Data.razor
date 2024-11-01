@@ -241,7 +241,7 @@ else
                         <Column>
                             <h4>AOs Posted This Month</h4>
                             <div class="aoChallengeContainer">
-                                @foreach (var location in allData.Aos)
+                                @foreach (var location in allData.Aos.OrderBy(x => x.DayOfWeek).ToList())
                                 {
                                     <Button class="aoChallengeButton"
                                         style="@GetAoChallengeButtonColor(location)">@location.Name</Button>
