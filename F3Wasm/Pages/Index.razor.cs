@@ -40,6 +40,7 @@ namespace F3Wasm.Pages
         public bool showNoMissingAoMessage { get; set; }
         public bool showCompleteAlert { get; set; }
         public bool isLoading { get; set; }
+        public bool commentIsLoading { get; set; }
         public bool isMissingDataLoading { get; set; }
         public bool isQSource { get; set; }
 
@@ -106,12 +107,14 @@ namespace F3Wasm.Pages
 
         private async Task OnCommentButtonClicked()
         {
+            commentIsLoading = true;
             allNames = await LambdaHelper.GetPaxNamesAsync(Http, Region);
             allNames = allNames.OrderBy(x => x).ToList();
             pax = await LambdaHelper.GetPaxFromCommentAsync(Http, Region, comment);
 
             // No need to show that we finished again, we're doing another ao
             showCompleteAlert = false;
+            commentIsLoading = false;
         }
 
         private async Task OnAddRowClicked()

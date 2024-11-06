@@ -81,7 +81,15 @@ else
     }
 
     <MemoEdit Rows="5" Placeholder="Paste the Pax Comment from Band" @bind-Text="@comment" style="margin-bottom:12px"></MemoEdit>
-    <Button Color="Color.Primary" Clicked="@OnCommentButtonClicked">Submit</Button>
+
+    <div class="one-row" >
+        <Button Color="Color.Primary" Clicked="@OnCommentButtonClicked">Submit</Button>
+        @if (commentIsLoading)
+        {
+            <SpinKit Type="SpinKitType.Bounce" />
+        }
+    </div>
+
 }
 @if (pax.Count > 0)
 {
