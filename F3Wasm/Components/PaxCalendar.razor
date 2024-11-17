@@ -27,16 +27,25 @@
         selectedPaxDates = SelectedPaxPosts.Select(p => (DateTime?)p.Date).ToList();
         disabledPaxQDates = SelectedPaxPosts.Where(p => p.IsQ).Select(p => (DateTime?)p.Date).ToList();
 
-        // Get the dates that were posted two and three times
-        var dates2 = SelectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 2).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
-        var dates3 = SelectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 3).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
+        // No q's
+        var dates2 = SelectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 2 && g.Any(p => !p.IsQ)).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
+        var dates3 = SelectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 3 && g.Any(p => !p.IsQ)).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
 
-        await SetupDuplicateDates(dates2, dates3);
+        // 2 Posts, 1 or 2 Q's
+        var dates2Q1 = SelectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 2 && g.Count(p => p.IsQ) == 1).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
+        var dates2Q2 = SelectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 2 && g.Count(p => p.IsQ) == 2).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
+        
+        // 3 Posts, 1, 2 or 3 Q's
+        var dates3Q1 = SelectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 3 && g.Count(p => p.IsQ) == 1).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
+        var dates3Q2 = SelectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 3 && g.Count(p => p.IsQ) == 2).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
+        var dates3Q3 = SelectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 3 && g.Count(p => p.IsQ) == 3).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
+
+        await SetupDuplicateDates(dates2, dates3, dates2Q1, dates2Q2, dates3Q1, dates3Q2, dates3Q3);
     }
 
-    private async Task SetupDuplicateDates(string[] dates2, string[] dates3)
+    private async Task SetupDuplicateDates(string[] dates2, string[] dates3, string[] dates2Q1, string[] dates2Q2, string[] dates3Q1, string[] dates3Q2, string[] dates3Q3)
     {
         // Use JSInterop to setup the duplicate date calendar colors
-        await JSRuntime.InvokeVoidAsync("setupDuplicateDates", dates2, dates3);
+        await JSRuntime.InvokeVoidAsync("setupDuplicateDates", dates2, dates3, dates2Q1, dates2Q2, dates3Q1, dates3Q2, dates3Q3);
     }
 }
