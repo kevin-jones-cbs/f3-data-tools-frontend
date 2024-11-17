@@ -30,7 +30,7 @@ function applyStylesBasedOnAriaLabel() {
 
         //dates2Q1 should be blue and green
         if (allDates2Q1.indexOf(ariaLabel) > -1) {
-            element.style.background = 'linear-gradient(to right, #007bff 50%, #28a745 50%)';
+            element.style.background = 'linear-gradient(to right, #28a745 50%, #007bff 50%)';
         }
 
         //dates2Q2 should be 2 shades of green
