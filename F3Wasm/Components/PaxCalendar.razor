@@ -11,12 +11,24 @@
     <Badge style="background:linear-gradient(to right, #007bff 33.33%, #3013b7 33.33%, #3013b7 66.66%, #7e80f9 66.66%)">3 Posts</Badge>
 </div>
 
+@if (HasQSource)
+{
+    <div style="text-align:center;">
+        <Badge Color="Color.Primary" style="color:#d9aaeb;font-weight:bold;text-decoration:underline">Q Source</Badge>
+    </div>
+}
+
 @code {
     [Inject]
     private IJSRuntime JSRuntime { get; set; }
 
     [Parameter]
     public List<Post> SelectedPaxPosts { get; set; } = new();
+    [Parameter]
+    public List<Post> SelectedPaxQSourcePosts { get; set; } = new();
+
+    [Parameter]
+    public bool HasQSource { get; set; } = false;
 
     public IReadOnlyList<DateTime?> selectedPaxDates { get; set; }
     public IReadOnlyList<DateTime?> disabledPaxQDates { get; set; }
@@ -34,18 +46,25 @@
         // 2 Posts, 1 or 2 Q's
         var dates2Q1 = SelectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 2 && g.Count(p => p.IsQ) == 1).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
         var dates2Q2 = SelectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 2 && g.Count(p => p.IsQ) == 2).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
-        
+
         // 3 Posts, 1, 2 or 3 Q's
         var dates3Q1 = SelectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 3 && g.Count(p => p.IsQ) == 1).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
         var dates3Q2 = SelectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 3 && g.Count(p => p.IsQ) == 2).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
         var dates3Q3 = SelectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 3 && g.Count(p => p.IsQ) == 3).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
 
-        await SetupDuplicateDates(dates2, dates3, dates2Q1, dates2Q2, dates3Q1, dates3Q2, dates3Q3);
+        var qSourceDates = new string[0];
+        
+        if (HasQSource)
+        {
+            qSourceDates = SelectedPaxQSourcePosts.Select(p => p.Date).Distinct().Select(d => d.ToString("MMMM d, yyyy")).ToArray();
+        }
+
+        await SetupDuplicateDates(dates2, dates3, dates2Q1, dates2Q2, dates3Q1, dates3Q2, dates3Q3, qSourceDates);
     }
 
-    private async Task SetupDuplicateDates(string[] dates2, string[] dates3, string[] dates2Q1, string[] dates2Q2, string[] dates3Q1, string[] dates3Q2, string[] dates3Q3)
+    private async Task SetupDuplicateDates(string[] dates2, string[] dates3, string[] dates2Q1, string[] dates2Q2, string[] dates3Q1, string[] dates3Q2, string[] dates3Q3, string[] qSourceDates)
     {
         // Use JSInterop to setup the duplicate date calendar colors
-        await JSRuntime.InvokeVoidAsync("setupDuplicateDates", dates2, dates3, dates2Q1, dates2Q2, dates3Q1, dates3Q2, dates3Q3);
+        await JSRuntime.InvokeVoidAsync("setupDuplicateDates", dates2, dates3, dates2Q1, dates2Q2, dates3Q1, dates3Q2, dates3Q3, qSourceDates);
     }
 }

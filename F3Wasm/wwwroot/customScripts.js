@@ -1,6 +1,6 @@
-var allDates2, allDates3, allDates2Q1, allDates2Q2, allDates3Q1, allDates3Q2, allDates3Q3;
+var allDates2, allDates3, allDates2Q1, allDates2Q2, allDates3Q1, allDates3Q2, allDates3Q3, allDatesQSource;
 
-function setupDuplicateDates(dates2, dates3, dates2Q1, dates2Q2, dates3Q1, dates3Q2, dates3Q3) {
+function setupDuplicateDates(dates2, dates3, dates2Q1, dates2Q2, dates3Q1, dates3Q2, dates3Q3, datesQSource) {
     allDates2 = dates2;
     allDates3 = dates3;
     allDates2Q1 = dates2Q1;
@@ -8,6 +8,7 @@ function setupDuplicateDates(dates2, dates3, dates2Q1, dates2Q2, dates3Q1, dates
     allDates3Q1 = dates3Q1;
     allDates3Q2 = dates3Q2;
     allDates3Q3 = dates3Q3;
+    allDatesQSource = datesQSource;
 
     applyStylesBasedOnAriaLabel();
 }
@@ -51,6 +52,13 @@ function applyStylesBasedOnAriaLabel() {
         //dates3Q3 should be 3 shades of green
         if (allDates3Q3.indexOf(ariaLabel) > -1) {
             element.style.background = 'linear-gradient(to right, #28a745 33.33%, #116F26 33.33%, #116F26 66.66%, #0d4f1d 66.66%)';
+        }
+
+        //datesQSource should just change the font color
+        if (allDatesQSource.indexOf(ariaLabel) > -1) {
+            element.style.fontWeight = 'bold';
+            element.style.color = '#d9aaeb';
+            element.style.textDecoration = 'underline';
         }
     });
 }

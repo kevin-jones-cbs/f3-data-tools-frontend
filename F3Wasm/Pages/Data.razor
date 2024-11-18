@@ -118,29 +118,29 @@ else
     </Column>
     </Row>
     <Row style="margin-top:6px;">
-    <Column>
-        @if (RegionInfo.HasQSourcePosts)
-        {
-            <Button Color="currentView == OverallView.QSource ? Color.Primary : Color.Light" Clicked="ShowQSource">Q Source</Button>
-        }
+        <Column>
+            @if (RegionInfo.HasQSourcePosts)
+            {
+                <Button Color="currentView == OverallView.QSource ? Color.Primary : Color.Light" Clicked="ShowQSource">Q Source</Button>
+            }
 
-        <Button Color="currentView == OverallView.Kotter ? Color.Primary : Color.Light" Clicked="ShowKotter">Kotter</Button>
-        <Button Color="currentView == OverallView.QKotter ? Color.Primary : Color.Light" Clicked="ShowQKotter">Q Kotter</Button>
+            <Button Color="currentView == OverallView.Kotter ? Color.Primary : Color.Light" Clicked="ShowKotter">Kotter</Button>
+            <Button Color="currentView == OverallView.QKotter ? Color.Primary : Color.Light" Clicked="ShowQKotter">Q Kotter</Button>
 
-        @if (RegionInfo.DisplayName == "South Fork")
-        {
-            <Button Color="Color.Success" Outline="currentView != OverallView.AoChallenge" Clicked="ShowAoChallenge">November AO Challenge</Button>
-        }
-        else
-        {
-            <Button Color="currentView == OverallView.AoList ? Color.Primary : Color.Light" Clicked="ShowAoList">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture) AOs</Button>
-        }
+            @if (RegionInfo.DisplayName == "South Fork")
+            {
+                <Button Color="Color.Success" Outline="currentView != OverallView.AoChallenge" Clicked="ShowAoChallenge">November AO Challenge</Button>
+            }
+            else
+            {
+                <Button Color="currentView == OverallView.AoList ? Color.Primary : Color.Light" Clicked="ShowAoList">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture) AOs</Button>
+            }
 
-        @if (lastUpdatedDate != DateTime.MinValue)
-        {
-            <Button>Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
-        }
-    </Column>
+            @if (lastUpdatedDate != DateTime.MinValue)
+            {
+                <Button>Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
+            }
+        </Column>
     </Row>    
 
     @if (loading)
@@ -267,7 +267,7 @@ else
                                 >
                                 </PaxSummaryTable>
 
-                                <PaxCalendar SelectedPaxPosts="@selectedPaxPosts"></PaxCalendar>
+                                <PaxCalendar SelectedPaxPosts="@selectedPaxPosts" SelectedPaxQSourcePosts="@selectedPaxQSourcePosts" HasQSource="RegionInfo.HasQSourcePosts" ></PaxCalendar>
            
                                 @* <PaxKeyDates SelectedPaxPosts="@selectedPaxPosts"></PaxKeyDates> *@
                              </Column>

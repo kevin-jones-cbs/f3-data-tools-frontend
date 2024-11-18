@@ -27,6 +27,7 @@ namespace F3Wasm.Pages
         public bool showPaxModal { get; set; }
         public Pax selectedPax { get; set; }
         public List<Post> selectedPaxPosts { get; set; }
+        public List<Post> selectedPaxQSourcePosts { get; set; }
         public HistoricalData selectedPaxHistoricalData { get; set; }
 
         Dropdown yearDropdown;
@@ -399,6 +400,7 @@ namespace F3Wasm.Pages
             }
 
             selectedPaxPosts = allData.Posts.Where(p => p.Pax == row.PaxName).OrderByDescending(x => x.Date).ToList();
+            selectedPaxQSourcePosts = allData.QSourcePosts.Where(p => p.Pax == row.PaxName).OrderByDescending(x => x.Date).ToList();
             selectedPaxHistoricalData = allData.HistoricalData?.FirstOrDefault(p => p.PaxName == row.PaxName);
             selectedPax = allData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
 
