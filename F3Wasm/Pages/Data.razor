@@ -121,33 +121,46 @@ else
         <Column>
             @if (RegionInfo.HasQSourcePosts)
             {
-                <Button Color="currentView == OverallView.QSource ? Color.Primary : Color.Light" Clicked="ShowQSource">Q Source</Button>
+                <Button Color="currentView == OverallView.QSource ? Color.Primary : Color.Light" Clicked="ShowQSource" style="margin-right:4px;">Q Source</Button>
             }
 
             <Button Color="currentView == OverallView.Kotter ? Color.Primary : Color.Light" Clicked="ShowKotter">Kotter</Button>
             <Button Color="currentView == OverallView.QKotter ? Color.Primary : Color.Light" Clicked="ShowQKotter">Q Kotter</Button>
 
-            @if (RegionInfo.DisplayName == "South Fork")
-            {
-                <Button Color="Color.Success" Outline="currentView != OverallView.AoChallenge" Clicked="ShowAoChallenge">November AO Challenge</Button>
-            }
-            else
+            @if (RegionInfo.DisplayName != "South Fork")
             {
                 <Button Color="currentView == OverallView.AoList ? Color.Primary : Color.Light" Clicked="ShowAoList">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture) AOs</Button>
             }
+        </Column>
+    </Row>    
+    
+    @if (RegionInfo.DisplayName == "South Fork")
+    {
+        <Row>
+            <Column>
+                <Button Color="Color.Success" Outline="currentView != OverallView.AoChallenge" Clicked="ShowAoChallenge" style="margin-top:6px;">November AO Challenge</Button>
+            </Column>
+        </Row>
+    }
 
-            @if (lastUpdatedDate != DateTime.MinValue)
+    <Row>
+        <Column>
+            @if (currentView == OverallView.QSource)
+            {
+                <Button>*Since @allData.QSourcePosts.Min(x => x.Date).ToShortDateString()</Button>
+            }
+            else if (lastUpdatedDate != DateTime.MinValue)
             {
                 <Button>Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
             }
         </Column>
-    </Row>    
+    </Row>
 
     @if (loading)
     {
         <div id="loader">
-    <SpinKit Type="SpinKitType.Bounce" />
-</div>
+            <SpinKit Type="SpinKitType.Bounce" />
+        </div>
     }
     else
     {
