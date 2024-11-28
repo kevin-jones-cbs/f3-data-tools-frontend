@@ -297,10 +297,10 @@ namespace F3Wasm.Pages
             await Task.Delay(1);
             currentView = OverallView.AoChallenge;
 
-            var posts = allData.Posts.Where(p => p.Date.Month == 11 && p.Date.Year == DateTime.Now.Year).ToList();
+            var posts = allData.Posts.Where(p => (p.Date.Month == 11 || (p.Date.Month == 12 && p.Date.Day <= 13) ) && p.Date.Year == DateTime.Now.Year).ToList();
 
             var firstDay = new DateTime(DateTime.Now.Year, 11, 1);
-            var lastDay = DateTime.Now;
+            var lastDay = new DateTime(DateTime.Now.Year, 12, 13);
             SetCurrentRows(posts, firstDay, lastDay, false);
 
             loading = false;
