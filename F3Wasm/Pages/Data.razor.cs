@@ -407,28 +407,30 @@ namespace F3Wasm.Pages
             await ShowModal();
         }
 
-
-
         public string FullMoonRuckName = "Full Moon Ruck";
         public Ao FullMoonRuckAo = new Ao() { Name = "Full Moon Ruck" };
         private string GetAoChallengeButtonColor(Ao location)
         {
-            string hex;
+            // Full Moon Ruck is always black
+            var hex = "#423c3f";
 
-            if (location.Name == FullMoonRuckName)
-            {
-                hex = "#423c3f";
-            }
-            else
+            if (location.Name != FullMoonRuckName)
             {
                 hex = ColorHelpers.GetAoHex(location);
             }
 
             var now = DateTime.Now;
-            var hasPosted = selectedPaxPosts.Where(x => 
-                x.Date.Year == now.Year && 
-                currentView == OverallView.AoChallenge ? (x.Date.Month == 11 || (x.Date.Month == 12 && x.Date.Day <= 14)) 
-                : x.Date.Month == now.Month).Any(x => x.Site == location.Name);
+            var hasPosted = false;
+
+            if (currentView == OverallView.AoChallenge)
+            {
+                // Only show posts from November 1st to December 14th
+                hasPosted = selectedPaxPosts.Where(x => x.Date.Year == now.Year && (x.Date.Month == 11 || (x.Date.Month == 12 && x.Date.Day <= 14)) && x.Site == location.Name).Any();
+            }
+            else
+            {
+                hasPosted = selectedPaxPosts.Where(x => x.Date.Year == now.Year && x.Date.Month == now.Month && x.Site == location.Name).Any();
+            }
 
             if (hasPosted)
             {
