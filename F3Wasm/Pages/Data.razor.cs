@@ -297,7 +297,7 @@ namespace F3Wasm.Pages
             await Task.Delay(1);
             currentView = OverallView.AoChallenge;
 
-            var posts = allData.Posts.Where(p => (p.Date.Month == 11 || (p.Date.Month == 12 && p.Date.Day <= 13) ) && p.Date.Year == DateTime.Now.Year).ToList();
+            var posts = allData.Posts.Where(p => (p.Date.Month == 11 || (p.Date.Month == 12 && p.Date.Day <= 14) ) && p.Date.Year == DateTime.Now.Year).ToList();
 
             var firstDay = new DateTime(DateTime.Now.Year, 11, 1);
             var lastDay = new DateTime(DateTime.Now.Year, 12, 13);
@@ -425,7 +425,10 @@ namespace F3Wasm.Pages
             }
 
             var now = DateTime.Now;
-            var hasPosted = selectedPaxPosts.Where(x => x.Date.Year == now.Year && x.Date.Month == (currentView == OverallView.AoChallenge ? 11 : now.Month)).Any(x => x.Site == location.Name);
+            var hasPosted = selectedPaxPosts.Where(x => 
+                x.Date.Year == now.Year && 
+                currentView == OverallView.AoChallenge ? (x.Date.Month == 11 || (x.Date.Month == 12 && x.Date.Day <= 14)) 
+                : x.Date.Month == now.Month).Any(x => x.Site == location.Name);
 
             if (hasPosted)
             {
@@ -433,10 +436,6 @@ namespace F3Wasm.Pages
             }
 
             return $"border: solid 1px {hex}; color:{hex}";
-        }
-
-
-
-        
+        }        
     }
 }
