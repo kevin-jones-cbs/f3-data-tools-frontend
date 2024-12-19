@@ -483,3 +483,5 @@ F3Wasm/Helpers/exicon.json
 
 # SAM
 .aws-sam
+/f3-data-tools-backend
+/f3-data-tools-core
