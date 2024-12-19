@@ -53,6 +53,18 @@ namespace F3Wasm.Data
             return locations;
         }
 
+        public static async Task<string> GetJsonAsync(HttpClient client, string region, short jsonRow)
+        {
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetJson", Region = region, JsonRow = jsonRow });
+            return response;
+        }
+
+        public static async Task SaveJsonAsync(HttpClient client, string region, short jsonRow, string json)
+        {
+            var input = new FunctionInput { Action = "SaveJson", Region = region, JsonRow = jsonRow, Json = json };
+            var response = await CallF3LambdaAsync(client, input);
+        }
+
         public static async Task ClearCacheAsync(HttpClient client, string region)
         {
             await CallF3LambdaAsync(client, new FunctionInput { Action = "ClearCache", Region = region });

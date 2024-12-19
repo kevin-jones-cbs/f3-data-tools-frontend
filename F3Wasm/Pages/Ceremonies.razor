@@ -1,0 +1,231 @@
+﻿@page "/ceremonies/{region}"
+@using F3Core
+@using F3Wasm.Models
+@using F3Wasm.Data
+@using F3Core.Regions
+@using System.Text.Json
+@inject HttpClient Http
+
+@if (close100s == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <Table Narrow style="font-size:12px">
+        <TableHeader>
+            <TableRow>
+                <TableHeaderCell>PAX</TableHeaderCell>
+                <TableHeaderCell>Post Count</TableHeaderCell>
+                <TableHeaderCell>Link Maker</TableHeaderCell>
+                @* <TableHeaderCell>Link Made</TableHeaderCell> *@
+                <TableHeaderCell>Scheduled Date</TableHeaderCell>
+                <TableHeaderCell>AO</TableHeaderCell>
+                <TableHeaderCell>Edit</TableHeaderCell>
+            </TableRow>
+        </TableHeader>
+        <TableBody>
+            @foreach (var pax in close100s)
+            {
+                <TableRow Color="GetRowColor(pax)">
+                    <TableRowCell>@pax.Pax</TableRowCell>
+                    <TableRowCell>@pax.PostCount</TableRowCell>
+                    <TableRowCell>
+                        @pax.LinkMaker
+                        @if (pax.LinkMaker != null)
+                        {
+                            <Icon Name="@(pax.LinkMade ? IconName.Check : IconName.Times)" TextColor="@(pax.LinkMade ? TextColor.Success : TextColor.Danger)" Style="margin-left: 3px;" />
+                        }
+                    </TableRowCell>
+                    <TableRowCell>@(pax.ScheduledDate.HasValue ? pax.ScheduledDate.Value.ToShortDateString() : "")</TableRowCell>
+                    <TableRowCell>@pax.Location</TableRowCell>
+                    <TableRowCell>
+                        <Button Color="Color.Secondary" Size="Size.ExtraSmall" Clicked="@(() => ShowModal(pax))">
+                            <Icon Name="IconName.Edit" />
+                        </Button>
+                    </TableRowCell>
+
+                    @*        <TableRowCell>
+            <Select @bind-SelectedValue="@pax.LinkMaker" style="font-size:10px">
+            @foreach (var linkMaker in ceremonyData.LinkMakers)
+            {
+            <SelectItem Value="@linkMaker">@linkMaker</SelectItem>
+            }
+            </Select>
+            </TableRowCell>
+
+            <TableRowCell>
+            <Check TValue="bool" @bind-Checked="@pax.LinkMade"></Check>
+            </TableRowCell>
+
+            <TableRowCell>
+            </TableRowCell>
+
+            <TableRowCell>
+            <Select @bind-SelectedValue="@pax.Location">
+            @foreach (var ao in aos)
+            {
+            <SelectItem Value="@ao">@ao</SelectItem>
+            }
+            </Select>
+            </TableRowCell> *@
+
+                </TableRow>
+            }
+        </TableBody>
+    </Table>
+
+    <Modal @ref="modalRef">
+        @if (selectedPax != null)
+        {
+            <ModalContent Centered>
+                <ModalHeader>
+                    <ModalTitle>@selectedPax.Pax</ModalTitle>
+                    <CloseButton />
+                </ModalHeader>
+                <ModalBody>
+                    <Field>
+                        <FieldLabel>Link Maker</FieldLabel>
+                        <Select @bind-SelectedValue="@selectedPax.LinkMaker" >
+                            @foreach (var linkMaker in ceremonyData.LinkMakers)
+                            {
+                                <SelectItem Value="@linkMaker">@linkMaker</SelectItem>
+                            }
+                        </Select>
+                    </Field>
+                    <Field>
+                        <FieldLabel>Link Made</FieldLabel>
+                        <Check TValue="bool" @bind-Checked="@selectedPax.LinkMade"></Check>
+                    </Field>
+                    <Field>
+                        <FieldLabel>Scheduled Date</FieldLabel>
+                        <DatePicker TValue="DateTime?" @bind-Date="@selectedPax.ScheduledDate" />
+                    </Field>
+                    <Field>
+                        <FieldLabel>AO</FieldLabel>
+                        <Select @bind-SelectedValue="@selectedPax.Location">
+                            @foreach (var ao in aos)
+                            {
+                            <SelectItem Value="@ao">@ao</SelectItem>
+                            }
+                        </Select>
+                    </Field>
+                </ModalBody>
+                <ModalFooter>
+                    <Button Color="Color.Secondary" Clicked="@HideModal">Close</Button>
+                    <Button Color="Color.Primary" Clicked="@SaveCeremonyData">Save Changes</Button>
+                </ModalFooter>
+            </ModalContent>
+        }
+    </Modal>
+
+    <div>Total: @close100s.Count</div>
+}
+
+@code {
+    [Parameter]
+    public string Region { get; set; }
+    public Region RegionInfo { get; set; }
+    public AllData allData { get; set; }
+    public List<Close100> close100s { get; set; }
+    public CeremonyData ceremonyData { get; set; }
+    public List<string> aos { get; set; }
+
+    public Close100 selectedPax { get; set; }
+
+    private Modal modalRef;
+
+    private Task ShowModal(Close100 selected)
+    {
+        selectedPax = selected;
+        return modalRef.Show();
+    }
+
+    private Task HideModal()
+    {
+        return modalRef.Hide();
+    }
+
+    private async Task SaveCeremonyData()
+    {
+        // Find the pax in the ceremony data, or add it if it doesn't exist
+        var ceremony = ceremonyData.PaxData.FirstOrDefault(x => x.Pax == selectedPax.Pax);
+        if (ceremony == null)
+        {
+            ceremony = new Close100 { Pax = selectedPax.Pax };
+            ceremonyData.PaxData.Add(ceremony);
+        }
+
+        ceremony.LinkMaker = selectedPax.LinkMaker;
+        ceremony.LinkMade = selectedPax.LinkMade;
+        ceremony.ScheduledDate = selectedPax.ScheduledDate;
+        ceremony.Location = selectedPax.Location;            
+
+        await LambdaHelper.SaveJsonAsync(Http, Region, 1, JsonSerializer.Serialize(ceremonyData));
+        await HideModal();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        RegionInfo = RegionList.All.FirstOrDefault(x => x.QueryStringValue == Region);
+        if (RegionInfo == null)
+        {
+            throw new Exception("Invalid Region");
+        }
+
+        var allDataTask = LambdaHelper.GetAllDataAsync(Http, Region);
+        var ceremonyDataTask = LambdaHelper.GetJsonAsync(Http, Region, 1);
+
+        await Task.WhenAll(allDataTask, ceremonyDataTask);
+        allData = allDataTask.Result;
+        ceremonyData = JsonSerializer.Deserialize<CeremonyData>(ceremonyDataTask.Result);
+
+        aos = allData.Aos.OrderBy(x => x.DayOfWeek).Select(x => x.Name).ToList();
+        var paxPostCount = allData.Posts.GroupBy(x => x.Pax).Select(x => new Close100 { Pax = x.Key, PostCount = x.Count() }).ToList();
+        close100s = paxPostCount.Where(x => x.PostCount % 100 >= 90).OrderByDescending(x => x.PostCount % 100).ToList();
+
+        var inactiveList = new List<string> { "OrderUp", "Bandwagon" };
+        close100s = close100s.Where(x => !inactiveList.Contains(x.Pax)).ToList();
+
+        // Join the two lists
+        foreach (var pax in close100s)
+        {
+            var ceremony = ceremonyData.PaxData.FirstOrDefault(x => x.Pax == pax.Pax);
+            if (ceremony != null)
+            {
+                pax.LinkMaker = ceremony.LinkMaker;
+                pax.LinkMade = ceremony.LinkMade;
+                pax.ScheduledDate = ceremony.ScheduledDate;
+                pax.Location = ceremony.Location;
+            }
+        }
+    }
+
+    private Color GetRowColor(Close100 pax)
+    {
+        if (!string.IsNullOrEmpty(pax.LinkMaker) && pax.LinkMade && pax.ScheduledDate.HasValue && !string.IsNullOrEmpty(pax.Location))
+        {
+            return Color.Success;
+        }
+
+        return "";
+    }
+
+
+
+    public class Close100
+    {
+        public string Pax { get; set; }
+        public int PostCount { get; set; }
+        public string LinkMaker { get; set; }
+        public bool LinkMade { get; set; }
+        public DateTime? ScheduledDate { get; set; }
+        public string Location { get; set; }
+    }
+
+    public class CeremonyData
+    {
+        public List<string> LinkMakers { get; set; }
+        public List<Close100> PaxData { get; set; }
+    }
+}

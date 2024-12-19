@@ -13,7 +13,7 @@
       "dotnetRunMessages": true,
       "launchBrowser": true,
       "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}",
-      "launchUrl": "http://localhost:5090/data/southfork",
+      "launchUrl": "http://localhost:5090/ceremonies/southfork",
       "applicationUrl": "http://localhost:5090",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
