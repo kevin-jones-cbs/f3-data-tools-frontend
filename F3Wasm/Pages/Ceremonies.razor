@@ -18,7 +18,6 @@ else
                 <TableHeaderCell>PAX</TableHeaderCell>
                 <TableHeaderCell>Post Count</TableHeaderCell>
                 <TableHeaderCell>Link Maker</TableHeaderCell>
-                @* <TableHeaderCell>Link Made</TableHeaderCell> *@
                 <TableHeaderCell>Scheduled Date</TableHeaderCell>
                 <TableHeaderCell>AO</TableHeaderCell>
                 <TableHeaderCell>Edit</TableHeaderCell>
@@ -44,32 +43,6 @@ else
                             <Icon Name="IconName.Edit" />
                         </Button>
                     </TableRowCell>
-
-                    @*        <TableRowCell>
-            <Select @bind-SelectedValue="@pax.LinkMaker" style="font-size:10px">
-            @foreach (var linkMaker in ceremonyData.LinkMakers)
-            {
-            <SelectItem Value="@linkMaker">@linkMaker</SelectItem>
-            }
-            </Select>
-            </TableRowCell>
-
-            <TableRowCell>
-            <Check TValue="bool" @bind-Checked="@pax.LinkMade"></Check>
-            </TableRowCell>
-
-            <TableRowCell>
-            </TableRowCell>
-
-            <TableRowCell>
-            <Select @bind-SelectedValue="@pax.Location">
-            @foreach (var ao in aos)
-            {
-            <SelectItem Value="@ao">@ao</SelectItem>
-            }
-            </Select>
-            </TableRowCell> *@
-
                 </TableRow>
             }
         </TableBody>
