@@ -4,6 +4,7 @@
 @using F3Wasm.Data
 @using F3Core.Regions
 @using System.Text.Json
+@using System.Text
 @inject HttpClient Http
 
 @if (close100s == null)
@@ -18,7 +19,7 @@ else
                 <TableHeaderCell>PAX</TableHeaderCell>
                 <TableHeaderCell>Post Count</TableHeaderCell>
                 <TableHeaderCell>Link Maker</TableHeaderCell>
-                <TableHeaderCell>Scheduled Date</TableHeaderCell>
+                <TableHeaderCell>Date</TableHeaderCell>
                 <TableHeaderCell>AO</TableHeaderCell>
                 <TableHeaderCell>Edit</TableHeaderCell>
             </TableRow>
@@ -36,7 +37,8 @@ else
                             <Icon Name="@(pax.LinkMade ? IconName.Check : IconName.Times)" TextColor="@(pax.LinkMade ? TextColor.Success : TextColor.Danger)" Style="margin-left: 3px;" />
                         }
                     </TableRowCell>
-                    <TableRowCell>@(pax.ScheduledDate.HasValue ? pax.ScheduledDate.Value.ToShortDateString() : "")</TableRowCell>
+                    @* Show schedule date as formate 12/24, no year *@
+                    <TableRowCell>@(pax.ScheduledDate.HasValue ? pax.ScheduledDate.Value.ToString("MM/dd") : "")</TableRowCell>
                     <TableRowCell>@pax.Location</TableRowCell>
                     <TableRowCell>
                         <Button Color="Color.Secondary" Size="Size.ExtraSmall" Clicked="@(() => ShowModal(pax))">
@@ -57,22 +59,29 @@ else
                     <CloseButton />
                 </ModalHeader>
                 <ModalBody>
-                    <Field>
-                        <FieldLabel>Link Maker</FieldLabel>
-                        <Select @bind-SelectedValue="@selectedPax.LinkMaker" >
-                            @foreach (var linkMaker in ceremonyData.LinkMakers)
-                            {
-                                <SelectItem Value="@linkMaker">@linkMaker</SelectItem>
-                            }
-                        </Select>
-                    </Field>
-                    <Field>
-                        <FieldLabel>Link Made</FieldLabel>
-                        <Check TValue="bool" @bind-Checked="@selectedPax.LinkMade"></Check>
-                    </Field>
+                    <Row>
+                        <Column ColumnSize="ColumnSize.Is8">
+                            <Field>
+                                <FieldLabel>Link Maker</FieldLabel>
+                                <Select @bind-SelectedValue="@selectedPax.LinkMaker" >
+                                    @foreach (var linkMaker in ceremonyData.LinkMakers)
+                                    {
+                                        <SelectItem Value="@linkMaker">@linkMaker</SelectItem>
+                                    }
+                                </Select>
+                            </Field>
+                        </Column>
+                        <Column ColumnSize="ColumnSize.Is4">
+                            <Field>
+                                <FieldLabel>Link Made</FieldLabel>
+                                <Check TValue="bool" @bind-Checked="@selectedPax.LinkMade"></Check>
+                            </Field>
+                        </Column>
+                    </Row>
+
                     <Field>
                         <FieldLabel>Scheduled Date</FieldLabel>
-                        <DatePicker TValue="DateTime?" @bind-Date="@selectedPax.ScheduledDate" />
+                        <DatePicker TValue="DateTime?" DisplayFormat="MM/dd/yyyy" @bind-Date="@selectedPax.ScheduledDate" />
                     </Field>
                     <Field>
                         <FieldLabel>AO</FieldLabel>
@@ -93,6 +102,21 @@ else
     </Modal>
 
     <div>Total: @close100s.Count</div>
+
+    @* Pax Report *@
+    <div>
+        <Button Color="Color.Secondary" Clicked="@(() => showCopy = !showCopy)">Show PAX for Report</Button>
+    </div>
+
+    @if (showCopy)
+    {
+        <div style="margin:12px 0px 12px 0px;">
+            @foreach (var pax in close100s.OrderByDescending(x => x.PostCount))
+            {
+                <pre style="margin:0px;">@pax.Pax.PadRight(10)			@pax.PostCount</pre>
+            }
+        </div>
+    }
 }
 
 @code {
@@ -103,6 +127,7 @@ else
     public List<Close100> close100s { get; set; }
     public CeremonyData ceremonyData { get; set; }
     public List<string> aos { get; set; }
+    public bool showCopy { get; set; }
 
     public Close100 selectedPax { get; set; }
 
@@ -183,8 +208,6 @@ else
 
         return "";
     }
-
-
 
     public class Close100
     {
