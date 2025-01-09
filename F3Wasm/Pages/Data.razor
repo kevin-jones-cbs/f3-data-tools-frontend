@@ -127,21 +127,12 @@ else
             <Button Color="currentView == OverallView.Kotter ? Color.Primary : Color.Light" Clicked="ShowKotter">Kotter</Button>
             <Button Color="currentView == OverallView.QKotter ? Color.Primary : Color.Light" Clicked="ShowQKotter">Q Kotter</Button>
 
-            @if (RegionInfo.DisplayName != "South Fork")
+            @if (RegionInfo.DisplayName != "Gold Rush")
             {
                 <Button Color="currentView == OverallView.AoList ? Color.Primary : Color.Light" Clicked="ShowAoList">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture) AOs</Button>
             }
         </Column>
     </Row>    
-    
-    @if (RegionInfo.DisplayName == "South Fork")
-    {
-        <Row>
-            <Column>
-                <Button Color="Color.Success" Outline="currentView != OverallView.AoChallenge" Clicked="ShowAoChallenge" style="margin-top:6px;">November Challenge</Button>
-            </Column>
-        </Row>
-    }
 
     <Row>
         <Column>
