@@ -23,7 +23,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\F3Wasm\F3Wasm.csproj" />
-    <ProjectReference Include="..\F3Core\F3Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="F3Core">
+      <HintPath>..\F3Wasm\Packages\F3Core.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

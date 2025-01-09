@@ -1,3 +1,4 @@
+using F3Core;
 using F3Core.Regions;
 using F3Wasm.Data;
 using F3Wasm.Models;

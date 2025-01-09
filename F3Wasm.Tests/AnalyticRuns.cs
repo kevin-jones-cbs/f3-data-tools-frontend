@@ -263,40 +263,6 @@ namespace F3Wasm.Tests
 
             File.WriteAllText("top_posters.csv", csv.ToString());
         }
-
-        [Fact]
-        public async Task GetTopPostersForAllLocations()
-        {
-            var client = new HttpClient();
-            var allData = await LambdaHelper.GetAllDataAsync(client, "southfork");
-            var pax = allData.Pax;
-            var posts = allData.Posts;
-
-            // Only show this year
-            posts = posts.Where(p => p.Date.Year == DateTime.Now.Year).ToList();
-
-            var region = new SouthFork();
-
-            await File.WriteAllTextAsync("top_posters_all.csv", "");
-            foreach (var location in region.AoList)
-            {
-                var regionPosts = posts.Where(p => p.Site == location.Name).ToList();
-                // Group each one by pax 
-                var postsByDay = regionPosts.GroupBy(p => p.Pax).OrderByDescending(g => g.Count()).Take(10).ToList();
-
-                // Write to File
-                var csv = new StringBuilder();
-                csv.AppendLine($"\n\n{location.Name}:");
-                foreach (var p in postsByDay)
-                {
-                    csv.AppendLine($"{p.Key} - {p.Count()}");
-                }
-
-                await File.AppendAllTextAsync("top_posters_all.csv", csv.ToString());
-            }
-
-
-        }
     }
 
     public class Kotter
