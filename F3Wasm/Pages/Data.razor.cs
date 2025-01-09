@@ -6,6 +6,8 @@ using F3Wasm.Data;
 using F3Wasm.Helpers;
 using F3Wasm.Models;
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
+using System.Text;
 using System.Web;
 
 namespace F3Wasm.Pages
@@ -14,6 +16,9 @@ namespace F3Wasm.Pages
     {
         [Parameter]
         public string Region { get; set; }
+
+        [Inject]
+        private IJSRuntime JSRuntime { get; set; }
 
         public Region RegionInfo { get; set; }
         public bool IsEmbed { get; set; }
@@ -442,5 +447,22 @@ namespace F3Wasm.Pages
 
             return $"border: solid 1px {hex}; color:{hex}";
         }        
+
+        private async Task ExportToCsv()
+        {
+            var properties = typeof(DisplayRow).GetProperties();
+            var csv = new StringBuilder();
+
+            // Add header row
+            csv.AppendLine(string.Join(",", properties.Select(p => p.Name)));
+
+            // Add data rows
+            foreach (var item in currentRows)
+            {
+                csv.AppendLine(string.Join(",", properties.Select(p => p.GetValue(item, null))));
+            }
+
+            await JSRuntime.InvokeVoidAsync("downloadFile", $"F3_{RegionInfo.QueryStringValue}_{DateTime.Now.ToShortDateString()}_{currentView}.csv", csv.ToString());
+        }
     }
 }

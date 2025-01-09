@@ -165,6 +165,12 @@ else
     else
     {
         <TextEdit Placeholder="Search PAX..." Text="@customFilterValue" TextChanged="@OnCustomFilterValueChanged"></TextEdit>
+
+        @if (currentView == OverallView.Kotter || currentView == OverallView.QKotter)
+        {
+            <Button Color="Color.Secondary" Clicked="@ExportToCsv">Export to CSV</Button>
+        }
+
         <DataGrid @ref="dataGrid" 
             TItem="DisplayRow" 
             Data="@currentRows" 
