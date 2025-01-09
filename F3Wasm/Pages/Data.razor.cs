@@ -60,10 +60,13 @@ namespace F3Wasm.Pages
             // Order the months by month number
             validMonths = validMonths.OrderByDescending(x => DateTime.ParseExact(x, "MMM", System.Globalization.CultureInfo.InvariantCulture).Month).ToList();
 
+            lastUpdatedDate = allData.Posts.Where(x => x.Date.Year <= DateTime.Now.AddYears(1).Year).Max(x => x.Date);
+
             var lastUpdateItem = allData.Posts.FirstOrDefault(x => x.Site == "UPDATE");
+
+            // Legacy handling of the UPDATE post for last updated date.
             if (lastUpdateItem != null)
             {
-                lastUpdatedDate = DateTime.Parse(lastUpdateItem.Pax.Split(" ")[1]);
                 allData.Posts.Remove(lastUpdateItem);
             }
 
@@ -152,10 +155,10 @@ namespace F3Wasm.Pages
                 // Q Kotter
                 if (currentView == OverallView.QKotter)
                 {
-                    row.LastPost = pax.Value.Where(x => x.IsQ).Max(p => p.Date);
-                    row.KotterDays = (DateTime.Now - row.LastPost.Value).Days;
+                    row.LastPost = pax.Value.Max(p => p.Date);
+                    row.LastQ = pax.Value.Where(x => x.IsQ).Max(p => p.Date);
+                    row.KotterDays = (DateTime.Now - row.LastQ.Value).Days;
                 }
-                
 
                 // Ao Challenge. Find the number of unique aos for this pax, for this month
                 if (currentView == OverallView.AoChallenge || currentView == OverallView.AoList)

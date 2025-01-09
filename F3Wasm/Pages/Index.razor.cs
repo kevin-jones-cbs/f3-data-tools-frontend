@@ -43,6 +43,7 @@ namespace F3Wasm.Pages
         public bool commentIsLoading { get; set; }
         public bool isMissingDataLoading { get; set; }
         public bool isQSource { get; set; }
+        public bool isSiteClosed { get; set; }
 
         protected override async Task OnInitializedAsync()
         {
@@ -173,32 +174,46 @@ namespace F3Wasm.Pages
             {
                 isLoading = true;
                 await LambdaHelper.UploadPaxAsync(Http, Region, pax, ao == AoOtherValue ? otherAoName : ao, qDate.Value, isQSource);
-                showCompleteAlert = true;
-
-                // Remove from missing list if it's there if ao and date match
-                if (missingAos.Any(x => x.Name == ao && x.Date.Date == qDate.Value.Date))
-                {
-                    missingAos.Remove(missingAos.First(x => x.Name == ao && x.Date.Date == qDate.Value.Date));
-
-                    // If there are no more missing aos, show the message
-                    if (!missingAos.Any())
-                    {
-                        showNoMissingAoMessage = true;
-                    }
-                }
-
-                // Reset everything
-                comment = string.Empty;
-                pax = new List<Pax>();
-                qDate = DateTime.Now;
-                ao = string.Empty;
-                otherAoName = string.Empty;
+                ResetAfterUpload();
                 isLoading = false;
             }
             catch (Exception ex)
             {
                 errorMessage = "There was an error uploading the data. Please try again." + ex.Message;
             }
+        }
+
+        private async Task OnSiteClosedClicked()
+        {
+            pax = new List<Pax> { new Pax { Name = "Site Closed (Archived)" } };
+            await LambdaHelper.UploadPaxAsync(Http, Region, pax, ao == AoOtherValue ? otherAoName : ao, qDate.Value, isQSource);
+            ResetAfterUpload();
+        }
+
+        private void ResetAfterUpload()
+        {
+            showCompleteAlert = true;
+
+            // Remove from missing list if it's there if ao and date match
+            if (missingAos.Any(x => x.Name == ao && x.Date.Date == qDate.Value.Date))
+            {
+                missingAos.Remove(missingAos.First(x => x.Name == ao && x.Date.Date == qDate.Value.Date));
+
+                // If there are no more missing aos, show the message
+                if (!missingAos.Any())
+                {
+                    showNoMissingAoMessage = true;
+                }
+            }
+
+            // Reset everything
+            comment = string.Empty;
+            pax = new List<Pax>();
+            qDate = DateTime.Now;
+            ao = string.Empty;
+            otherAoName = string.Empty;
+            isQSource = false;
+            isSiteClosed = false;
         }
 
         void OnQSelected(Pax member, bool isChecked)

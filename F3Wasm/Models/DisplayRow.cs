@@ -12,6 +12,7 @@ namespace F3Wasm.Models
 
         // Kotter
         public DateTime? LastPost { get; set; }
+        public DateTime? LastQ { get; set; }
         public int KotterDays { get; set; }
 
         // Ao Challenge

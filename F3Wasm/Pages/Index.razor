@@ -75,23 +75,39 @@ else
         <TextEdit @bind-Text="@otherAoName" style="margin-bottom:12px" Placeholder="Other Location Name (Feb Moon Ruck, etc.)"></TextEdit>
     }
 
-    @if (RegionInfo.HasQSourcePosts)
+    <Row>
+        @if (RegionInfo.HasQSourcePosts)
+        {
+            <Column ColumnSize="ColumnSize.Is6">
+                <Check TValue="bool" @bind-Checked="@isQSource" style="margin-bottom:12px;color:#575859;font-weight:500">Q Source</Check>
+            </Column>
+        }
+
+        <Column ColumnSize="ColumnSize.Is6">
+            <Check TValue="bool" @bind-Checked="@isSiteClosed" style="margin-bottom:12px;color:#575859;font-weight:500">Site Closed</Check>
+        </Column>
+    </Row>
+
+    @if (isSiteClosed)
     {
-        <Check TValue="bool" @bind-Checked="@isQSource" style="margin-bottom:12px;color:#575859;font-weight:500">Q Source</Check>
+        <div style="font-size:14px; margin: 8px;color: #4b4646;font-style:italic">This adds a new Site Closed row to the data sheet so the site no longer show as "Missing Data"</div>
+        <Button Color="Color.Primary" Clicked="@OnSiteClosedClicked">Upload</Button>
+    }
+    else
+    {
+        <MemoEdit Rows="5" Placeholder="Paste the Pax Comment from Band" @bind-Text="@comment" style="margin-bottom:12px"></MemoEdit>
+
+        <div class="one-row">
+            <Button Color="Color.Primary" Clicked="@OnCommentButtonClicked">Submit</Button>
+            @if (commentIsLoading)
+            {
+                <SpinKit Type="SpinKitType.Bounce" />
+            }
+        </div>
     }
 
-    <MemoEdit Rows="5" Placeholder="Paste the Pax Comment from Band" @bind-Text="@comment" style="margin-bottom:12px"></MemoEdit>
-
-    <div class="one-row" >
-        <Button Color="Color.Primary" Clicked="@OnCommentButtonClicked">Submit</Button>
-        @if (commentIsLoading)
-        {
-            <SpinKit Type="SpinKitType.Bounce" />
-        }
-    </div>
-
 }
-@if (pax.Count > 0)
+@if (pax.Count > 0 && !isSiteClosed)
 {
     <Table Narrow>
     <TableHeader>
