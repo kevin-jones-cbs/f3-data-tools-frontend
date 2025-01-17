@@ -18,10 +18,10 @@ else
             <TableRow>
                 <TableHeaderCell>PAX</TableHeaderCell>
                 <TableHeaderCell>Post Count</TableHeaderCell>
-                <TableHeaderCell>Link Maker</TableHeaderCell>
+                <TableHeaderCell>Assignee</TableHeaderCell>
                 <TableHeaderCell>Date</TableHeaderCell>
                 <TableHeaderCell>AO</TableHeaderCell>
-                <TableHeaderCell>Edit</TableHeaderCell>
+                <TableHeaderCell>Actions</TableHeaderCell>
             </TableRow>
         </TableHeader>
         <TableBody>
@@ -44,6 +44,12 @@ else
                         <Button Color="Color.Secondary" Size="Size.ExtraSmall" Clicked="@(() => ShowModal(pax))">
                             <Icon Name="IconName.Edit" />
                         </Button>
+                        @if (pax.PostCount % 100 < 90)
+                        {
+                            <Button Color="Color.Success" Size="Size.ExtraSmall" Clicked="@(() => Complete100(pax))">
+                                <Icon Name="IconName.Check" />
+                            </Button>
+                        }
                     </TableRowCell>
                 </TableRow>
             }
@@ -103,6 +109,35 @@ else
 
     <div>Total: @close100s.Count</div>
 
+    <hr/>
+
+    <div>
+        Trinket Makers:
+        <ul>
+            @foreach (var maker in ceremonyData.LinkMakers.Where(x => !string.IsNullOrEmpty(x)))
+            {
+                <li>
+                    <Button Color="Color.Danger" Size="Size.ExtraSmall" Clicked="@(() => RemoveMaker(maker))">
+                        <Icon Name="IconName.Times" />
+                    </Button>
+                    @maker
+
+                </li>
+            }
+        </ul>
+
+        <Row>
+            <Column ColumnSize="ColumnSize.Is6">
+                <TextEdit @bind-Text="@newMaker" Placeholder="New Maker PAX Name" />
+            </Column>
+            <Column ColumnSize="ColumnSize.Is6">
+                <Button Color="Color.Secondary" Clicked="@AddMaker">Add Maker</Button>
+            </Column>
+        </Row>
+    </div>
+
+    <hr/>
+
     @* Pax Report *@
     <div>
         <Button Color="Color.Secondary" Clicked="@(() => showCopy = !showCopy)">Show PAX for Report</Button>
@@ -129,6 +164,8 @@ else
     public List<string> aos { get; set; }
     public bool showCopy { get; set; }
 
+    private string newMaker { get; set; }
+
     public Close100 selectedPax { get; set; }
 
     private Modal modalRef;
@@ -137,6 +174,14 @@ else
     {
         selectedPax = selected;
         return modalRef.Show();
+    }
+
+    private async Task Complete100(Close100 selected)
+    {
+        // Remove the pax from the list
+        close100s.Remove(selected);
+        ceremonyData.PaxData.RemoveAll(x => x.Pax == selected.Pax);
+        await LambdaHelper.SaveJsonAsync(Http, Region, 1, JsonSerializer.Serialize(ceremonyData));
     }
 
     private Task HideModal()
@@ -163,6 +208,19 @@ else
         await HideModal();
     }
 
+    private async Task AddMaker()
+    {
+        ceremonyData.LinkMakers.Add(newMaker);    
+        await LambdaHelper.SaveJsonAsync(Http, Region, 1, JsonSerializer.Serialize(ceremonyData));
+        newMaker = "";
+    }
+
+    private async Task RemoveMaker(string maker)
+    {
+        ceremonyData.LinkMakers.Remove(maker);
+        await LambdaHelper.SaveJsonAsync(Http, Region, 1, JsonSerializer.Serialize(ceremonyData));
+    }
+
     protected override async Task OnInitializedAsync()
     {
         RegionInfo = RegionList.All.FirstOrDefault(x => x.QueryStringValue == Region);
@@ -176,11 +234,26 @@ else
 
         await Task.WhenAll(allDataTask, ceremonyDataTask);
         allData = allDataTask.Result;
-        ceremonyData = JsonSerializer.Deserialize<CeremonyData>(ceremonyDataTask.Result);
+
+        try
+        {
+            ceremonyData = JsonSerializer.Deserialize<CeremonyData>(ceremonyDataTask.Result);
+        }
+        catch (JsonException ex)
+        {
+            // Data isn't there, create it
+            ceremonyData = new CeremonyData { LinkMakers = new List<string>(), PaxData = new List<Close100>() };
+            await LambdaHelper.SaveJsonAsync(Http, Region, 1, JsonSerializer.Serialize(ceremonyData));
+        }
 
         aos = allData.Aos.OrderBy(x => x.DayOfWeek).Select(x => x.Name).ToList();
+        var ceremonyPax = ceremonyData.PaxData.Select(x => x.Pax).ToList();
         var paxPostCount = allData.Posts.GroupBy(x => x.Pax).Select(x => new Close100 { Pax = x.Key, PostCount = x.Count() }).ToList();
-        close100s = paxPostCount.Where(x => x.PostCount % 100 >= 90).OrderByDescending(x => x.PostCount % 100).ToList();
+        
+        // Grab anyone close to a 100, or anyone who already passed that's in the data.
+        close100s = paxPostCount
+                .Where(x => x.PostCount % 100 >= 90 || ceremonyPax.Contains(x.Pax))
+                .OrderByDescending(x => x.PostCount % 100).ToList();
 
         var inactiveList = new List<string> { "OrderUp", "Bandwagon" };
         close100s = close100s.Where(x => !inactiveList.Contains(x.Pax)).ToList();
@@ -204,6 +277,11 @@ else
         if (!string.IsNullOrEmpty(pax.LinkMaker) && pax.LinkMade && pax.ScheduledDate.HasValue && !string.IsNullOrEmpty(pax.Location))
         {
             return Color.Success;
+        }
+
+        if (pax.PostCount % 100 < 90)
+        {
+            return Color.Warning;
         }
 
         return "";
