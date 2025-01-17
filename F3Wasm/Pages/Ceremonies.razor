@@ -18,7 +18,7 @@ else
             <TableRow>
                 <TableHeaderCell>PAX</TableHeaderCell>
                 <TableHeaderCell>Post Count</TableHeaderCell>
-                <TableHeaderCell>Assignee</TableHeaderCell>
+                <TableHeaderCell>Maker</TableHeaderCell>
                 <TableHeaderCell>Date</TableHeaderCell>
                 <TableHeaderCell>AO</TableHeaderCell>
                 <TableHeaderCell>Actions</TableHeaderCell>
@@ -68,7 +68,7 @@ else
                     <Row>
                         <Column ColumnSize="ColumnSize.Is8">
                             <Field>
-                                <FieldLabel>Link Maker</FieldLabel>
+                                <FieldLabel>Trinket Maker</FieldLabel>
                                 <Select @bind-SelectedValue="@selectedPax.LinkMaker" >
                                     @foreach (var linkMaker in ceremonyData.LinkMakers)
                                     {
@@ -79,7 +79,7 @@ else
                         </Column>
                         <Column ColumnSize="ColumnSize.Is4">
                             <Field>
-                                <FieldLabel>Link Made</FieldLabel>
+                                <FieldLabel>Trinket Made</FieldLabel>
                                 <Check TValue="bool" @bind-Checked="@selectedPax.LinkMade"></Check>
                             </Field>
                         </Column>
