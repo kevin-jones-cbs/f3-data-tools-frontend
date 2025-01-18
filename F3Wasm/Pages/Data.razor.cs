@@ -250,8 +250,8 @@ namespace F3Wasm.Pages
 
             var posts = allData.Posts.Where(p => p.Date.Month == monthInt && p.Date.Year == currentYear).ToList();
 
-            var firstDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month - 1, 1);
-            var lastDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddDays(-1);
+            var firstDay = new DateTime(currentYear, monthInt, 1);
+            var lastDay = new DateTime(currentYear, monthInt + 1, 1).AddDays(-1);
             SetCurrentRows(posts, firstDay, lastDay, false);
             await RefreshDropdowns();
         }
