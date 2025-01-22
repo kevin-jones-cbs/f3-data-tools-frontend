@@ -410,7 +410,7 @@ namespace F3Wasm.Pages
             selectedPaxPosts = allData.Posts.Where(p => p.Pax == row.PaxName).OrderByDescending(x => x.Date).ToList();
             selectedPaxQSourcePosts = allData.QSourcePosts?.Where(p => p.Pax == row.PaxName).OrderByDescending(x => x.Date).ToList();
             selectedPaxHistoricalData = allData.HistoricalData?.FirstOrDefault(p => p.PaxName == row.PaxName);
-            selectedPax = allData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
+            selectedPax = allData.Pax.FirstOrDefault(p => p.Name.Equals(row.PaxName, StringComparison.InvariantCultureIgnoreCase ));
 
             await ShowModal();
         }
