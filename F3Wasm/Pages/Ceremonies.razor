@@ -235,16 +235,7 @@ else
         await Task.WhenAll(allDataTask, ceremonyDataTask);
         allData = allDataTask.Result;
 
-        try
-        {
-            ceremonyData = JsonSerializer.Deserialize<CeremonyData>(ceremonyDataTask.Result);
-        }
-        catch (JsonException ex)
-        {
-            // Data isn't there, create it
-            ceremonyData = new CeremonyData { LinkMakers = new List<string>(), PaxData = new List<Close100>() };
-            await LambdaHelper.SaveJsonAsync(Http, Region, 1, JsonSerializer.Serialize(ceremonyData));
-        }
+        ceremonyData = JsonSerializer.Deserialize<CeremonyData>(ceremonyDataTask.Result);
 
         aos = allData.Aos.OrderBy(x => x.DayOfWeek).Select(x => x.Name).ToList();
         var ceremonyPax = ceremonyData.PaxData.Select(x => x.Pax).ToList();
