@@ -21,105 +21,195 @@
         display: inline-grid;
         width: 100%;
     }
+
+    /* Card header styling (similar to bg-slate-900 and rounded-t-lg) */
+    .card-header {
+        background-color: #1e293b; /* slate-900 */
+        color: #fff;
+        padding: 1rem;
+        border-top-left-radius: 0.375rem;
+        border-top-right-radius: 0.375rem;
+    }
+
+        .card-header .card-title {
+            margin: 0;
+        }
+
+    /* Location selection card styling */
+    .location-card {
+        cursor: pointer;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        padding: 0.5rem 1rem;
+        transition: border-color 0.2s, background-color 0.2s;
+    }
+
+        .location-card:hover {
+            border-color: #86b7fe;
+        }
+
+        .location-card.selected {
+            border-color: #0d6efd;
+            background-color: #e7f1ff;
+        }
+
+    .indicator {
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid #0d6efd;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .indicator .dot {
+            width: 0.5rem;
+            height: 0.5rem;
+            background-color: #0d6efd;
+            border-radius: 50%;
+        }
 </style>
 
+<div class="mx-auto" Style="max-width: 600px;">
 @if (aoList == null)
 {
     <p>Loading...</p>
 }
 else
 {
-    <div class="one-row" style="padding-bottom:12px">
-        <Button Color="Color.Primary" Clicked="OnMissingAoButtonClicked">Check for Missing Data</Button>
-        <Button Color="Color.Primary" Clicked="ClearCache" style="margin-left:12px;">Clear Cache</Button>
-        @if (isMissingDataLoading)
+    <div>
+        <!-- Top row: Check Missing Data and Clear Cache -->
+        <div class="d-flex mb-3">
+            <Button Color="Color.Primary" Clicked="OnMissingAoButtonClicked" Class="flex-fill me-2" Loading="isMissingDataLoading">
+                Check for Missing Data
+            </Button>
+            <Button Color="Color.Primary" Clicked="ClearCache" Class="flex-fill">
+                Clear Cache
+            </Button>
+        </div>
+
+        <!-- Missing Data List -->
+        @if (missingAos.Count > 0)
         {
-            <SpinKit Type="SpinKitType.Bounce" />
+            <div class="mb-3">
+                <Alert Color="Color.Danger" class="d-flex align-items-center">
+                    <Icon Name="IconName.ExclamationCircle" class="me-2" />
+                    <span>Missing entries:</span>
+                </Alert>
+                <div class="d-grid gap-2">
+                    @foreach (var missing in missingAos)
+                    {
+                        <Card onclick="@(() => OnMissingAoSelected(missing))">
+                            <CardBody style="padding: 0.25em; margin:6px; font-weight:500" class="d-flex justify-content-between text-start">
+                                <CardText>
+                                    <span>@missing.Name - <span class="text-muted" style="font-weight:400">@missing.DayOfWeek @missing.Date.ToShortDateString()</span></span>
+                                </CardText>
+                                <Icon Name="IconName.ChevronRight" class="ms-auto" style="margin-top:3px;" />
+                            </CardBody>
+                        </Card>
+                    }
+                </div>
+            </div>
+
+            @if (showNoMissingAoMessage)
+            {
+                <Alert Color="Color.Success" ShowIcon Visible>
+                    All up to date!
+                    <CloseButton />
+                </Alert>
+            }
+
+            <hr />
+        }
+
+        <Addons>
+            <Addon AddonType="AddonType.Body">
+                <DatePicker @ref="@datePicker" TValue="DateTime?" Placeholder="Q Date" Date="@qDate" DateChanged="@OnDateChanged" DisplayFormat="M/d/yyy" />
+            </Addon>
+            <Addon AddonType="AddonType.End">
+                <Button Color="Color.Secondary" Clicked="@(()=>datePicker.ToggleAsync())">
+                    <Icon Name="IconName.CalendarDay" />
+                </Button>
+            </Addon>
+        </Addons>
+
+        <!-- Locations Grid-->
+        <div class="row g-3 mb-3 mt-1">
+            @foreach (var item in aoList)
+            {
+                <div style="@ShowOrHideAo(item)" class="col-6  gx-0">
+                    <div class="location-card @(ao == item.Name ? "selected" : "")" @onclick="@(() => OnAoChanged(item.Name))">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-0">@item.Name</h6>
+                                <p class="mb-0 text-muted" style="font-size:14px;">@item.City</p>
+                            </div>
+                            <div class="indicator" style="margin-top:auto;margin-bottom:auto;">
+                                @if (ao == item.Name)
+                                {
+                                    <div class="dot"></div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (ao == AoOtherValue)
+        {
+            <TextEdit @bind-Text="@otherAoName" style="margin-bottom:12px" Placeholder="Other Location Name (Full Moon Ruck, etc.)"></TextEdit>
+        }
+
+        <!-- Checkboxes Row (Site Closed and Q Source if applicable) -->
+        <div class="d-flex align-items-center p-3 bg-light rounded mb-3">
+            @if (RegionInfo.HasQSourcePosts)
+            {
+                <Check TValue="bool" @bind-Checked="@isQSource" class="me-3" />
+                <span class="me-auto">Q Source</span>
+            }
+            <Check TValue="bool" @bind-Checked="@isSiteClosed" class="me-2" />
+            <span class="me-auto">Site Closed</span>
+        </div>
+
+        <!-- PAX Comment Section -->
+        <div class="mb-3">
+            @if (!isSiteClosed)
+            {
+                <MemoEdit Rows="5" @bind-Text="@comment" Placeholder="Paste the PAX Comment here..." Style="min-height: 100px;" />
+            }
+            else
+            {
+                <div class="text-muted fst-italic mb-2" style="font-size:14px;">
+                    This adds a new Site Closed row to the data sheet so the site no longer shows as "Missing Data"
+                </div>
+                <Button Color="Color.Primary" Clicked="OnSiteClosedClicked">Upload</Button>
+            }
+        </div>
+
+        @if (!isSiteClosed)
+        {
+            <Button Color="Color.Primary" Clicked="OnCommentButtonClicked" class="w-100" Style="margin-bottom:24px;" Loading="commentIsLoading">
+                Match PAX
+            </Button>
         }
     </div>
-
-    @if (missingAos.Count > 0)
-    {
-        <ListGroup style="padding-bottom:12px">
-            @foreach (var missing in missingAos)
-            {
-                <ListGroupItem class="custom-link" Clicked="@(x => OnMissingAoSelected(missing))">@missing.Name -
-                    @missing.DayOfWeek.ToString() @missing.Date.ToShortDateString()</ListGroupItem>
-            }
-        </ListGroup>
-    }
-
-    @if (showNoMissingAoMessage)
-    {
-        <Alert Color="Color.Success" ShowIcon Visible>
-            All up to date!
-            <CloseButton />
-        </Alert>
-    }
-
-    <DatePicker TValue="DateTime?" Placeholder="Q Date" Date="@qDate" DateChanged="@OnDateChanged" DisplayFormat="M/d/yyy" />
-    <RadioGroup TValue="string" Name="ao" CheckedValue="@ao" CheckedValueChanged="@OnAoChanged" Buttons Orientation="Orientation.Vertical" style="margin-top:12px;">
-        @foreach (var ao in aoList)
-        {
-            <div style="@ShowOrHideAo(ao)" class="radio-group-item">
-                <Radio Value="@(ao.Name)" style="appearance:none">@ao.Name (@ao.City)</Radio>
-            </div>
-        }
-        <div style="margin-bottom:6px;" class="radio-group-item">
-            <Radio Value="@AoOtherValue" style="appearance:none">Other</Radio>
-        </div>
-    </RadioGroup>
-
-    @if (ao == AoOtherValue)
-    {
-        <TextEdit @bind-Text="@otherAoName" style="margin-bottom:12px" Placeholder="Other Location Name (Feb Moon Ruck, etc.)"></TextEdit>
-    }
-
-    <Row>
-        @if (RegionInfo.HasQSourcePosts)
-        {
-            <Column ColumnSize="ColumnSize.Is6">
-                <Check TValue="bool" @bind-Checked="@isQSource" style="margin-bottom:12px;color:#575859;font-weight:500">Q Source</Check>
-            </Column>
-        }
-
-        <Column ColumnSize="ColumnSize.Is6">
-            <Check TValue="bool" @bind-Checked="@isSiteClosed" style="margin-bottom:12px;color:#575859;font-weight:500">Site Closed</Check>
-        </Column>
-    </Row>
-
-    @if (isSiteClosed)
-    {
-        <div style="font-size:14px; margin: 8px;color: #4b4646;font-style:italic">This adds a new Site Closed row to the data sheet so the site no longer shows as "Missing Data"</div>
-        <Button Color="Color.Primary" Clicked="@OnSiteClosedClicked">Upload</Button>
-    }
-    else
-    {
-        <MemoEdit Rows="5" Placeholder="Paste the Pax Comment from Band" @bind-Text="@comment" style="margin-bottom:12px"></MemoEdit>
-
-        <div class="one-row">
-            <Button Color="Color.Primary" Clicked="@OnCommentButtonClicked">Submit</Button>
-            @if (commentIsLoading)
-            {
-                <SpinKit Type="SpinKitType.Bounce" />
-            }
-        </div>
-    }
 
 }
 @if (pax.Count > 0 && !isSiteClosed)
 {
     <Table Narrow>
-    <TableHeader>
-        <TableRow>
-            <TableHeaderCell>Name</TableHeaderCell>
-            <TableHeaderCell>Q?</TableHeaderCell>
-            <TableHeaderCell>FNG</TableHeaderCell>
-            <TableHeaderCell></TableHeaderCell>
-        </TableRow>
-    </TableHeader>
-    <TableBody>
-        @foreach (var p in pax.Where(x => x.IsOfficial).ToList())
+        <TableHeader>
+            <TableRow>
+                <TableHeaderCell>Name</TableHeaderCell>
+                <TableHeaderCell>Q?</TableHeaderCell>
+                <TableHeaderCell>FNG</TableHeaderCell>
+                <TableHeaderCell></TableHeaderCell>
+            </TableRow>
+        </TableHeader>
+        <TableBody>
+            @foreach (var p in pax.Where(x => x.IsOfficial).ToList())
             {
                 <TableRow Color="@(p.IsQ ? Color.Primary : Color.Default)">
                     <TableRowCell>
@@ -163,10 +253,10 @@ else
                         else
                         {
                             <Autocomplete TItem="String" TValue="string" Data="@allNames" TextField="@(( item ) => item)"
-                                ValueField="@(( item ) => item)" @bind-SelectedValue="@p.Name" @bind-SelectedText="@p.UnknownName" 
-                                Placeholder="Search..." Filter="AutocompleteFilter.StartsWith" FreeTyping
-                                CustomFilter="@(( item, searchValue ) => item.IndexOf( searchValue, 0, StringComparison.CurrentCultureIgnoreCase ) >= 0 )">
-                            <NotFoundContent> Sorry... @context was not found! :( </NotFoundContent>
+                                          ValueField="@(( item ) => item)" @bind-SelectedValue="@p.Name" @bind-SelectedText="@p.UnknownName"
+                                          Placeholder="Search..." Filter="AutocompleteFilter.StartsWith" FreeTyping
+                                          CustomFilter="@(( item, searchValue ) => item.IndexOf( searchValue, 0, StringComparison.CurrentCultureIgnoreCase ) >= 0 )">
+                                <NotFoundContent> Sorry... @context was not found! :( </NotFoundContent>
                             </Autocomplete>
                         }
                     </TableRowCell>
@@ -177,32 +267,30 @@ else
                     <TableRowCell>
                         <Check TValue="bool" Checked="@p.IsFng" CheckedChanged="@(isChecked => OnFngSelected(p, (bool)isChecked))"></Check>
                     </TableRowCell>
-                    <TableRowCell Clicked="@(e => OnRemovePax(p))" >
+                    <TableRowCell Clicked="@(e => OnRemovePax(p))">
                         <Icon Name="IconName.Times" class="custom-link" />
                     </TableRowCell>
                 </TableRow>
             }
+
+            <TableRow>
+                <div class="one-row">
+                    <Button Color="Color.Secondary" Clicked="@OnAddRowClicked" @bind-Disabled="@isLoading">Add Row</Button>
+                </div>
+            </TableRow>
         </TableBody>
     </Table>
 
-    <div class="one-row" style="padding-bottom:12px">
-        <Button Color="Color.Secondary" Clicked="@OnAddRowClicked" @bind-Disabled="@isLoading">Add Row</Button>
-    </div>
-
-    <div class="one-row" style="padding-bottom:12px">
-        <Button Color="Color.Primary" Clicked="@OnUploadButtonClicked" @bind-Disabled="@isLoading">Upload</Button>
-        <span style="margin: auto 0px auto 12px;">@pax.Count PAX</span>
-        @if (isLoading)
-        {
-            <SpinKit Type="SpinKitType.Bounce" />
-        }
+    <div style="padding-bottom:12px;">
+        <Button Color="Color.Primary" Clicked="@OnUploadButtonClicked" @bind-Disabled="@isLoading" Loading="isLoading">Upload</Button>
+        <span style="margin: auto 0px auto 12px;">@pax.Count PAX for @ao</span>
     </div>
 
     @if (!string.IsNullOrEmpty(errorMessage))
     {
         <Alert Color="Color.Danger" Visible>
-        <AlertDescription>@errorMessage</AlertDescription>
-    </Alert>
+            <AlertDescription>@errorMessage</AlertDescription>
+        </Alert>
     }
 }
 
@@ -216,4 +304,5 @@ else
     <CloseButton />
 </Alert>
 
+</div>
 

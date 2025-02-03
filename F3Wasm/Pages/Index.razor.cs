@@ -1,22 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Components;
-using System.Net.Http;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.AspNetCore.Components.Routing;
-using Microsoft.AspNetCore.Components.Web;
-using Microsoft.AspNetCore.Components.Web.Virtualization;
-using Microsoft.JSInterop;
-using F3Wasm;
 using Blazorise;
-using Blazorise.Components;
-using F3Wasm.Models;
-using F3Wasm.Data;
 using F3Core;
 using F3Core.Regions;
+using F3Wasm.Data;
+using Microsoft.AspNetCore.Components;
 
 namespace F3Wasm.Pages
 {
@@ -25,6 +11,7 @@ namespace F3Wasm.Pages
         [Parameter]
         public string Region { get; set; }
         public Region RegionInfo { get; set; }
+        DatePicker<DateTime?> datePicker;
         public List<Ao> aoList { get; set; }
 
         private string comment = string.Empty;
@@ -33,7 +20,7 @@ namespace F3Wasm.Pages
         public List<Ao> missingAos { get; set; } = new List<Ao>();
         private static DateTime? qDate = DateTime.Now;
         public string ao { get; set; }
-        public static string AoOtherValue { get; } = "other";
+        public static string AoOtherValue { get; } = "Other";
         public string otherAoName { get; set; }
 
         public string errorMessage { get; set; }
@@ -54,6 +41,12 @@ namespace F3Wasm.Pages
             }
 
             aoList = await LambdaHelper.GetAllLocationsAsync(Http, Region);
+
+            // Add Other to each day of week
+            foreach (var day in Enum.GetValues(typeof(DayOfWeek)).Cast<DayOfWeek>())
+            {
+                aoList.Add(new Ao { Name = AoOtherValue, DayOfWeek = day, City = "Enter Details..." });
+            }
         }
 
         private string ShowOrHideAo(Ao ao)
@@ -89,16 +82,18 @@ namespace F3Wasm.Pages
         private async Task OnMissingAoSelected(Ao missingAo)
         {
             qDate = missingAo.Date;
-            await Task.Delay(50);
-            ao = missingAo.Name;
 
-            Console.WriteLine($"Selected {missingAo.Name} on {missingAo.Date}. ao is now {ao}");
+            await OnAoChanged(missingAo.Name);
+            await InvokeAsync(StateHasChanged);
         }
 
         private async Task OnDateChanged(DateTime? date)
         {
-            qDate = date;
-            ao = string.Empty;
+            if (qDate.Value.Date.Day != date.Value.Date.Day)
+            {
+                ao = string.Empty;
+                qDate = date;
+            }
         }
 
         private async Task OnAoChanged(string aoValue)
