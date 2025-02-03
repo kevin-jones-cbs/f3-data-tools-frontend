@@ -112,15 +112,15 @@ else
                 </div>
             </div>
 
-            @if (showNoMissingAoMessage)
-            {
-                <Alert Color="Color.Success" ShowIcon Visible>
-                    All up to date!
-                    <CloseButton />
-                </Alert>
-            }
-
             <hr />
+        }
+
+        @if (showNoMissingAoMessage)
+        {
+            <Alert Color="Color.Success" ShowIcon Visible>
+                All up to date!
+                <CloseButton />
+            </Alert>
         }
 
         <Addons>

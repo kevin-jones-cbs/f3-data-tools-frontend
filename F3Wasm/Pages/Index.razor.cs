@@ -63,9 +63,10 @@ namespace F3Wasm.Pages
         {
             isMissingDataLoading = true;
             missingAos = await LambdaHelper.GetMissingAosAsync(Http, Region);
-            if (!missingAos.Any())
+            if (!missingAos.Any(x => x.Name != AoOtherValue))
             {
                 showNoMissingAoMessage = true;
+                await InvokeAsync(StateHasChanged);
             }
 
             isMissingDataLoading = false;
@@ -195,7 +196,7 @@ namespace F3Wasm.Pages
                 missingAos.Remove(missingAos.First(x => x.Name == ao && x.Date.Date == qDate.Value.Date));
 
                 // If there are no more missing aos, show the message
-                if (!missingAos.Any())
+                if (!missingAos.Any(x => x.Name != AoOtherValue))
                 {
                     showNoMissingAoMessage = true;
                 }
