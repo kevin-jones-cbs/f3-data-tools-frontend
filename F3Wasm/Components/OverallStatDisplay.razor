@@ -1,0 +1,23 @@
+﻿@using F3Wasm.Models
+@inherits ComponentBase
+
+<div class="col-xl-3 col-md-6 col-12 d-flex">
+    <Card Class="shadow-sm flex-fill" Style="min-width:225px;">
+        <CardBody>
+            <div class="d-flex align-items-center">
+                <div class="@Stat.Color p-2 rounded-lg text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <Icon Name="@Stat.Icon" Size="lg" />
+                </div>
+                <div class="ms-3">
+                    <div class="text-muted small">@Stat.Label</div>
+                    <div class="fw-bold fs-5">@Stat.Value</div>
+                </div>
+            </div>
+        </CardBody>
+    </Card>
+</div>
+
+@code {
+    [Parameter]
+    public OverallStat Stat { get; set; }
+}

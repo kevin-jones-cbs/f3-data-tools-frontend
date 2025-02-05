@@ -3,6 +3,7 @@
 @using F3Wasm.Data
 @using System.Globalization
 @using F3Wasm.Models
+@using F3Wasm.Components
 @inject HttpClient Http
 
 <PageTitle>F3 Sacramento Sector Data</PageTitle>
@@ -13,53 +14,43 @@
 }
 else
 {
-    <div class="row g-4 mb-3">
+    <div class="row g-2 mb-3 justify-content-center">
         @foreach (var stat in OverallStats)
         {
-            <div class="col-md-3 col-12">
-                <Card Class="shadow-sm">
-                    <CardBody>
-                        <div class="d-flex align-items-center">
-                            <div class="@stat.Color p-2 rounded-lg text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                <Icon Name="@stat.Icon" Size="lg" />
-                            </div>
-                            <div class="ms-3">
-                                <div class="text-muted small">@stat.Label</div>
-                                <div class="fw-bold fs-5">@stat.Value</div>
-                            </div>
-                        </div>
-                    </CardBody>
-                </Card>
-            </div>
+           <OverallStatDisplay Stat="stat" />
         }
     </div>
 
     <div class="data-grid-container">
+        <TextEdit class="mb-2" Placeholder="Search PAX..." Text="@SearchTerm" TextChanged="@OnCustomFilterValueChanged"></TextEdit>
         <DataGrid TItem="PaxSectorData"
+                  @ref="dataGrid"
                   Data="@SectorData.PaxSectorData"
+                  CustomFilter="@OnCustomFilter"
                   ShowSearchBar="true"
                   ShowPager="true"
                   Responsive="true"
                   PageSize="10"
                   Narrow
+                  RowClicked="@(e => ToggleRow(e.Item))"
                   SortMode="DataGridSortMode.Single"
-                  DetailRowTrigger="@(data => IsRowExpanded.Contains(data.Item))">
+                  DetailRowTrigger="@(data => IsRowExpanded(data.Item))">
 
             <DataGridColumns>
             <DataGridColumn Field="PaxName" Caption="PAX Name" Sortable="true">
                 <DisplayTemplate>
                     @{ var pax = context as PaxSectorData;
                         <div class="d-flex align-items-center">
-                            <Icon Name="IconName.ChevronRight" class="mr-2" style="@($"color: {GetRegionColor(pax.PaxRegionData.FirstOrDefault().Key)}")" Clicked="() => ToggleRow(pax)" />
+                                <Icon Name="@(IsRowExpanded(pax) ? IconName.MinusCircle : IconName.PlusCircle)" class="mr-2" style="@($"color: {GetRegionColor(pax.PaxRegionData.OrderByDescending(x => x.Value.PostCount).FirstOrDefault().Key)}")" />
                             @pax.PaxName
                         </div>
                     }
 
                 </DisplayTemplate>
             </DataGridColumn>
-                <DataGridColumn Field="TotalPostCount" Caption="Total Posts" Sortable="true" />
-                <DataGridColumn Field="TotalQCount" Caption="Total Qs" Sortable="true"  />
-                <DataGridColumn Field="FirstPost" Caption="First Post" Sortable="true" DisplayFormat="{0:M/d/yy}" />
+                <DataGridColumn Field="TotalPostCount" Caption="All Posts" Sortable="true" />
+                <DataGridColumn Field="TotalQCount" Caption="All Qs" Sortable="true" />
+                <DataGridColumn Field="FirstPost" Caption="1st Post" Sortable="true" DisplayFormat="{0:M/d/yy}" />
             </DataGridColumns>
 
             <DetailRowTemplate Context="pax">
@@ -72,7 +63,7 @@ else
                         }
                         @foreach (var region in pax.PaxRegionData.OrderByDescending(r => r.Value.PostCount))
                         {
-                            <span style="@GetRegionClass(region.Key, isFirst)" class="badge flex-shrink-0 p-2">@region.Key: @region.Value.PostCount</span>
+                            <span style="@GetRegionPillStyle(region.Key, isFirst)" class="badge flex-shrink-0 p-2">@region.Key: @region.Value.PostCount</span>
                             isFirst = false;
                         }
 
@@ -118,50 +109,38 @@ else
         .badge {
             font-weight: 400;
             font-size: 14px;
-            
+        }
+
+        /* Pager goes past page boundary */
+        .justify-content-between {
+            width: 100%;
         }
     </style>
-
 }
 
 @code {
     private SectorData SectorData { get; set; }
+    private DataGrid<PaxSectorData> dataGrid;
     private string SearchTerm = "";
     private readonly Dictionary<string, string> RegionColors = new()
     {
         { "South Fork", "#00c73c" },
         { "Asgard", "#8367eb" },
         { "Gold Rush", "#c79400" },
-        { "Mother Lode", "#ffa91c" },
+        { "Mother Lode", "#1f2f03" },
+        { "Delta", "#d31a08" },
+        { "Rubicon", "#fc5460" },
+        { "SacTown", "#1ca7ea" },
+        { "Terracotta", "#ffa91c" },
     };
 
     private List<OverallStat> OverallStats;
 
-    private HashSet<PaxSectorData> IsRowExpanded = new();
-
-    private void ToggleRow(PaxSectorData pax)
-    {
-        if (!IsRowExpanded.Add(pax))
-        {
-            IsRowExpanded.Remove(pax);
-        }
-    }
-
-    private void ToggleAllRows()
-    {
-        if (IsRowExpanded.Count > 0)
-        {
-            IsRowExpanded.Clear();
-        }
-        else
-        {
-            IsRowExpanded = SectorData.PaxSectorData.ToHashSet();
-        }
-    }
-
     protected override async Task OnInitializedAsync()
     {
         SectorData = await LambdaHelper.GetSectorDataAsync(Http);
+
+        var banjo = SectorData.PaxSectorData.FirstOrDefault(x => x.PaxName == "Banjo");
 
         OverallStats = new List<OverallStat>()
         {
@@ -172,18 +151,46 @@ else
         };
     }
 
-    private string GetRegionClass(string regionName, bool isFirst)
+    private HashSet<PaxSectorData> RoxExpandedSet = new();
+
+    private bool IsRowExpanded(PaxSectorData pax) => RoxExpandedSet.Contains(pax);
+
+    private void ToggleRow(PaxSectorData pax)
+    {
+        if (!RoxExpandedSet.Add(pax))
+        {
+            RoxExpandedSet.Remove(pax);
+        }
+    }
+
+    private string GetRegionPillStyle(string regionName, bool isFirst)
     {
         if (!isFirst)
         {
             return "background: white;color: #555555; border: 1px solid #c1c1c1;";
         }
 
-        return RegionColors.TryGetValue(regionName, out var color) ? $"background:{color};color: #white;font-weight:500" : "background: #6c757d;color:white;";
+        var color = GetRegionColor(regionName);
+
+        return !string.IsNullOrEmpty(color) ? $"background:{color};color: #white;font-weight:500" : "background: #6c757d;color:white;";
     }
 
     private string GetRegionColor(string regionName)
     {
         return RegionColors.TryGetValue(regionName, out var color) ? color : "#6c757d";
+    }
+
+    private Task OnCustomFilterValueChanged(string e)
+    {
+        SearchTerm = e;
+        return dataGrid.Reload();
+    }
+
+    private bool OnCustomFilter(PaxSectorData model)
+    {
+        if (string.IsNullOrEmpty(SearchTerm))
+            return true;
+
+        return model.PaxName?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) == true;
     }
 }

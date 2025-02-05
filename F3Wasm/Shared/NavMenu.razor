@@ -1,21 +1,27 @@
-﻿@using F3Core
+﻿@inject NavigationManager Navigation
+@using F3Core
 @using F3Core.Regions
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">@GetRegionName()</a>
-        @* <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+        <a class="navbar-brand" href="">@MenuTitle</a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
-        </button> *@
+        </button>
     </div>
 </div>
 
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
     <nav class="flex-column">
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                @* <span class="oi oi-home" aria-hidden="true"></span> Home *@
-            </NavLink>
+            <a class="nav-link" href="/data/asgard" target="_blank">Asgard</a>
+            <a class="nav-link" href="/data/delta" target="_blank">Delta</a>
+            <a class="nav-link" href="/data/goldrush" target="_blank">Gold Rush</a>
+            <a class="nav-link" href="/data/motherlode" target="_blank">Mother Lode</a>
+            <a class="nav-link" href="/data/rubicon" target="_blank">Rubicon</a>
+            <a class="nav-link" href="/data/sactown" target="_blank">SacTown</a>
+            <a class="nav-link" href="/data/southfork" target="_blank">South Fork</a>
+            <a class="nav-link" href="/data/terracotta" target="_blank">Terracotta</a>
         </div>
     </nav>
 </div>
@@ -26,17 +32,28 @@
     public Region RegionInfo { get; set; }
     private bool collapseNavMenu = true;
 
+    private string MenuTitle { get; set; }
+
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
-    public string GetRegionName()
+    protected override void OnInitialized()
     {
-        RegionInfo = RegionList.All.FirstOrDefault(x => x.QueryStringValue == Region);
-        var display = RegionInfo?.DisplayName ?? "";
+        var uri = Navigation.Uri;
 
-        if (!display.Contains("FiA"))
-            display = "F3 " + display;
+        if (uri.Contains("sectordata"))
+        {
+            MenuTitle = "F3 Greater Sacramento Area";
+        }
+        else
+        {
+            RegionInfo = RegionList.All.FirstOrDefault(x => x.QueryStringValue == Region);
+            var display = RegionInfo?.DisplayName ?? "";
 
-        return display;
+            if (!display.Contains("FiA"))
+                display = "F3 " + display;
+
+            MenuTitle = display;
+        }
     }
 
     private void ToggleNavMenu()
