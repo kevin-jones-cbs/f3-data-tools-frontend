@@ -5,9 +5,12 @@
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">@MenuTitle</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+        @if (ShowRegionList)
+        {
+            <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        }
     </div>
 </div>
 
@@ -33,6 +36,7 @@
     private bool collapseNavMenu = true;
 
     private string MenuTitle { get; set; }
+    private bool ShowRegionList { get; set; } = false;
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
@@ -43,6 +47,7 @@
         if (uri.Contains("sectordata"))
         {
             MenuTitle = "F3 Greater Sacramento";
+            ShowRegionList = true;
         }
         else
         {
