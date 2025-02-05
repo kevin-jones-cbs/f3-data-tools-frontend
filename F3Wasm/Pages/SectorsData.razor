@@ -83,6 +83,8 @@ else
         .data-grid-container {
             max-width: 100%;
             overflow-x: auto;
+            min-height: 500px; /* Prevents shrinkage when filtering */
+            position: relative;
         }
 
         .data-grid-container .b-table {
