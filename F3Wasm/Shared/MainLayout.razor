@@ -5,8 +5,8 @@
 <div class="page">
     @if (!IsEmbed)
     {
-        <div>
-            <NavMenu Region="@Region"/>
+        <div class="sidebar">
+            <NavMenu Region="@Region" />
         </div>
     }
 
@@ -14,7 +14,7 @@
         @if (!IsEmbed)
         {
             <div class="top-row px-4"></div>
-        }           
+        }
 
         <article class="content px-4">
             @Body
