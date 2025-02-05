@@ -1,0 +1,189 @@
+﻿@page "/sectordata/sacramento"
+@using F3Core
+@using F3Wasm.Data
+@using System.Globalization
+@using F3Wasm.Models
+@inject HttpClient Http
+
+<PageTitle>F3 Sacramento Sector Data</PageTitle>
+
+@if (SectorData == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="row g-4 mb-3">
+        @foreach (var stat in OverallStats)
+        {
+            <div class="col-md-3 col-12">
+                <Card Class="shadow-sm">
+                    <CardBody>
+                        <div class="d-flex align-items-center">
+                            <div class="@stat.Color p-2 rounded-lg text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <Icon Name="@stat.Icon" Size="lg" />
+                            </div>
+                            <div class="ms-3">
+                                <div class="text-muted small">@stat.Label</div>
+                                <div class="fw-bold fs-5">@stat.Value</div>
+                            </div>
+                        </div>
+                    </CardBody>
+                </Card>
+            </div>
+        }
+    </div>
+
+    <div class="data-grid-container">
+        <DataGrid TItem="PaxSectorData"
+                  Data="@SectorData.PaxSectorData"
+                  ShowSearchBar="true"
+                  ShowPager="true"
+                  Responsive="true"
+                  PageSize="10"
+                  Narrow
+                  SortMode="DataGridSortMode.Single"
+                  DetailRowTrigger="@(data => IsRowExpanded.Contains(data.Item))">
+
+            <DataGridColumns>
+            <DataGridColumn Field="PaxName" Caption="PAX Name" Sortable="true">
+                <DisplayTemplate>
+                    @{ var pax = context as PaxSectorData;
+                        <div class="d-flex align-items-center">
+                            <Icon Name="IconName.ChevronRight" class="mr-2" style="@($"color: {GetRegionColor(pax.PaxRegionData.FirstOrDefault().Key)}")" Clicked="() => ToggleRow(pax)" />
+                            @pax.PaxName
+                        </div>
+                    }
+
+                </DisplayTemplate>
+            </DataGridColumn>
+                <DataGridColumn Field="TotalPostCount" Caption="Total Posts" Sortable="true" />
+                <DataGridColumn Field="TotalQCount" Caption="Total Qs" Sortable="true"  />
+                <DataGridColumn Field="FirstPost" Caption="First Post" Sortable="true" DisplayFormat="{0:M/d/yy}" />
+            </DataGridColumns>
+
+            <DetailRowTemplate Context="pax">
+                <div class="d-flex align-items-center">
+                    <!-- Scrollable container for regions -->
+                    <div class="d-flex gap-2 overflow-auto px-2 py-2 rounded "
+                         style="max-width: 80vw; overflow-x: auto; white-space: nowrap;background:#f7f7f7">
+                        @{
+                            var isFirst = true;
+                        }
+                        @foreach (var region in pax.PaxRegionData.OrderByDescending(r => r.Value.PostCount))
+                        {
+                            <span style="@GetRegionClass(region.Key, isFirst)" class="badge flex-shrink-0 p-2">@region.Key: @region.Value.PostCount</span>
+                            isFirst = false;
+                        }
+
+                    </div>
+                </div>
+            </DetailRowTemplate>
+        </DataGrid>
+    </div>
+
+    <style>
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: gray; /* Default color, will customize later */
+        }
+        .data-grid-container {
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .data-grid-container .b-table {
+            width: 100%;
+            table-layout: fixed; /* Ensures column widths don’t auto-expand */
+        }
+
+        .data-grid-container th,
+        .data-grid-container td {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Ensure the DataGrid shrinks properly on smaller screens */
+        @@media (max-width: 768px) {
+            .data-grid-container .b-table {
+                display: block;
+                overflow-x: auto;
+                max-width: 100%;
+            }
+        }
+
+        .badge {
+            font-weight: 400;
+            font-size: 14px;
+            
+        }
+    </style>
+
+}
+
+@code {
+    private SectorData SectorData { get; set; }
+    private string SearchTerm = "";
+    private readonly Dictionary<string, string> RegionColors = new()
+    {
+        { "South Fork", "#00c73c" },
+        { "Asgard", "#8367eb" },
+        { "Gold Rush", "#c79400" },
+        { "Mother Lode", "#ffa91c" },
+    };
+
+    private List<OverallStat> OverallStats;
+
+    private HashSet<PaxSectorData> IsRowExpanded = new();
+
+    private void ToggleRow(PaxSectorData pax)
+    {
+        if (!IsRowExpanded.Add(pax))
+        {
+            IsRowExpanded.Remove(pax);
+        }
+    }
+
+    private void ToggleAllRows()
+    {
+        if (IsRowExpanded.Count > 0)
+        {
+            IsRowExpanded.Clear();
+        }
+        else
+        {
+            IsRowExpanded = SectorData.PaxSectorData.ToHashSet();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        SectorData = await LambdaHelper.GetSectorDataAsync(Http);
+
+        OverallStats = new List<OverallStat>()
+        {
+            new OverallStat { Label = "Total Posts", Value = SectorData.TotalPosts.ToString("N0"), Icon = IconName.Running, Color = "bg-primary" },
+            new OverallStat { Label = "Total PAX All-Time", Value = SectorData.TotalPax.ToString("N0"), Icon = IconName.Grin, Color = "bg-success" },
+            new OverallStat { Label = "Active AOs", Value = SectorData.ActiveLocations.ToString("N0"), Icon = IconName.MapMarkerAlt, Color = "bg-info" },
+            new OverallStat { Label = "Total PAX Last 30 Days", Value = SectorData.TotalPax30Days.ToString("N0"), Icon = IconName.CalendarWeek, Color = "bg-warning" }
+        };
+    }
+
+    private string GetRegionClass(string regionName, bool isFirst)
+    {
+        if (!isFirst)
+        {
+            return "background: white;color: #555555; border: 1px solid #c1c1c1;";
+        }
+
+        return RegionColors.TryGetValue(regionName, out var color) ? $"background:{color};color: #white;font-weight:500" : "background: #6c757d;color:white;";
+    }
+
+    private string GetRegionColor(string regionName)
+    {
+        return RegionColors.TryGetValue(regionName, out var color) ? color : "#6c757d";
+    }
+}

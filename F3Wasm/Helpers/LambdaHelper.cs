@@ -70,6 +70,13 @@ namespace F3Wasm.Data
             await CallF3LambdaAsync(client, new FunctionInput { Action = "ClearCache", Region = region });
         }
 
+        public static async Task<SectorData> GetSectorDataAsync(HttpClient client)
+        {
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetSectorData"});
+            var sectorData = JsonSerializer.Deserialize<SectorData>(response);
+            return sectorData;
+        }
+
         public static AllData DecompressAll(string compressedString)
         {
             var decompressed = Decompress(compressedString);
