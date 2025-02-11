@@ -18,5 +18,10 @@ namespace F3Wasm.Models
         // Ao Challenge
         public int AoPosts { get; set; }
         public double AoPercent { get; set; }
+
+        // Q Source
+        public int QSourceCount { get; set; }
+        public int QSourceQCount { get; set; }
+        public int GoldStandardPercent { get; set; }
     }
 }

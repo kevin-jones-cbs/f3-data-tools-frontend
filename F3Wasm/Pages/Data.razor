@@ -117,7 +117,8 @@ else
         </Dropdown>
     </Column>
     </Row>
-    <Row style="margin-top:6px;">
+
+    <Row Class="mt-1">
         <Column>
             @if (RegionInfo.HasQSourcePosts)
             {
@@ -130,9 +131,18 @@ else
             @if (RegionInfo.DisplayName != "Gold Rush")
             {
                 <Button Color="currentView == OverallView.AoList ? Color.Primary : Color.Light" Clicked="ShowAoList">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture) AOs</Button>
-            }
+            } 
         </Column>
     </Row>    
+
+    <Row Class="mt-1">
+        <Column>
+            @if (RegionInfo.DisplayName == "Gold Rush")
+            {
+                <Button Outline="currentView != OverallView.GoldStandard" Color="Color.Warning" Clicked="@(() => currentView = OverallView.GoldStandard)">Gold Standard</Button>
+            }
+        </Column>
+    </Row>
 
     <Row>
         <Column>
@@ -162,7 +172,13 @@ else
             <Button Color="Color.Secondary" Clicked="@ExportToCsv">Export to CSV</Button>
         }
 
-        <DataGrid @ref="dataGrid" 
+        @if (currentView == OverallView.GoldStandard)
+        {
+            <GoldStandard AllData="allData" FilterValue="@customFilterValue"></GoldStandard>   
+        }
+        else
+        {
+            <DataGrid @ref="dataGrid" 
             TItem="DisplayRow" 
             Data="@currentRows" 
             ShowPager 
@@ -230,7 +246,7 @@ else
             </DataGridColumns>
 
         </DataGrid>
-
+        }   
         @if (RegionInfo.HasHistoricalData && firstNonHistoricalDate.HasValue)
         {
             <p>* Since @firstNonHistoricalDate.Value.ToString("M/d/yy")</p>

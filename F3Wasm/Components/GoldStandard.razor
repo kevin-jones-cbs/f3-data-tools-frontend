@@ -1,0 +1,208 @@
+﻿@using Blazorise.DataGrid
+@using F3Core
+@using F3Wasm.Models
+
+<style>
+    th {
+        font-size: 12px;
+    }
+
+    table td {
+        vertical-align:middle !important;
+    }
+
+    .progress-bar {
+        color: white;
+        min-width: 15px;
+    }
+
+    .f3progress {
+        width: 100%;
+    }
+
+    .progress-label {
+        font-size: 10px;
+    }
+
+    .progress-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 100px;
+    }
+
+    /* Show larger on larger screens */
+    @@media (min-width: 640px) {
+        .progress-container {
+            min-width: 120px;
+        }
+    }
+
+    @@media (min-width: 1060px) {
+        .progress-container {
+            min-width: 150px;
+        }
+    }
+
+    /* Show smaller on smaller screens */
+    @@media (max-width: 360px) {
+        .progress-container {
+            min-width: 80px;
+        }
+    } 
+</style>
+
+<DataGrid TItem="DisplayRow"
+          Data="@GoldStandardRows"
+          ShowPager="true"
+          SortMode="DataGridSortMode.Single"
+          PageSize="50"
+          Responsive="true"
+          ShowPageSizes="true"
+          PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }">
+    <DataGridColumns>
+
+        <!-- PAX Name -->
+        <DataGridColumn TItem="DisplayRow"
+                        Caption="Name"
+                        Sortable="true"
+                        Width="40px"
+                        SortField="@nameof(DisplayRow.PaxName)">
+            <DisplayTemplate>
+                <Span Style="font-weight:600;font-size:12px;vertical-align:middle;">@context.PaxName</Span>
+            </DisplayTemplate>
+        </DataGridColumn>
+
+        <DataGridColumn TItem="DisplayRow"
+                        Caption="Gold %"
+                        Filterable="false"
+                        Sortable="true">
+            <DisplayTemplate>
+                <!-- Single flex container, wrapping enabled -->
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start;">
+
+                    <!-- Posts -->
+                    <div class="progress-container">
+                        <Progress ShowValue Min="0" Max="100"
+                                  Value="@GetPercent(context.PostCount, PostCountMax)"
+                                  Color="Color.Success"
+                                  style="@GetHighlightStyle(context.PostCount, PostCountMax)"
+                                  Class="f3progress">@context.PostCount</Progress>
+                        <Span Class="progress-label">Posts</Span>
+                    </div>
+
+                    <!-- Qs -->
+                    <div class="progress-container">
+                        <Progress ShowValue Min="0" Max="100"
+                                  Value="@GetPercent(context.QCount, QCountMax)"
+                                  Color="Color.Info"
+                                  style="@GetHighlightStyle(context.QCount, QCountMax)"
+                                  Class="f3progress">@context.QCount</Progress>
+                        <Span Class="progress-label">Qs</Span>
+                    </div>
+
+                    <!-- Q Source -->
+                    <div class="progress-container">
+                        <Progress ShowValue Min="0" Max="100"
+                                  Value="@GetPercent(context.QSourceCount, QSourceCountMax)"
+                                  Color="Color.Warning"
+                                  style="@GetHighlightStyle(context.QSourceCount, QSourceCountMax)"
+                                  Class="f3progress">@context.QSourceCount</Progress>
+                        <Span Class="progress-label">Q Source</Span>
+                    </div>
+
+                    <!-- Q Source Qs -->
+                    <div class="progress-container">
+                        <Progress ShowValue Min="0" Max="100"
+                                  Value="@GetPercent(context.QSourceQCount, QSourceQCountMax)"
+                                  Color="Color.Danger"
+                                  style="@GetHighlightStyle(context.QSourceQCount, QSourceQCountMax)"
+                                  Class="f3progress">@context.QSourceQCount</Progress>
+                        <Span Class="progress-label">Q Source Qs</Span>
+                    </div>
+
+                </div>
+            </DisplayTemplate>
+        </DataGridColumn>
+
+    </DataGridColumns>
+</DataGrid>
+
+@code {
+    [Parameter]
+    public AllData AllData { get; set; }
+
+    [Parameter]
+    public string FilterValue { get; set; }
+
+    public List<DisplayRow> GoldStandardRows { get; set; }
+
+    private static int PostCountMax = 200;
+    private static int QCountMax = 12;
+    private static int QSourceCountMax = 30;
+    private static int QSourceQCountMax = 3;
+
+    protected override void OnParametersSet()
+    {
+        var thisYear = DateTime.Now.Year;
+        var posts = AllData.Posts.Where(x => x.Date.Year == thisYear).ToList();
+        var qSourcePosts = AllData.QSourcePosts.Where(x => x.Date.Year == thisYear).ToList();
+
+        var paxPosts = posts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
+        var paxQSourcePosts = qSourcePosts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
+
+        GoldStandardRows = new List<DisplayRow>();
+
+        foreach (var pax in paxPosts.Keys)
+        {
+            var postCount = paxPosts[pax].Count;
+            var qCount = paxPosts[pax].Count(x => x.IsQ);
+            var qSourceCount = paxQSourcePosts.ContainsKey(pax) ? paxQSourcePosts[pax].Count : 0;
+            var qSourceQCount = paxQSourcePosts.ContainsKey(pax) ? paxQSourcePosts[pax].Count(x => x.IsQ) : 0;
+
+            GoldStandardRows.Add(new DisplayRow
+                {
+                    PaxName = pax,
+                    PostCount = postCount,
+                    QCount = qCount,
+                    QSourceCount = qSourceCount,
+                    QSourceQCount = qSourceQCount,
+                    GoldStandardPercent = GetGoldStandardPercent(postCount, qCount, qSourceCount, qSourceQCount)
+                });
+        }
+
+        if (!string.IsNullOrEmpty(FilterValue))
+        {
+            GoldStandardRows = GoldStandardRows
+                .Where(row => row.PaxName.Contains(FilterValue, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        GoldStandardRows = GoldStandardRows.OrderByDescending(x => x.GoldStandardPercent).ToList();
+    }
+
+    private int GetPercent(int value, int max)
+    {
+        return (int)((double)value / max * 100);
+    }
+
+    private int GetGoldStandardPercent(int postCount, int qCount, int qSourceCount, int qSourceQCount)
+    {
+        var totalReq = PostCountMax + QCountMax + QSourceCountMax + QSourceQCountMax;
+        var paxTotal = postCount + qCount + qSourceCount + qSourceQCount;
+
+        var goldStandardPercent = ((double)paxTotal / totalReq) * 100;
+
+        return (int)goldStandardPercent;
+    }
+
+    // Example threshold-based style.
+    // If the value is >= the threshold, highlight it green.
+    private string GetHighlightStyle(int value, int threshold)
+    {
+        if (value >= threshold)
+            return "font-weight:700";
+        else
+            return "";
+    }
+}

@@ -10,6 +10,7 @@ namespace F3Wasm.Models
         AoList,
         QKotter,
         QSource,
+        GoldStandard,
         UNSET
     }
 }
