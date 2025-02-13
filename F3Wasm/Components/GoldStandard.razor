@@ -10,46 +10,6 @@
     table td {
         vertical-align:middle !important;
     }
-
-    .progress-bar {
-        color: white;
-        min-width: 16px;
-    }
-
-    .f3progress {
-        width: 100%;
-    }
-
-    .progress-label {
-        font-size: 10px;
-    }
-
-    .progress-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        min-width: 100px;
-    }
-
-    /* Show larger on larger screens */
-    @@media (min-width: 640px) {
-        .progress-container {
-            min-width: 120px;
-        }
-    }
-
-    @@media (min-width: 1060px) {
-        .progress-container {
-            min-width: 150px;
-        }
-    }
-
-    /* Show smaller on smaller screens */
-    @@media (max-width: 360px) {
-        .progress-container {
-            min-width: 80px;
-        }
-    } 
 </style>
 
 <div class="mb-2" style="font-style:italic">The Gold Standard is achieving 200 posts, 12 Q's, 30 Q Source Posts, and 3 Q Source Q's in @DateTime.Now.Year.</div>
@@ -82,47 +42,10 @@
             <DisplayTemplate>
                 <!-- Single flex container, wrapping enabled -->
                 <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start;">
-
-                    <!-- Posts -->
-                    <div class="progress-container">
-                        <Progress ShowValue Min="0" Max="100"
-                                  Value="@GetPercent(context.PostCount, PostCountMax)"
-                                  Color="Color.Success"
-                                  style="@GetHighlightStyle(context.PostCount, PostCountMax)"
-                                  Class="f3progress">@context.PostCount</Progress>
-                        <Span Class="progress-label">Posts</Span>
-                    </div>
-
-                    <!-- Qs -->
-                    <div class="progress-container">
-                        <Progress ShowValue Min="0" Max="100"
-                                  Value="@GetPercent(context.QCount, QCountMax)"
-                                  Color="Color.Info"
-                                  style="@GetHighlightStyle(context.QCount, QCountMax)"
-                                  Class="f3progress">@context.QCount</Progress>
-                        <Span Class="progress-label">Qs</Span>
-                    </div>
-
-                    <!-- Q Source -->
-                    <div class="progress-container">
-                        <Progress ShowValue Min="0" Max="100"
-                                  Value="@GetPercent(context.QSourceCount, QSourceCountMax)"
-                                  Color="Color.Warning"
-                                  style="@GetHighlightStyle(context.QSourceCount, QSourceCountMax)"
-                                  Class="f3progress">@context.QSourceCount</Progress>
-                        <Span Class="progress-label">Q Source</Span>
-                    </div>
-
-                    <!-- Q Source Qs -->
-                    <div class="progress-container">
-                        <Progress ShowValue Min="0" Max="100"
-                                  Value="@GetPercent(context.QSourceQCount, QSourceQCountMax)"
-                                  Color="Color.Danger"
-                                  style="@GetHighlightStyle(context.QSourceQCount, QSourceQCountMax)"
-                                  Class="f3progress">@context.QSourceQCount</Progress>
-                        <Span Class="progress-label">Q Source Qs</Span>
-                    </div>
-
+                    <ProgressContainer Label="Posts" Value="@context.PostCount" MaxValue="PostCountMax" Color="Color.Success" />
+                    <ProgressContainer Label="Qs" Value="@context.QCount" MaxValue="QCountMax" Color="Color.Info" />
+                    <ProgressContainer Label="Q Source" Value="@context.QSourceCount" MaxValue="QSourceCountMax" Color="Color.Warning" />
+                    <ProgressContainer Label="Q Source Qs" Value="@context.QSourceQCount" MaxValue="QSourceQCountMax" Color="Color.Danger" />
                 </div>
             </DisplayTemplate>
         </DataGridColumn>

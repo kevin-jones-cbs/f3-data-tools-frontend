@@ -1,0 +1,101 @@
+@using Blazorise
+
+<style>
+    /* Show larger on larger screens */
+    @@media (min-width: 640px) {
+        .progress-container {
+            min-width: 120px;
+        }
+    }
+
+    @@media (min-width: 1060px) {
+        .progress-container {
+            min-width: 150px;
+        }
+    }
+
+    /* Show smaller on smaller screens */
+    @@media (max-width: 360px) {
+        .progress-container {
+            min-width: 80px;
+        }
+    }
+
+    .check-mark {
+        color: #ffc107;
+        font-weight: bold;
+        margin-left: 4px;
+        font-size: 10px; /* Match the size of the progress-label */
+    }
+
+    .progress-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 100px;
+    }
+
+    .progress-label {
+        font-size: 10px;
+    }
+
+    .progress-label-complete {
+        font-size: 10px;
+        font-weight: 600;
+    }
+
+    .f3progress {
+        width: 100%;
+    }
+
+    .progress-bar {
+        color: white;
+        min-width: 16px;
+    }
+</style>
+
+<div class="progress-container">
+    <Progress ShowValue Min="0" Max="100"
+              Value="@GetPercent(Value, MaxValue)"
+              Color="@Color"
+              style="@GetHighlightStyle(Value, MaxValue)"
+              Class="f3progress">@Value</Progress>
+    <div style="display: flex; align-items: center;">
+        @if (Value >= MaxValue)
+        {
+            <Span Class="progress-label-complete">@Label</Span>
+            <Icon Name="IconName.Check" Class="check-mark" />
+        }
+        else
+        {
+            <Span Class="progress-label">@Label</Span>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Label { get; set; }
+
+    [Parameter]
+    public int Value { get; set; }
+
+    [Parameter]
+    public int MaxValue { get; set; }
+
+    [Parameter]
+    public Color Color { get; set; }
+
+    private int GetPercent(int value, int max)
+    {
+        return (int)((double)value / max * 100);
+    }
+
+    private string GetHighlightStyle(int value, int threshold)
+    {
+        if (value >= threshold)
+            return "font-weight:700";
+        else
+            return "";
+    }
+}
