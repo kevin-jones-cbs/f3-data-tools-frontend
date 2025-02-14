@@ -53,6 +53,12 @@
             background-color: #e7f1ff;
         }
 
+    .location-card.missing {
+        border-color: #dc3545; /* red */
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4" viewBox="0 0 4 4"><path fill="rgba(250, 190, 190, 0.4)" d="M0 0h2v2H0zm2 2h2v2H2z"/></svg>');
+        background-color: #fdf3f3;
+    }
+
     .indicator {
         width: 1rem;
         height: 1rem;
@@ -69,6 +75,21 @@
             background-color: #0d6efd;
             border-radius: 50%;
         }
+
+    .indicator.missing {
+        border-color: #dc3545; /* red */
+    }
+
+    .indicator.missing .dot {
+        background-color: #dc3545; /* red */
+    }
+
+    .missing-dates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.5rem;
+        cursor: pointer;
+    }
 </style>
 
 <div class="mx-auto" Style="max-width: 600px;">
@@ -89,21 +110,20 @@ else
             </Button>
         </div>
 
-        <!-- Missing Data List -->
-        @if (missingAos.Count > 0)
+        @if (missingDates.Count > 0)
         {
             <div class="mb-3">
                 <Alert Color="Color.Danger" class="d-flex align-items-center">
                     <Icon Name="IconName.ExclamationCircle" class="me-2" />
-                    <span>Missing entries:</span>
+                    <span>Missing entries for dates:</span>
                 </Alert>
-                <div class="d-grid gap-2">
-                    @foreach (var missing in missingAos)
+                <div class="missing-dates-grid">
+                    @foreach (var date in missingDates)
                     {
-                        <Card onclick="@(() => OnMissingAoSelected(missing))">
+                        <Card onclick="@(() => OnMissingDateSelected(date))">
                             <CardBody style="padding: 0.25em; margin:6px; font-weight:500" class="d-flex justify-content-between text-start">
                                 <CardText>
-                                    <span>@missing.Name - <span class="text-muted" style="font-weight:400">@missing.DayOfWeek @missing.Date.ToShortDateString()</span></span>
+                                    <span>@date.ToShortDateString()</span>
                                 </CardText>
                                 <Icon Name="IconName.ChevronRight" class="ms-auto" style="margin-top:3px;" />
                             </CardBody>
@@ -139,13 +159,13 @@ else
             @foreach (var item in aoList)
             {
                 <div style="@ShowOrHideAo(item)" class="col-6  gx-0">
-                    <div class="location-card @(ao == item.Name ? "selected" : "")" @onclick="@(() => OnAoChanged(item.Name))">
+                    <div class="@GetLocationCardClass(item)" @onclick="@(() => OnAoChanged(item.Name))">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
                                 <h6 class="mb-0">@item.Name</h6>
                                 <p class="mb-0 text-muted" style="font-size:14px;">@item.City</p>
                             </div>
-                            <div class="indicator" style="margin-top:auto;margin-bottom:auto;">
+                            <div class="@GetIndicatorClass(item)" style="margin-top:auto;margin-bottom:auto;">
                                 @if (ao == item.Name)
                                 {
                                     <div class="dot"></div>

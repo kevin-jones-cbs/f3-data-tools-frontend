@@ -32,6 +32,8 @@ namespace F3Wasm.Pages
         public bool isQSource { get; set; }
         public bool isSiteClosed { get; set; }
 
+        private List<DateTime> missingDates = new List<DateTime>();
+
         protected override async Task OnInitializedAsync()
         {
             RegionInfo = RegionList.All.FirstOrDefault(x => x.QueryStringValue == Region);
@@ -47,6 +49,8 @@ namespace F3Wasm.Pages
             {
                 aoList.Add(new Ao { Name = AoOtherValue, DayOfWeek = day, City = "Enter Details..." });
             }
+
+            await OnMissingAoButtonClicked();
         }
 
         private string ShowOrHideAo(Ao ao)
@@ -63,12 +67,12 @@ namespace F3Wasm.Pages
         {
             isMissingDataLoading = true;
             missingAos = await LambdaHelper.GetMissingAosAsync(Http, Region);
-            if (!missingAos.Any(x => x.Name != AoOtherValue))
+            missingDates = missingAos.Select(x => x.Date.Date).Distinct().ToList();
+            if (!missingDates.Any())
             {
                 showNoMissingAoMessage = true;
                 await InvokeAsync(StateHasChanged);
             }
-
             isMissingDataLoading = false;
         }
 
@@ -85,6 +89,13 @@ namespace F3Wasm.Pages
             qDate = missingAo.Date;
 
             await OnAoChanged(missingAo.Name);
+            await InvokeAsync(StateHasChanged);
+        }
+
+        private async Task OnMissingDateSelected(DateTime date)
+        {
+            qDate = date;
+            await OnDateChanged(date);
             await InvokeAsync(StateHasChanged);
         }
 
@@ -170,7 +181,7 @@ namespace F3Wasm.Pages
             {
                 isLoading = true;
                 await LambdaHelper.UploadPaxAsync(Http, Region, pax, ao == AoOtherValue ? otherAoName : ao, qDate.Value, isQSource);
-                ResetAfterUpload();
+                await ResetAfterUploadAsync();
                 isLoading = false;
             }
             catch (Exception ex)
@@ -183,10 +194,10 @@ namespace F3Wasm.Pages
         {
             pax = new List<Pax> { new Pax { Name = "Site Closed (Archived)" } };
             await LambdaHelper.UploadPaxAsync(Http, Region, pax, ao == AoOtherValue ? otherAoName : ao, qDate.Value, isQSource);
-            ResetAfterUpload();
+            await ResetAfterUploadAsync();
         }
 
-        private void ResetAfterUpload()
+        private async Task ResetAfterUploadAsync()
         {
             showCompleteAlert = true;
 
@@ -200,7 +211,10 @@ namespace F3Wasm.Pages
                 {
                     showNoMissingAoMessage = true;
                 }
+
+                missingDates = missingAos.Select(x => x.Date.Date).Distinct().ToList();
             }
+
 
             // Reset everything
             comment = string.Empty;
@@ -210,6 +224,26 @@ namespace F3Wasm.Pages
             otherAoName = string.Empty;
             isQSource = false;
             isSiteClosed = false;
+
+            //await OnMissingAoButtonClicked();
+        }
+
+        private string GetLocationCardClass(Ao ao)
+        {
+            if (missingAos.Any(x => x.Name == ao.Name && x.Date.Date == qDate.Value.Date))
+            {
+                return "location-card missing";
+            }
+            return ao.Name == this.ao ? "location-card selected" : "location-card";
+        }
+
+        private string GetIndicatorClass(Ao ao)
+        {
+            if (missingAos.Any(x => x.Name == ao.Name && x.Date.Date == qDate.Value.Date))
+            {
+                return "indicator missing";
+            }
+            return ao.Name == this.ao ? "indicator selected" : "indicator";
         }
 
         void OnQSelected(Pax member, bool isChecked)
