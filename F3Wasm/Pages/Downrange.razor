@@ -35,7 +35,7 @@ else
         <div class="intro">After posting a picture in Band, enter your F3 name and the date you posted Downrange below to get post credit for the day.</div>
         <div class="intro">It is considered posting downrange if @RegionInfo.DisplayName is your home region, and you posted at an official F3 workout in another official region.</div>
 
-        <Autocomplete TItem="String" TValue="string" Data="@paxNames" TextField="@(( item ) => item)"
+        <Autocomplete @ref="autocompleteRef" TItem="String" TValue="string" Data="@paxNames" TextField="@(( item ) => item)"
             ValueField="@(( item ) => item)" @bind-SelectedValue="@selectedPaxName" @bind-SelectedText="@selectedPaxName" 
             Placeholder="Search Your F3 Name..." Filter="AutocompleteFilter.StartsWith" FreeTyping
             CustomFilter="@(( item, searchValue ) => item.IndexOf( searchValue, 0, StringComparison.CurrentCultureIgnoreCase ) >= 0 )">
@@ -44,11 +44,7 @@ else
 
         <DatePicker Placeholder="Select a Date Below" TValue="DateTime?" @bind-Date="@selectedDate" Min="@minDate" Max="@maxDate" Inline />
 
-        <Button Color="Color.Primary" Clicked="@OnSubmit" @bind-Disabled="@isLoading" Style="margin-top:12px;">Submit</Button>
-        @if (isLoading)
-        {
-            <SpinKit Type="SpinKitType.Bounce" />
-        }
+        <Button Color="Color.Primary" Clicked="@OnSubmit" @bind-Disabled="@isLoading" Style="margin-top:12px;" Loading="isLoading" >Submit</Button>
 
         <Alert Color="Color.Success" @bind-Visible="@showCompleteAlert">
             <AlertMessage>
@@ -70,6 +66,7 @@ else
     private List<string> paxNames = new List<string>();
     private bool isLoading = false;
     private bool showCompleteAlert = false;
+    private Autocomplete<string, string> autocompleteRef;
 
     protected override async Task OnInitializedAsync()
     {
@@ -104,5 +101,13 @@ else
 
         isLoading = false;
         showCompleteAlert = true;
+
+        // Reset the form fields
+        selectedPaxName = string.Empty;
+        selectedDate = null;
+        await autocompleteRef.Clear();
+
+        // Notify the UI of the changes
+        StateHasChanged();
     }
 }
