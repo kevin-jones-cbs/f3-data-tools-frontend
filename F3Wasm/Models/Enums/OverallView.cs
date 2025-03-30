@@ -11,6 +11,7 @@ namespace F3Wasm.Models
         QKotter,
         QSource,
         GoldStandard,
+        TerracottaChallenge,
         UNSET
     }
 }

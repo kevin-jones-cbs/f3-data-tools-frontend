@@ -141,6 +141,12 @@ else
             {
                 <Button Outline="currentView != OverallView.GoldStandard" Color="Color.Warning" Clicked="@(() => currentView = OverallView.GoldStandard)">Gold Standard</Button>
             }
+
+            @* TerracottaChallenge *@
+            @if (RegionInfo.DisplayName == "Terracotta")
+            {
+                <Button Outline="currentView != OverallView.TerracottaChallenge" Color="Color.Warning" Clicked="@(() => currentView = OverallView.TerracottaChallenge)">PAX on FIRE 2025</Button>
+            }
         </Column>
     </Row>
 
@@ -174,7 +180,11 @@ else
 
         @if (currentView == OverallView.GoldStandard)
         {
-            <GoldStandard AllData="allData" FilterValue="@customFilterValue"></GoldStandard>   
+            <GoldStandard AllData="allData" FilterValue="@customFilterValue"></GoldStandard>
+        }
+        else if (currentView == OverallView.TerracottaChallenge)
+        {
+            <PaxOnFire AllData="allData" FilterValue="@customFilterValue"></PaxOnFire>
         }
         else
         {

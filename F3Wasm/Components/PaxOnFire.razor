@@ -1,0 +1,225 @@
+﻿@using Blazorise.DataGrid
+@using F3Core
+@using F3Wasm.Data
+@using F3Wasm.Models
+@using System.Text
+@inject HttpClient Http
+
+<style>
+    th {
+        font-size: 12px;
+    }
+
+    table td {
+        vertical-align: middle !important;
+    }
+</style>
+
+<div class="mb-2" style="font-style:italic">The PAX on Fire Challenge is achieving 156 posts total (including 100 in Terracotta), 15 Q's, 12 downrange posts, 4 different downrange regions, 4 cold plunges, hitting all 15 Terracotta sites at least once, and 25 volunteer/Q-Source posts in @DateTime.Now.Year.</div>
+
+<button class="btn btn-primary mb-2" @onclick="ExportToCsv">Export To Csv</button>
+
+<DataGrid TItem="TerracottaDisplayRow"
+          Data="@TerracottaRows"
+          ShowPager="true"
+          SortMode="DataGridSortMode.Single"
+          PageSize="25"
+          Responsive="true"
+          ShowPageSizes="true"
+          PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }">
+    <DataGridColumns>
+
+        <!-- PAX Name -->
+        <DataGridColumn TItem="TerracottaDisplayRow"
+                        Caption="Name"
+                        Sortable="true"
+                        Width="90px"
+                        SortField="@nameof(TerracottaDisplayRow.PaxName)">
+            <DisplayTemplate>
+                <Span Style="font-weight:600;font-size:12px;vertical-align:middle;">@context.PaxName</Span>
+            </DisplayTemplate>
+        </DataGridColumn>
+
+        <DataGridColumn TItem="TerracottaDisplayRow"
+                        Caption="Terracotta Challenge %"
+                        Filterable="false"
+                        Sortable="true">
+            <DisplayTemplate>
+                <!-- Multi-row flex container with wrapping -->
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start;">
+                    <ProgressContainer Label="156 Total Posts" Value="@context.TotalPosts" MaxValue="TotalPostsMax" Color="Color.Success" />
+                    <ProgressContainer Label="100 in Terracotta" Value="@context.TerracottaPosts" MaxValue="TerracottaPostsMax" Color="Color.Info" />
+                    <ProgressContainer Label="15 Qs" Value="@context.QCount" MaxValue="QCountMax" Color="Color.Warning" />
+                    <ProgressContainer Label="12 DR Posts" Value="@context.DownrangePosts" MaxValue="12" Color="Color.Link" />
+                    <ProgressContainer Label="4 DR Regions" Value="@context.RegionCount" MaxValue="RegionCountMax" Color="Color.Link" />
+                    <ProgressContainer Label="4 Cold Plunges" Value="@context.ColdPlunges" MaxValue="ColdPlungesMax" Color="Color.Danger" />
+                    <ProgressContainer Label="15 Sites" Value="@context.TerracottaSites" MaxValue="TerracottaSitesMax" Color="Color.Secondary" />
+                    <ProgressContainer Label="25 Vol/QS" Value="@context.VolunteerQSourceCount" MaxValue="VolunteerQSourceMax" Color="Color.Dark" />
+                </div>
+            </DisplayTemplate>
+        </DataGridColumn>
+
+    </DataGridColumns>
+</DataGrid>
+
+@code {
+    [Parameter]
+    public AllData AllData { get; set; }
+
+    [Parameter]
+    public string FilterValue { get; set; }
+
+    private List<TerracottaChallenge> TerracottaChallengeData { get; set; }
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; }
+
+    public List<TerracottaDisplayRow> TerracottaRows { get; set; }
+
+    // Challenge requirements constants
+    private static int TotalPostsMax = 156;
+    private static int TerracottaPostsMax = 100;
+    private static int QCountMax = 15;
+    private static int RegionCountMax = 4;
+    private static int ColdPlungesMax = 4;
+    private static int TerracottaSitesMax = 15;
+    private static int VolunteerQSourceMax = 25;
+
+    protected override async Task OnInitializedAsync()
+    {
+        TerracottaChallengeData = await LambdaHelper.GetTerracottaChallengeDataAsync(Http);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var thisYear = DateTime.Now.Year;
+        var posts = AllData.Posts.Where(x => x.Date.Year == thisYear).ToList();
+        var qSourcePosts = AllData.QSourcePosts.Where(x => x.Date.Year == thisYear).ToList();
+
+        // Group posts by PAX
+        var paxPosts = posts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
+        var paxQSourcePosts = qSourcePosts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
+
+        TerracottaRows = new List<TerracottaDisplayRow>();
+
+        // Create a dictionary to quickly look up the Terracotta challenge data by PAX name
+        var challengeDataByPax = TerracottaChallengeData.ToDictionary(c => c.PaxName, c => c);
+
+        foreach (var pax in paxPosts.Keys)
+        {
+            var postCount = paxPosts[pax].Count;
+            var qCount = paxPosts[pax].Count(x => x.IsQ);
+            var qSourceCount = paxQSourcePosts.ContainsKey(pax) ? paxQSourcePosts[pax].Count : 0;
+
+            // Get the Terracotta challenge data for this PAX, or use default values if not found
+            var challengeData = challengeDataByPax.ContainsKey(pax) ? challengeDataByPax[pax] : new TerracottaChallenge();
+
+            // Get downrange posts
+            var downrangePosts = challengeData?.DownrangePosts ?? 0;
+
+            // Calculate total posts (post count + downrange posts)
+            var totalPosts = postCount + downrangePosts;
+
+            // Find the unique number of sites visited
+            var terracottaSites = paxPosts[pax].Select(x => x.Site).Distinct().Count();
+
+            // Calculate volunteer + Q Source count
+            var volunteerQSourceCount = (challengeData?.Volunteers ?? 0) + qSourceCount;
+
+            TerracottaRows.Add(new TerracottaDisplayRow
+                {
+                    PaxName = pax,
+                    TotalPosts = totalPosts,
+                    TerracottaPosts = postCount,
+                    QCount = qCount,
+                    RegionCount = challengeData?.RegionCount ?? 0,
+                    ColdPlunges = challengeData?.ColdPlunges ?? 0,
+                    TerracottaSites = terracottaSites,
+                    VolunteerQSourceCount = volunteerQSourceCount,
+                    DownrangePosts = downrangePosts,
+                    ChallengePercent = CalculateChallengePercent(
+                        totalPosts, postCount, qCount,
+                        challengeData?.RegionCount ?? 0,
+                        challengeData?.ColdPlunges ?? 0,
+                        terracottaSites,
+                        volunteerQSourceCount)
+                });
+        }
+
+        if (!string.IsNullOrEmpty(FilterValue))
+        {
+            TerracottaRows = TerracottaRows
+                .Where(row => row.PaxName.Contains(FilterValue, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        TerracottaRows = TerracottaRows.OrderByDescending(x => x.ChallengePercent).ToList();
+    }
+
+    private int CalculateChallengePercent(
+        int totalPosts, int terracottaPosts, int qCount,
+        int regionCount, int coldPlunges, int terracottaSites,
+        int volunteerQSourceCount)
+    {
+        // Calculate individual percentages (capped at 100%)
+        int totalPostsPercent = Math.Min(100, GetPercent(totalPosts, TotalPostsMax));
+        int terracottaPostsPercent = Math.Min(100, GetPercent(terracottaPosts, TerracottaPostsMax));
+        int qCountPercent = Math.Min(100, GetPercent(qCount, QCountMax));
+        int regionCountPercent = Math.Min(100, GetPercent(regionCount, RegionCountMax));
+        int coldPlungesPercent = Math.Min(100, GetPercent(coldPlunges, ColdPlungesMax));
+        int terracottaSitesPercent = Math.Min(100, GetPercent(terracottaSites, TerracottaSitesMax));
+        int volunteerQSourcePercent = Math.Min(100, GetPercent(volunteerQSourceCount, VolunteerQSourceMax));
+
+        // Sum of all max values
+        int totalMax = TotalPostsMax + TerracottaPostsMax + QCountMax + RegionCountMax +
+                      ColdPlungesMax + TerracottaSitesMax + VolunteerQSourceMax;
+
+        // Sum of actual values (capped at their respective maximums)
+        int totalActual = Math.Min(totalPosts, TotalPostsMax) +
+                         Math.Min(terracottaPosts, TerracottaPostsMax) +
+                         Math.Min(qCount, QCountMax) +
+                         Math.Min(regionCount, RegionCountMax) +
+                         Math.Min(coldPlunges, ColdPlungesMax) +
+                         Math.Min(terracottaSites, TerracottaSitesMax) +
+                         Math.Min(volunteerQSourceCount, VolunteerQSourceMax);
+
+        // Overall percentage
+        return (int)((double)totalActual / totalMax * 100);
+    }
+
+    private int GetPercent(int value, int max)
+    {
+        return (int)((double)value / max * 100);
+    }
+
+    private async Task ExportToCsv()
+    {
+        var csv = new StringBuilder();
+
+        // Add header row
+        csv.AppendLine("PaxName,TotalPosts,TerracottaPosts,QCount,RegionCount,ColdPlunges,TerracottaSites,VolunteerQSourceCount,DownrangePosts,ChallengePercent");
+
+        // Add data rows
+        foreach (var item in TerracottaRows)
+        {
+            csv.AppendLine($"{item.PaxName},{item.TotalPosts},{item.TerracottaPosts},{item.QCount},{item.RegionCount}," +
+                          $"{item.ColdPlunges},{item.TerracottaSites},{item.VolunteerQSourceCount},{item.DownrangePosts},{item.ChallengePercent}");
+        }
+
+        await JSRuntime.InvokeVoidAsync("downloadFile", $"TerracottaChallenge_{DateTime.Now.ToShortDateString()}.csv", csv.ToString());
+    }
+
+    public class TerracottaDisplayRow
+    {
+        public string PaxName { get; set; }
+        public int TotalPosts { get; set; }
+        public int TerracottaPosts { get; set; }
+        public int QCount { get; set; }
+        public int RegionCount { get; set; }
+        public int ColdPlunges { get; set; }
+        public int TerracottaSites { get; set; }
+        public int VolunteerQSourceCount { get; set; }
+        public int DownrangePosts { get; set; }
+        public int ChallengePercent { get; set; }
+    }
+}

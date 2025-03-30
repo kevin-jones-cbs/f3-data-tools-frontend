@@ -77,6 +77,13 @@ namespace F3Wasm.Data
             return sectorData;
         }
 
+        public static async Task<List<TerracottaChallenge>> GetTerracottaChallengeDataAsync(HttpClient client)
+        {
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetTerracottaChallenge", Region = "terracotta" });
+            var terracottaChallengeData = JsonSerializer.Deserialize<List<TerracottaChallenge>>(response);
+            return terracottaChallengeData;
+        }
+
         public static AllData DecompressAll(string compressedString)
         {
             var decompressed = Decompress(compressedString);
