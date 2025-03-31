@@ -147,6 +147,11 @@ else
             {
                 <Button Outline="currentView != OverallView.TerracottaChallenge" Color="Color.Warning" Clicked="@(() => currentView = OverallView.TerracottaChallenge)">Forged in Fire 2025</Button>
             }
+
+            @if (RegionInfo.DisplayName == "South Fork")
+            {
+                <Button Outline="currentView != OverallView.SouthForkChallenge" Color="Color.Warning" Clicked="@(() => currentView = OverallView.SouthForkChallenge)">High Water Mark</Button>
+            }
         </Column>
     </Row>
 
@@ -180,11 +185,15 @@ else
 
         @if (currentView == OverallView.GoldStandard)
         {
-            <GoldStandard AllData="allData" FilterValue="@customFilterValue"></GoldStandard>
+            <Challenges.GoldStandard AllData="allData" FilterValue="@customFilterValue"></Challenges.GoldStandard>
         }
         else if (currentView == OverallView.TerracottaChallenge)
         {
-            <PaxOnFire AllData="allData" FilterValue="@customFilterValue"></PaxOnFire>
+            <Challenges.PaxOnFire AllData="allData" FilterValue="@customFilterValue"></Challenges.PaxOnFire>
+        }
+        else if (currentView == OverallView.SouthForkChallenge)
+        {
+            <Challenges.HighWaterMark AllData="allData" FilterValue="@customFilterValue"></Challenges.HighWaterMark>
         }
         else
         {
