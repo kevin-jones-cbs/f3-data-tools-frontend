@@ -13,7 +13,7 @@
     }
 </style>
 
-<div class="mb-2" style="font-style:italic">The High Water Mark is achieving 150 posts, 10 Q's, 20 Q Source Posts, 1 Q Source Q, and visiting all locations in @DateTime.Now.Year.</div>
+<div class="mb-2" style="font-style:italic">The High Water Mark is achieving 150 posts, 10 Q's, 20 Q Source Posts, 1 Q Source Q, and visiting all locations starting April 1, 2025</div>
 
 <DataGrid TItem="DisplayRow"
           Data="@HighWaterMarkRows"
@@ -78,7 +78,7 @@
     protected override void OnParametersSet()
     {
         var thisYear = DateTime.Now.Year;
-        var posts = AllData.Posts.Where(x => x.Date.Year == thisYear).ToList();
+        var posts = AllData.Posts.Where(x => x.Date.Year == thisYear && x.Date.Month > 3).ToList();
         var qSourcePosts = AllData.QSourcePosts.Where(x => x.Date.Year == thisYear).ToList();
 
         var paxPosts = posts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
