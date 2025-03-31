@@ -1,5 +1,6 @@
 @page "/data/{region}"
 @using F3Wasm.Components
+@using F3Wasm.Components.Challenges
 @using F3Wasm.Models
 @using F3Wasm.Data
 @using F3Core
@@ -185,15 +186,15 @@ else
 
         @if (currentView == OverallView.GoldStandard)
         {
-            <Challenges.GoldStandard AllData="allData" FilterValue="@customFilterValue"></Challenges.GoldStandard>
+            <GoldStandard AllData="allData" FilterValue="@customFilterValue"></GoldStandard>
         }
         else if (currentView == OverallView.TerracottaChallenge)
         {
-            <Challenges.PaxOnFire AllData="allData" FilterValue="@customFilterValue"></Challenges.PaxOnFire>
+            <PaxOnFire AllData="allData" FilterValue="@customFilterValue"></PaxOnFire>
         }
         else if (currentView == OverallView.SouthForkChallenge)
         {
-            <Challenges.HighWaterMark AllData="allData" FilterValue="@customFilterValue"></Challenges.HighWaterMark>
+            <HighWaterMark AllData="allData" FilterValue="@customFilterValue"></HighWaterMark>
         }
         else
         {

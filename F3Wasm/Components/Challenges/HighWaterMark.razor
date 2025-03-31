@@ -73,7 +73,7 @@
     private static int QCountMax = 10;
     private static int QSourceCountMax = 20;
     private static int QSourceQCountMax = 1;
-    private static int LocationsMax = 10; // Assuming 10 locations as the requirement
+    private static int LocationsMax = 19;
 
     protected override void OnParametersSet()
     {
@@ -94,7 +94,10 @@
             var qSourceQCount = paxQSourcePosts.ContainsKey(pax) ? paxQSourcePosts[pax].Count(x => x.IsQ) : 0;
 
             // Calculate unique locations visited
-            var locationsVisited = paxPosts[pax].Select(x => x.Site).Distinct().Count();
+            var officialLocations = AllData.Aos.ToList();
+            var allLocationsVisited = paxPosts[pax].Select(x => x.Site).Distinct().Count();
+
+            var locationsVisited = officialLocations.Count(x => paxPosts[pax].Any(y => y.Site == x.Name));
 
             HighWaterMarkRows.Add(new DisplayRow
                 {
