@@ -12,6 +12,7 @@ namespace F3Wasm.Models
         QSource,
         GoldStandard,
         TerracottaChallenge,
+        SouthForkChallenge,
         UNSET
     }
 }

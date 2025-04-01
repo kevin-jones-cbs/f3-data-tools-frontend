@@ -1,5 +1,6 @@
 @page "/data/{region}"
 @using F3Wasm.Components
+@using F3Wasm.Components.Challenges
 @using F3Wasm.Models
 @using F3Wasm.Data
 @using F3Core
@@ -147,6 +148,11 @@ else
             {
                 <Button Outline="currentView != OverallView.TerracottaChallenge" Color="Color.Warning" Clicked="@(() => currentView = OverallView.TerracottaChallenge)">Forged in Fire 2025</Button>
             }
+
+            @if (RegionInfo.DisplayName == "South Fork")
+            {
+                <Button Outline="currentView != OverallView.SouthForkChallenge" Color="Color.Warning" Clicked="@(() => currentView = OverallView.SouthForkChallenge)">High Water Mark</Button>
+            }
         </Column>
     </Row>
 
@@ -185,6 +191,10 @@ else
         else if (currentView == OverallView.TerracottaChallenge)
         {
             <PaxOnFire AllData="allData" FilterValue="@customFilterValue"></PaxOnFire>
+        }
+        else if (currentView == OverallView.SouthForkChallenge)
+        {
+            <HighWaterMark AllData="allData" FilterValue="@customFilterValue"></HighWaterMark>
         }
         else
         {

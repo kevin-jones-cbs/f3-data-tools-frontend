@@ -1,0 +1,169 @@
+@using Blazorise.DataGrid
+@using F3Core
+@using F3Wasm.Models
+@using System.Text
+
+<style>
+    th {
+        font-size: 12px;
+    }
+
+    table td {
+        vertical-align: middle !important;
+    }
+</style>
+
+<div class="mb-2" style="font-style:italic">The High Water Mark is achieving 150 posts, 10 Q's, 20 Q Source Posts, 1 Q Source Q, and visiting all locations starting April 1, 2025</div>
+
+<DataGrid TItem="DisplayRow"
+          Data="@HighWaterMarkRows"
+          ShowPager="true"
+          SortMode="DataGridSortMode.Single"
+          PageSize="50"
+          Responsive="true"
+          ShowPageSizes="true"
+          PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }">
+    <DataGridColumns>
+
+        <!-- PAX Name -->
+        <DataGridColumn TItem="DisplayRow"
+                        Caption="Name"
+                        Sortable="true"
+                        Width="90px"
+                        SortField="@nameof(DisplayRow.PaxName)">
+            <DisplayTemplate>
+                <Span Style="font-weight:600;font-size:12px;vertical-align:middle;">@context.PaxName</Span>
+            </DisplayTemplate>
+        </DataGridColumn>
+
+        <DataGridColumn TItem="DisplayRow"
+                        Caption="High Water Mark %"
+                        Filterable="false"
+                        Sortable="true">
+            <DisplayTemplate>
+                <!-- Single flex container, wrapping enabled -->
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start;">
+                    <ProgressContainer Label="Posts" Value="@context.PostCount" MaxValue="PostCountMax" Color="Color.Success" />
+                    <ProgressContainer Label="Qs" Value="@context.QCount" MaxValue="QCountMax" Color="Color.Info" />
+                    <ProgressContainer Label="Q Source" Value="@context.QSourceCount" MaxValue="QSourceCountMax" Color="Color.Warning" />
+                    <ProgressContainer Label="Q Source Qs" Value="@context.QSourceQCount" MaxValue="QSourceQCountMax" Color="Color.Danger" />
+                    <ProgressContainer Label="Locations" Value="@context.LocationsVisited" MaxValue="LocationsMax" Color="Color.Primary" />
+                </div>
+            </DisplayTemplate>
+        </DataGridColumn>
+
+    </DataGridColumns>
+</DataGrid>
+
+<button class="btn btn-sm btn-primary mt-2" @onclick="ExportToCsv">Export To Csv</button>
+
+@code {
+    [Parameter]
+    public AllData AllData { get; set; }
+
+    [Parameter]
+    public string FilterValue { get; set; }
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; }
+
+    public List<DisplayRow> HighWaterMarkRows { get; set; }
+
+    private static int PostCountMax = 150;
+    private static int QCountMax = 10;
+    private static int QSourceCountMax = 20;
+    private static int QSourceQCountMax = 1;
+    private static int LocationsMax = 19;
+
+    protected override void OnParametersSet()
+    {
+        var thisYear = DateTime.Now.Year;
+        var posts = AllData.Posts.Where(x => x.Date.Year == thisYear && x.Date.Month > 3).ToList();
+        var qSourcePosts = AllData.QSourcePosts.Where(x => x.Date.Year == thisYear).ToList();
+
+        var paxPosts = posts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
+        var paxQSourcePosts = qSourcePosts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
+
+        HighWaterMarkRows = new List<DisplayRow>();
+
+        foreach (var pax in paxPosts.Keys)
+        {
+            var postCount = paxPosts[pax].Count;
+            var qCount = paxPosts[pax].Count(x => x.IsQ);
+            var qSourceCount = paxQSourcePosts.ContainsKey(pax) ? paxQSourcePosts[pax].Count : 0;
+            var qSourceQCount = paxQSourcePosts.ContainsKey(pax) ? paxQSourcePosts[pax].Count(x => x.IsQ) : 0;
+
+            // Calculate unique locations visited
+            var officialLocations = AllData.Aos.ToList();
+            var allLocationsVisited = paxPosts[pax].Select(x => x.Site).Distinct().Count();
+
+            var locationsVisited = officialLocations.Count(x => paxPosts[pax].Any(y => y.Site == x.Name));
+
+            HighWaterMarkRows.Add(new DisplayRow
+                {
+                    PaxName = pax,
+                    PostCount = postCount,
+                    QCount = qCount,
+                    QSourceCount = qSourceCount,
+                    QSourceQCount = qSourceQCount,
+                    LocationsVisited = locationsVisited,
+                    HighWaterMarkPercent = GetHighWaterMarkPercent(postCount, qCount, qSourceCount, qSourceQCount, locationsVisited)
+                });
+        }
+
+        if (!string.IsNullOrEmpty(FilterValue))
+        {
+            HighWaterMarkRows = HighWaterMarkRows
+                .Where(row => row.PaxName.Contains(FilterValue, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        HighWaterMarkRows = HighWaterMarkRows.OrderByDescending(x => x.HighWaterMarkPercent).ToList();
+    }
+
+    private int GetPercent(int value, int max)
+    {
+        return (int)((double)value / max * 100);
+    }
+
+    private int GetHighWaterMarkPercent(int postCount, int qCount, int qSourceCount, int qSourceQCount, int locationsVisited)
+    {
+        var totalReq = PostCountMax + QCountMax + QSourceCountMax + QSourceQCountMax + LocationsMax;
+        var paxTotal = Math.Min(postCount, PostCountMax) +
+                       Math.Min(qCount, QCountMax) +
+                       Math.Min(qSourceCount, QSourceCountMax) +
+                       Math.Min(qSourceQCount, QSourceQCountMax) +
+                       Math.Min(locationsVisited, LocationsMax);
+
+        var highWaterMarkPercent = ((double)paxTotal / totalReq) * 100;
+
+        return (int)highWaterMarkPercent;
+    }
+
+    private async Task ExportToCsv()
+    {
+        var csv = new StringBuilder();
+
+        // Add header row
+        csv.AppendLine("PaxName,PostCount,QCount,QSourceCount,QSourceQCount,LocationsVisited,HWPercent");
+
+        // Add data rows
+        foreach (var item in HighWaterMarkRows)
+        {
+            csv.AppendLine($"{item.PaxName},{item.PostCount},{item.QCount},{item.QSourceCount},{item.QSourceQCount},{item.LocationsVisited},{item.HighWaterMarkPercent}");
+        }
+
+        await JSRuntime.InvokeVoidAsync("downloadFile", $"HighWaterMark_{DateTime.Now.ToShortDateString()}.csv", csv.ToString());
+    }
+
+    public class DisplayRow
+    {
+        public string PaxName { get; set; }
+        public int PostCount { get; set; }
+        public int QCount { get; set; }
+        public int QSourceCount { get; set; }
+        public int QSourceQCount { get; set; }
+        public int LocationsVisited { get; set; }
+        public int HighWaterMarkPercent { get; set; }
+    }
+}
