@@ -79,7 +79,7 @@
     {
         var thisYear = DateTime.Now.Year;
         var posts = AllData.Posts.Where(x => x.Date.Year == thisYear && x.Date.Month > 3).ToList();
-        var qSourcePosts = AllData.QSourcePosts.Where(x => x.Date.Year == thisYear).ToList();
+        var qSourcePosts = AllData.QSourcePosts.Where(x => x.Date.Year == thisYear && x.Date.Month > 3).ToList();
 
         var paxPosts = posts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
         var paxQSourcePosts = qSourcePosts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
