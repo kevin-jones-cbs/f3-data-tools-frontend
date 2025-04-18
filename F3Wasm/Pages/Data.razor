@@ -256,6 +256,11 @@ else
                         <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="@(RegionInfo.HasHistoricalData && currentView == OverallView.AllTime ? "Post % *" : "Post %")" Filterable="false" DisplayFormat="{0:0}%" />
                         <DataGridColumn Field="@nameof(DisplayRow.Streak)" Caption="@(RegionInfo.HasHistoricalData && currentView == OverallView.AllTime ? "Daily Streak *" : "Daily Streak")" Filterable="false" />
                         <DataGridColumn Field="@nameof(DisplayRow.QRatio)" Caption="Q Ratio" Filterable="true" DisplayFormat="{0:0}%" />
+
+                        @if (RegionInfo.DisplayName == "South Fork")
+                        {
+                            <DataGridColumn Field="@nameof(DisplayRow.CalendarDaysTo100)" Caption="Cal Days to 100" Filterable="false" />
+                        }
                     }
                     else
                     {

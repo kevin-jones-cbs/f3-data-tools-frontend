@@ -35,12 +35,6 @@
                 </TableRowCell>
             </TableRow>
             <TableRow>
-                <TableRowHeader>F3 Days to 100</TableRowHeader>
-                <TableRowCell>
-                    @GetDaysTo100()
-                </TableRowCell>
-            </TableRow>
-            <TableRow>
                 <TableRowHeader>Calendar Days to 100</TableRowHeader>
                 <TableRowCell>
                     @GetCalDaysTo100()
@@ -109,25 +103,6 @@
             return "";
 
         return namedBy.Pax;
-    }
-
-    public string GetDaysTo100()
-    {
-        // Get the 100th post for the selected pax
-        var pax100thPost = SelectedPaxPosts.OrderBy(x => x.Date).Skip(99).FirstOrDefault();
-        var notYet = false;
-        if (pax100thPost == null)
-        {
-            // No 100 yet, so just count today
-            pax100thPost = new Post() { Date = DateTime.Now };
-            notYet = true;
-        }
-
-        var pax1stPost = SelectedPaxPosts.LastOrDefault();
-
-        // Get the number of days since their first post
-        var days = AllPossibleWorkoutDays.Where(x => x.Date >= pax1stPost.Date && x.Date <= pax100thPost.Date).ToList();
-        return days.Count.ToString() + (notYet ? " (so far)" : "");
     }
 
     public string GetCalDaysTo100()

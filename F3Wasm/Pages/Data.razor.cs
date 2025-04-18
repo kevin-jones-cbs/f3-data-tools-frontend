@@ -172,6 +172,11 @@ namespace F3Wasm.Pages
                     row.AoPercent = (double)row.AoPosts / allData.Aos.Count * 100;
                 }
 
+                if (currentView == OverallView.AllTime)
+                {
+                    row.CalendarDaysTo100 = GetCalDaysTo100(pax.Value);
+                }
+
                 currentRows.Add(row);
             }
 
@@ -191,22 +196,43 @@ namespace F3Wasm.Pages
             loading = false;
         }
 
+        public int? GetCalDaysTo100(List<Post> selectedPaxPosts)
+        {
+            // Get the 100th post for the selected pax
+            var pax100thPost = selectedPaxPosts.OrderBy(x => x.Date).Skip(99).FirstOrDefault();
+            var notYet = false;
+            if (pax100thPost == null)
+            {
+                // No 100 yet, so just count today
+                pax100thPost = new Post() { Date = DateTime.Now };
+                notYet = true;
+            }
+
+            var pax1stPost = selectedPaxPosts.FirstOrDefault();
+
+            // Get the number of days between their first post and 100th post
+            var days = (pax100thPost.Date - pax1stPost.Date).Days;
+
+            // Get the number of days since their first post
+            return notYet ? 9999 : days;
+        }
+
         public static List<WorkoutDay> GetCurrentPossibleWorkoutDays(List<Post> posts)
         {
             var currentUniqueWorkoutDays = new List<WorkoutDay>();
             foreach (var post in posts)
             {
                 DateTime postDateWithoutTime = post.Date.Date;
-                bool isEvening = post.Site.Contains("moon", StringComparison.OrdinalIgnoreCase);
-                var key = $"{postDateWithoutTime.ToShortDateString()}-{isEvening}";
+                //bool isEvening = post.Site.Contains("moon", StringComparison.OrdinalIgnoreCase);
+                var key = $"{postDateWithoutTime.ToShortDateString()}";
 
                 // Check if the day and isEvening is already in the list
-                if (currentUniqueWorkoutDays.Any(x => x.Date == postDateWithoutTime && x.IsEvening == isEvening))
+                if (currentUniqueWorkoutDays.Any(x => x.Date == postDateWithoutTime))
                 {
                     continue;
                 }
 
-                currentUniqueWorkoutDays.Add(new WorkoutDay() { Date = postDateWithoutTime, IsEvening = isEvening });
+                currentUniqueWorkoutDays.Add(new WorkoutDay() { Date = postDateWithoutTime });
             }
 
             return currentUniqueWorkoutDays;

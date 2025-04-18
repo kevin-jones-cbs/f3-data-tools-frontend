@@ -23,5 +23,7 @@ namespace F3Wasm.Models
         public int QSourceCount { get; set; }
         public int QSourceQCount { get; set; }
         public int GoldStandardPercent { get; set; }
+
+        public int? CalendarDaysTo100 { get; set; }
     }
 }
