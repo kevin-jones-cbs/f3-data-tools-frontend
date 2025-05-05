@@ -95,6 +95,7 @@
         var thisYear = DateTime.Now.Year;
         var posts = AllData.Posts.Where(x => x.Date.Year == thisYear).ToList();
         var qSourcePosts = AllData.QSourcePosts.Where(x => x.Date.Year == thisYear).ToList();
+        var allValidAos = AllData.Aos;
 
         // Group posts by PAX
         var paxPosts = posts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
@@ -121,7 +122,11 @@
             var totalPosts = postCount + downrangePosts;
 
             // Find the unique number of sites visited
-            var terracottaSites = paxPosts[pax].Select(x => x.Site).Distinct().Count();
+            var terracottaSites = paxPosts[pax]
+                .Select(x => x.Site)
+                .Where(site => allValidAos.Any(ao => ao.Name == site))
+                .Distinct()
+                .Count();
 
             // Calculate volunteer + Q Source count
             var volunteerQSourceCount = (challengeData?.Volunteers ?? 0) + qSourceCount;
