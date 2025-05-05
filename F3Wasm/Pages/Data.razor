@@ -250,22 +250,14 @@ else
                 }
                 else
                 {
-                    @if (RegionInfo.DisplayName != "Cap Valley Ipssa")
-                    {
-                        <DataGridColumn Field="@nameof(DisplayRow.FirstPost)" Caption="1st Post" Filterable="false" DisplayFormat="{0:M/d/yy}" />
-                        <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="@(RegionInfo.HasHistoricalData && currentView == OverallView.AllTime ? "Post % *" : "Post %")" Filterable="false" DisplayFormat="{0:0}%" />
-                        <DataGridColumn Field="@nameof(DisplayRow.Streak)" Caption="@(RegionInfo.HasHistoricalData && currentView == OverallView.AllTime ? "Daily Streak *" : "Daily Streak")" Filterable="false" />
-                        <DataGridColumn Field="@nameof(DisplayRow.QRatio)" Caption="Q Ratio" Filterable="true" DisplayFormat="{0:0}%" />
+                    <DataGridColumn Field="@nameof(DisplayRow.FirstPost)" Caption="1st Post" Filterable="false" DisplayFormat="{0:M/d/yy}" />
+                    <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="@(RegionInfo.HasHistoricalData && currentView == OverallView.AllTime ? "Post % *" : "Post %")" Filterable="false" DisplayFormat="{0:0}%" />
+                    <DataGridColumn Field="@nameof(DisplayRow.Streak)" Caption="@(RegionInfo.HasHistoricalData && currentView == OverallView.AllTime ? "Daily Streak *" : "Daily Streak")" Filterable="false" />
+                    <DataGridColumn Field="@nameof(DisplayRow.QRatio)" Caption="Q Ratio" Filterable="true" DisplayFormat="{0:0}%" />
 
-                        @if (RegionInfo.DisplayName == "South Fork")
-                        {
-                            <DataGridColumn Field="@nameof(DisplayRow.CalendarDaysTo100)" Caption="Cal Days to 100" Filterable="false" />
-                        }
-                    }
-                    else
+                    @if (RegionInfo.DisplayName == "South Fork")
                     {
-                        @* Just Post Percent for IPSSA *@
-                        <DataGridColumn Field="@nameof(DisplayRow.PostPercent)" Caption="Post %" Filterable="false" DisplayFormat="{0:0}%" />
+                        <DataGridColumn Field="@nameof(DisplayRow.CalendarDaysTo100)" Caption="Cal Days to 100" Filterable="false" />
                     }
                 }
             </DataGridColumns>
