@@ -1,5 +1,6 @@
 ﻿@using Blazorise.DataGrid
 @using F3Core
+@using F3Core.Regions
 @using F3Wasm.Data
 @using F3Wasm.Models
 @using System.Text
@@ -26,7 +27,8 @@
           PageSize="25"
           Responsive="true"
           ShowPageSizes="true"
-          PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }">
+          PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }"
+          SelectedRowChanged="OnSelectedRowChanged">
     <DataGridColumns>
 
         <!-- PAX Name -->
@@ -62,6 +64,15 @@
     </DataGridColumns>
 </DataGrid>
 
+<AoChallengeModal 
+    @bind-Visible="showAoChallengeModal"
+    SelectedPax="selectedPax"
+    SelectedPaxPosts="selectedPaxPosts"
+    Aos="AllData.Aos"
+    RegionInfo="RegionInfo"
+    CurrentView="OverallView.TerracottaChallenge"
+/>
+
 @code {
     [Parameter]
     public AllData AllData { get; set; }
@@ -69,12 +80,18 @@
     [Parameter]
     public string FilterValue { get; set; }
 
+    [Parameter]
+    public Region RegionInfo { get; set; }
+
     private List<TerracottaChallenge> TerracottaChallengeData { get; set; }
 
     [Inject]
     private IJSRuntime JSRuntime { get; set; }
 
     public List<TerracottaDisplayRow> TerracottaRows { get; set; }
+    private bool showAoChallengeModal { get; set; }
+    private Pax selectedPax { get; set; }
+    private List<Post> selectedPaxPosts { get; set; }
 
     // Challenge requirements constants
     private static int TotalPostsMax = 156;
@@ -212,6 +229,16 @@
         }
 
         await JSRuntime.InvokeVoidAsync("downloadFile", $"TerracottaChallenge_{DateTime.Now.ToShortDateString()}.csv", csv.ToString());
+    }
+
+    private async Task OnSelectedRowChanged(TerracottaDisplayRow row)
+    {
+        if (row == null) return;
+
+        selectedPax = AllData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
+        var thisYear = DateTime.Now.Year;
+        selectedPaxPosts = AllData.Posts.Where(p => p.Pax == row.PaxName && p.Date.Year == thisYear).ToList();
+        showAoChallengeModal = true;
     }
 
     public class TerracottaDisplayRow

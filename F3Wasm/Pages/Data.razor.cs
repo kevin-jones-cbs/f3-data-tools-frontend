@@ -30,6 +30,7 @@ namespace F3Wasm.Pages
         public List<DisplayRow> currentRows { get; set; }
         public DateTime lastUpdatedDate { get; set; }
         public bool showPaxModal { get; set; }
+        public bool showAoChallengeModal { get; set; }
         public Pax selectedPax { get; set; }
         public List<Post> selectedPaxPosts { get; set; }
         public List<Post> selectedPaxQSourcePosts { get; set; }
@@ -438,41 +439,15 @@ namespace F3Wasm.Pages
             selectedPaxHistoricalData = allData.HistoricalData?.FirstOrDefault(p => p.PaxName == row.PaxName);
             selectedPax = allData.Pax.FirstOrDefault(p => p.Name.Equals(row.PaxName, StringComparison.InvariantCultureIgnoreCase ));
 
-            await ShowModal();
-        }
-
-        public string FullMoonRuckName = "Full Moon Ruck";
-        public Ao FullMoonRuckAo = new Ao() { Name = "Full Moon Ruck" };
-        private string GetAoChallengeButtonColor(Ao location)
-        {
-            // Full Moon Ruck is always black
-            var hex = "#423c3f";
-
-            if (location.Name != FullMoonRuckName)
+            if (currentView == OverallView.AoChallenge || currentView == OverallView.AoList)
             {
-                hex = ColorHelpers.GetAoHex(location);
-            }
-
-            var now = DateTime.Now;
-            var hasPosted = false;
-
-            if (currentView == OverallView.AoChallenge)
-            {
-                // Only show posts from November 1st to December 14th
-                hasPosted = selectedPaxPosts.Where(x => x.Date.Year == now.Year && (x.Date.Month == 11 || (x.Date.Month == 12 && x.Date.Day <= 14)) && x.Site == location.Name).Any();
+                showAoChallengeModal = true;
             }
             else
             {
-                hasPosted = selectedPaxPosts.Where(x => x.Date.Year == now.Year && x.Date.Month == now.Month && x.Site == location.Name).Any();
+                await ShowModal();
             }
-
-            if (hasPosted)
-            {
-                return $"background-color: {hex}; color: white;";
-            }
-
-            return $"border: solid 1px {hex}; color:{hex}";
-        }        
+        }
 
         private async Task ExportToCsv()
         {

@@ -1,7 +1,9 @@
 @using Blazorise.DataGrid
 @using F3Core
+@using F3Core.Regions
 @using F3Wasm.Models
 @using System.Text
+@using F3Wasm.Components
 
 <style>
     th {
@@ -22,7 +24,8 @@
           PageSize="50"
           Responsive="true"
           ShowPageSizes="true"
-          PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }">
+          PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }"
+          SelectedRowChanged="OnSelectedRowChanged">
     <DataGridColumns>
 
         <!-- PAX Name -->
@@ -57,6 +60,15 @@
 
 <button class="btn btn-sm btn-primary mt-2" @onclick="ExportToCsv">Export To Csv</button>
 
+<AoChallengeModal 
+    @bind-Visible="showAoChallengeModal"
+    SelectedPax="selectedPax"
+    SelectedPaxPosts="selectedPaxPosts"
+    Aos="AllData.Aos"
+    RegionInfo="RegionInfo"
+    CurrentView="OverallView.SouthForkChallenge"
+/>
+
 @code {
     [Parameter]
     public AllData AllData { get; set; }
@@ -64,10 +76,16 @@
     [Parameter]
     public string FilterValue { get; set; }
 
+    [Parameter]
+    public Region RegionInfo { get; set; }
+
     [Inject]
     private IJSRuntime JSRuntime { get; set; }
 
     public List<DisplayRow> HighWaterMarkRows { get; set; }
+    private bool showAoChallengeModal { get; set; }
+    private Pax selectedPax { get; set; }
+    private List<Post> selectedPaxPosts { get; set; }
 
     private static int PostCountMax = 150;
     private static int QCountMax = 10;
@@ -119,6 +137,16 @@
         }
 
         HighWaterMarkRows = HighWaterMarkRows.OrderByDescending(x => x.HighWaterMarkPercent).ToList();
+    }
+
+    private async Task OnSelectedRowChanged(DisplayRow row)
+    {
+        if (row == null) return;
+
+        selectedPax = AllData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
+        var thisYear = DateTime.Now.Year;
+        selectedPaxPosts = AllData.Posts.Where(p => p.Pax == row.PaxName && p.Date.Year == thisYear && p.Date.Month > 3).ToList();
+        showAoChallengeModal = true;
     }
 
     private int GetPercent(int value, int max)

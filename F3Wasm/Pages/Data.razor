@@ -190,11 +190,11 @@ else
         }
         else if (currentView == OverallView.TerracottaChallenge)
         {
-            <PaxOnFire AllData="allData" FilterValue="@customFilterValue"></PaxOnFire>
+            <PaxOnFire AllData="allData" FilterValue="@customFilterValue" RegionInfo="@RegionInfo"></PaxOnFire>
         }
         else if (currentView == OverallView.SouthForkChallenge)
         {
-            <HighWaterMark AllData="allData" FilterValue="@customFilterValue"></HighWaterMark>
+            <HighWaterMark AllData="allData" FilterValue="@customFilterValue" RegionInfo="@RegionInfo"></HighWaterMark>
         }
         else
         {
@@ -278,81 +278,69 @@ else
                      <CloseButton />
                  </ModalHeader>
                  <ModalBody>
-                     @if (currentView == OverallView.AoChallenge || currentView == OverallView.AoList)
-                    {
-                        <Column>
-                            <h4>AOs Posted This Month</h4>
-                            <div class="aoChallengeContainer">
-                                @foreach (var location in allData.Aos.OrderBy(x => x.DayOfWeek).ToList())
-                                {
-                                    <Button class="aoChallengeButton"
-                                        style="@GetAoChallengeButtonColor(location)">@location.Name</Button>
-                                }
-                                @if (RegionInfo.DisplayName == "South Fork")
-                                {
-                                    <Button class="aoChallengeButton"
-                                        style="@GetAoChallengeButtonColor(FullMoonRuckAo)">Full Moon Ruck</Button>
-                                }
-                            </div>
-                        </Column>
-                    }
-                    else
-                    {
-                        <Row VerticalGutter="16">
-                            <Column>
-                                <PaxSummaryTable 
-                                    RegionInfo="@RegionInfo"
-                                    SelectedPaxPosts="@selectedPaxPosts"
-                                    AllPosts="@allData.Posts"
-                                    AllPossibleWorkoutDays="@allPossibleWorkoutDays"
-                                    SelectedPaxHistoricalData="@selectedPaxHistoricalData"
-                                >
-                                </PaxSummaryTable>
+                     <Row VerticalGutter="16">
+                         <Column>
+                             <PaxSummaryTable 
+                                 RegionInfo="@RegionInfo"
+                                 SelectedPaxPosts="@selectedPaxPosts"
+                                 AllPosts="@allData.Posts"
+                                 AllPossibleWorkoutDays="@allPossibleWorkoutDays"
+                                 SelectedPaxHistoricalData="@selectedPaxHistoricalData"
+                             >
+                             </PaxSummaryTable>
 
-                                <PaxCalendar SelectedPaxPosts="@selectedPaxPosts" SelectedPaxQSourcePosts="@selectedPaxQSourcePosts" HasQSource="RegionInfo.HasQSourcePosts" ></PaxCalendar>
-           
-                                @* <PaxKeyDates SelectedPaxPosts="@selectedPaxPosts"></PaxKeyDates> *@
+                             <PaxCalendar SelectedPaxPosts="@selectedPaxPosts" SelectedPaxQSourcePosts="@selectedPaxQSourcePosts" HasQSource="RegionInfo.HasQSourcePosts" ></PaxCalendar>
+        
+                             @* <PaxKeyDates SelectedPaxPosts="@selectedPaxPosts"></PaxKeyDates> *@
+                          </Column>
+
+                          <Column>
+                              <PaxLocations 
+                                  RegionInfo="@RegionInfo" 
+                                  SelectedPaxPosts="@selectedPaxPosts"
+                                  AoList="@allData.Aos"
+                                  HasHistoricalData="selectedPaxHistoricalData != null"
+                              >
+                              </PaxLocations>
+                         </Column>
+                     </Row>
+
+                     <PaxPostedWith 
+                         AllPosts="@allData.Posts" 
+                         RegionInfo="@RegionInfo" 
+                         SelectedPaxPosts="@selectedPaxPosts"
+                         SelectedPaxHistoricalData="@selectedPaxHistoricalData"
+                     >
+                     </PaxPostedWith>
+
+                     @if (selectedPaxHistoricalData != null)
+                     {
+                         <Row>
+                             <Column id="historical-note">
+                                 * Since @firstNonHistoricalDate.Value.ToString("M/d/yy")
                              </Column>
+                         </Row>
+                     }
 
-                             <Column>
-                                 <PaxLocations 
-                                     RegionInfo="@RegionInfo" 
-                                     SelectedPaxPosts="@selectedPaxPosts"
-                                     AoList="@allData.Aos"
-                                     HasHistoricalData="selectedPaxHistoricalData != null"
-                                 >
-                                 </PaxLocations>
-                            </Column>
-                        </Row>
+                     <Row>
+                         <Column id="privacy-note">
+                             If you see any errors, or would like to hide your data, contact Peacock or a Band admin.
+                         </Column>
+                     </Row>
+                 </ModalBody>
+                 <ModalFooter>
+                     <Button Color="Color.Secondary" Clicked="@HideModal">Close</Button>
+                 </ModalFooter>
+             </ModalContent>
+         }
+     </Modal>
 
-                        <PaxPostedWith 
-                            AllPosts="@allData.Posts" 
-                            RegionInfo="@RegionInfo" 
-                            SelectedPaxPosts="@selectedPaxPosts"
-                            SelectedPaxHistoricalData="@selectedPaxHistoricalData"
-                        >
-                        </PaxPostedWith>
-
-                        @if (selectedPaxHistoricalData != null)
-                        {
-                            <Row>
-                                <Column id="historical-note">
-                                    * Since @firstNonHistoricalDate.Value.ToString("M/d/yy")
-                                </Column>
-                            </Row>
-                        }
-
-                        <Row>
-                            <Column id="privacy-note">
-                                If you see any errors, or would like to hide your data, contact Peacock or a Band admin.
-                            </Column>
-                        </Row>
-                    }
-                </ModalBody>
-                <ModalFooter>
-                    <Button Color="Color.Secondary" Clicked="@HideModal">Close</Button>
-                </ModalFooter>
-            </ModalContent>
-        }
-        </Modal>
+     <AoChallengeModal 
+         @bind-Visible="showAoChallengeModal"
+         SelectedPax="selectedPax"
+         SelectedPaxPosts="selectedPaxPosts"
+         Aos="allData.Aos"
+         RegionInfo="RegionInfo"
+         CurrentView="currentView"
+     />
 }

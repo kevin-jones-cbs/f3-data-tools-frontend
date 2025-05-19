@@ -1,0 +1,126 @@
+@using Blazorise
+@using F3Core
+@using F3Core.Regions
+@using F3Wasm.Data
+@using F3Wasm.Models
+
+<Modal @bind-Visible="@Visible" id="AoChallengeModal" Closing="@OnModalClosing">
+    @if (SelectedPax != null)
+    {
+        <ModalContent Centered Size="ModalSize.Fullscreen">
+            <ModalHeader>
+                <ModalTitle>@SelectedPax.Name</ModalTitle>
+                <CloseButton />
+            </ModalHeader>
+            <ModalBody>
+                <Column>
+                    <h4>AOs Posted This Month</h4>
+                    <div class="aoChallengeContainer">
+                        @foreach (var location in Aos.OrderBy(x => x.DayOfWeek).ToList())
+                        {
+                            <Button class="aoChallengeButton"
+                                style="@GetAoChallengeButtonColor(location)">@location.Name</Button>
+                        }
+                        @if (RegionInfo.DisplayName == "South Fork")
+                        {
+                            <Button class="aoChallengeButton"
+                                style="@GetAoChallengeButtonColor(FullMoonRuckAo)">Full Moon Ruck</Button>
+                        }
+                    </div>
+                </Column>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary" Clicked="@HideModal">Close</Button>
+            </ModalFooter>
+        </ModalContent>
+    }
+</Modal>
+
+<style>
+    .aoChallengeButton {
+        height: 75px;
+    }
+
+    .aoChallengeContainer {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public bool Visible { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> VisibleChanged { get; set; }
+
+    [Parameter]
+    public Pax SelectedPax { get; set; }
+
+    [Parameter]
+    public List<Post> SelectedPaxPosts { get; set; }
+
+    [Parameter]
+    public List<Ao> Aos { get; set; }
+
+    [Parameter]
+    public Region RegionInfo { get; set; }
+
+    [Parameter]
+    public OverallView CurrentView { get; set; }
+
+    public string FullMoonRuckName = "Full Moon Ruck";
+    public Ao FullMoonRuckAo = new Ao() { Name = "Full Moon Ruck" };
+
+    private Task HideModal()
+    {
+        Visible = false;
+        return VisibleChanged.InvokeAsync(Visible);
+    }
+
+    private Task OnModalClosing(ModalClosingEventArgs e)
+    {
+        return Task.CompletedTask;
+    }
+
+    private string GetAoChallengeButtonColor(Ao location)
+    {
+        // Full Moon Ruck is always black
+        var hex = "#423c3f";
+
+        if (location.Name != FullMoonRuckName)
+        {
+            hex = ColorHelpers.GetAoHex(location);
+        }
+
+        var now = DateTime.Now;
+        var hasPosted = false;
+
+        if (CurrentView == OverallView.AoChallenge)
+        {
+            // Only show posts from November 1st to December 14th
+            hasPosted = SelectedPaxPosts.Where(x => x.Date.Year == now.Year && (x.Date.Month == 11 || (x.Date.Month == 12 && x.Date.Day <= 14)) && x.Site == location.Name).Any();
+        }
+        else if (CurrentView == OverallView.SouthForkChallenge)
+        {
+            // Only show posts from April 1st onwards
+            hasPosted = SelectedPaxPosts.Where(x => x.Date.Year == now.Year && x.Date.Month > 3 && x.Site == location.Name).Any();
+        }
+        else if (CurrentView == OverallView.TerracottaChallenge)
+        {
+            hasPosted = SelectedPaxPosts.Where(x => x.Date.Year == now.Year && x.Site == location.Name).Any();
+        }
+        else
+        {
+            hasPosted = SelectedPaxPosts.Where(x => x.Date.Year == now.Year && x.Date.Month == now.Month && x.Site == location.Name).Any();
+        }
+
+        if (hasPosted)
+        {
+            return $"background-color: {hex}; color: white;";
+        }
+
+        return $"border: solid 1px {hex}; color:{hex}";
+    }
+} 
