@@ -1,7 +1,9 @@
 @using Blazorise.DataGrid
 @using F3Core
+@using F3Wasm.Data
 @using F3Wasm.Models
 @using System.Text
+@inject HttpClient Http
 
 <style>
     th {
@@ -73,11 +75,31 @@
     private static int QSourceCountMax = 30;
     private static int QSourceQCountMax = 3;
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
+        // Get Junction and Bedrock for this too
+        var junctionTask = LambdaHelper.GetAllDataAsync(Http, "junction");
+        var bedrockTask = LambdaHelper.GetAllDataAsync(Http, "bedrock");
+        await Task.WhenAll(junctionTask, bedrockTask);
+
         var thisYear = DateTime.Now.Year;
         var posts = AllData.Posts.Where(x => x.Date.Year == thisYear).ToList();
         var qSourcePosts = AllData.QSourcePosts.Where(x => x.Date.Year == thisYear).ToList();
+
+        // Combine Junction and Bedrock posts for this year
+        var junctionData = await junctionTask;
+        var bedrockData = await bedrockTask;
+        if (junctionData?.Posts != null)
+        {
+            posts.AddRange(junctionData.Posts.Where(x => x.Date.Year == thisYear));
+            qSourcePosts.AddRange(junctionData.QSourcePosts.Where(x => x.Date.Year == thisYear));
+        }
+
+        if (bedrockData?.Posts != null)
+        {
+            posts.AddRange(bedrockData.Posts.Where(x => x.Date.Year == thisYear));
+            qSourcePosts.AddRange(bedrockData.QSourcePosts.Where(x => x.Date.Year == thisYear));
+        }
 
         var paxPosts = posts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
         var paxQSourcePosts = qSourcePosts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
