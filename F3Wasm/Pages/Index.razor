@@ -225,6 +225,10 @@ else
                 <TableHeaderCell>Name</TableHeaderCell>
                 <TableHeaderCell>Q?</TableHeaderCell>
                 <TableHeaderCell>FNG</TableHeaderCell>
+                @if (RegionInfo.HasExtraActivity)
+                {
+                    <TableHeaderCell>Pre-Workout</TableHeaderCell>
+                }
                 <TableHeaderCell></TableHeaderCell>
             </TableRow>
         </TableHeader>
@@ -242,6 +246,12 @@ else
                     <TableRowCell>
                         <Check TValue="bool" Disabled></Check>
                     </TableRowCell>
+                    @if (RegionInfo.HasExtraActivity)
+                    {
+                        <TableRowCell>
+                            <Check TValue="bool" @bind-Checked="@p.ExtraActivity"></Check>
+                        </TableRowCell>
+                    }
                     <TableRowCell>
                         <Icon Name="IconName.Times" Clicked="@(e => OnRemovePax(p))" class="custom-link" />
                     </TableRowCell>
@@ -287,6 +297,12 @@ else
                     <TableRowCell>
                         <Check TValue="bool" Checked="@p.IsFng" CheckedChanged="@(isChecked => OnFngSelected(p, (bool)isChecked))"></Check>
                     </TableRowCell>
+                    @if (RegionInfo.HasExtraActivity)
+                    {
+                        <TableRowCell>
+                            <Check TValue="bool" @bind-Checked="@p.ExtraActivity"></Check>
+                        </TableRowCell>
+                    }
                     <TableRowCell Clicked="@(e => OnRemovePax(p))">
                         <Icon Name="IconName.Times" class="custom-link" />
                     </TableRowCell>

@@ -151,6 +151,11 @@ namespace F3Wasm.Pages
 
                 row.QRatio = row.QCount == 0 ? 0 : (double)row.QCount / row.PostCount * 100;
 
+                if (RegionInfo.HasExtraActivity)
+                {
+                    row.ExtraActivityCount = pax.Value.Count(p => p.ExtraActivity);
+                }
+
                 // Kotter
                 if (currentView == OverallView.Kotter)
                 {

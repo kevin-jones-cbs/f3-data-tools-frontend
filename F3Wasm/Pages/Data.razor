@@ -255,6 +255,11 @@ else
                     <DataGridColumn Field="@nameof(DisplayRow.Streak)" Caption="@(RegionInfo.HasHistoricalData && currentView == OverallView.AllTime ? "Daily Streak *" : "Daily Streak")" Filterable="false" />
                     <DataGridColumn Field="@nameof(DisplayRow.QRatio)" Caption="Q Ratio" Filterable="true" DisplayFormat="{0:0}%" />
 
+                    @if (RegionInfo.HasExtraActivity)
+                    {
+                        <DataGridColumn Field="@nameof(DisplayRow.ExtraActivityCount)" Caption="Pre Workouts" Filterable="false" />
+                    }
+
                     @if (RegionInfo.DisplayName == "South Fork")
                     {
                         <DataGridColumn Field="@nameof(DisplayRow.CalendarDaysTo100)" Caption="Cal Days to 100" Filterable="false" />
