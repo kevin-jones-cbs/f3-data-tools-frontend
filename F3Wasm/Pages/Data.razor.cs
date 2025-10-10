@@ -262,8 +262,11 @@ namespace F3Wasm.Pages
             currentYear = year;
             var posts = allData.Posts.Where(p => p.Date.Year == year).ToList();
 
-            var firstDay = new DateTime(DateTime.Now.Year - 1, 1, 1);
-            var lastDay = new DateTime(DateTime.Now.Year, 1, 1).AddDays(-1);
+            var firstDay = new DateTime(year, 1, 1);
+            // For current year, use today's date. For past years, use Dec 31st
+            var lastDay = year == DateTime.Now.Year
+                ? DateTime.Now
+                : new DateTime(year, 12, 31);
             SetCurrentRows(posts, firstDay, lastDay, false);
             await RefreshDropdowns();
         }
