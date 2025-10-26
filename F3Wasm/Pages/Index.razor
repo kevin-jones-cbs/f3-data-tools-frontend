@@ -356,7 +356,11 @@ else
     <div style="padding-bottom:12px;">
         <Button Color="Color.Primary" Clicked="@OnUploadButtonClicked" @bind-Disabled="@isLoading" Loading="isLoading">Upload</Button>
         <span style="margin: auto 0px auto 12px;">
-            @pax.Count PAX for @ao
+            @{
+                var qList = pax.Where(x => x.IsQ).Select(x => x.Name).ToList();
+                var qNames = qList.Any() ? string.Join(", ", qList) : "";
+            }
+            @pax.Count PAX @(qNames.Length > 0 ? $"Q'd by {qNames} at" : "for") @ao
             @if (isQSource)
             {
                 <span class="badge bg-warning text-dark ms-2" style="font-size:9px; padding:2px 6px; vertical-align:middle;">QS</span>
