@@ -59,6 +59,12 @@
         background-color: #fdf3f3;
     }
 
+    .location-card.missing-qsource {
+        border-color: #fd7e14; /* orange */
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4" viewBox="0 0 4 4"><path fill="rgba(255, 220, 180, 0.4)" d="M0 0h2v2H0zm2 2h2v2H2z"/></svg>');
+        background-color: #fff8f0;
+    }
+
     .indicator {
         width: 1rem;
         height: 1rem;
@@ -82,6 +88,14 @@
 
     .indicator.missing .dot {
         background-color: #dc3545; /* red */
+    }
+
+    .indicator.missing-qsource {
+        border-color: #fd7e14; /* orange */
+    }
+
+    .indicator.missing-qsource .dot {
+        background-color: #fd7e14; /* orange */
     }
 
     .missing-dates-grid {
@@ -115,21 +129,43 @@ else
             <div class="mb-3">
                 <Alert Color="Color.Danger" class="d-flex align-items-center">
                     <Icon Name="IconName.ExclamationCircle" class="me-2" />
-                    <span>Missing entries for dates:</span>
+                    <span>Missing entries:</span>
                 </Alert>
-                <div class="missing-dates-grid">
-                    @foreach (var date in missingDates)
-                    {
-                        <Card onclick="@(() => OnMissingDateSelected(date))">
-                            <CardBody style="padding: 0.25em; margin:6px; font-weight:500" class="d-flex justify-content-between text-start">
-                                <CardText>
-                                    <span>@date.ToShortDateString()</span>
-                                </CardText>
-                                <Icon Name="IconName.ChevronRight" class="ms-auto" style="margin-top:3px;" />
-                            </CardBody>
-                        </Card>
-                    }
-                </div>
+
+                @foreach (var date in missingDates.OrderBy(d => d))
+                {
+                    <div class="mb-3">
+                        <h6 class="mb-2" style="font-weight:600;">@date.DayOfWeek.ToString() - @date.ToShortDateString()</h6>
+                        <div class="missing-dates-grid">
+                            @* Show regular missing AOs *@
+                            @foreach (var missingAo in missingAos.Where(x => x.Date.Date == date.Date))
+                            {
+                                <Card onclick="@(() => OnMissingAoSelected(missingAo, false))" style="border-color: #dc3545; cursor: pointer;">
+                                    <CardBody style="padding: 0.5em; margin:4px; font-weight:500; background-color: #fdf3f3;" class="d-flex justify-content-between text-start align-items-center">
+                                        <CardText style="margin-bottom:0;">
+                                            <span>@missingAo.Name</span>
+                                        </CardText>
+                                        <Icon Name="IconName.ChevronRight" class="ms-auto" />
+                                    </CardBody>
+                                </Card>
+                            }
+
+                            @* Show Q Source missing AOs with orange styling *@
+                            @foreach (var qSourceAo in missingQSourceAos.Where(x => x.Date.Date == date.Date))
+                            {
+                                <Card onclick="@(() => OnMissingAoSelected(qSourceAo, true))" style="border-color: #fd7e14; cursor: pointer;">
+                                    <CardBody style="padding: 0.5em; margin:4px; font-weight:500; background-color: #fff8f0;" class="d-flex justify-content-between text-start align-items-center">
+                                        <CardText style="margin-bottom:0;">
+                                            <span>@qSourceAo.Name</span>
+                                            <span class="badge bg-warning text-dark ms-2" style="font-size:9px; padding:2px 6px; vertical-align:middle;">QS</span>
+                                        </CardText>
+                                        <Icon Name="IconName.ChevronRight" class="ms-auto" />
+                                    </CardBody>
+                                </Card>
+                            }
+                        </div>
+                    </div>
+                }
             </div>
 
             <hr />
@@ -319,7 +355,13 @@ else
 
     <div style="padding-bottom:12px;">
         <Button Color="Color.Primary" Clicked="@OnUploadButtonClicked" @bind-Disabled="@isLoading" Loading="isLoading">Upload</Button>
-        <span style="margin: auto 0px auto 12px;">@pax.Count PAX for @ao</span>
+        <span style="margin: auto 0px auto 12px;">
+            @pax.Count PAX for @ao
+            @if (isQSource)
+            {
+                <span class="badge bg-warning text-dark ms-2" style="font-size:9px; padding:2px 6px; vertical-align:middle;">QS</span>
+            }
+        </span>
     </div>
 
     @if (!string.IsNullOrEmpty(errorMessage))

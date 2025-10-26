@@ -18,6 +18,7 @@ namespace F3Wasm.Pages
         private List<string> allNames = new List<string>();
         private List<Pax> pax = new List<Pax>();
         public List<Ao> missingAos { get; set; } = new List<Ao>();
+        public List<Ao> missingQSourceAos { get; set; } = new List<Ao>();
         private static DateTime? qDate = DateTime.Now;
         public string ao { get; set; }
         public static string AoOtherValue { get; } = "Other";
@@ -66,8 +67,19 @@ namespace F3Wasm.Pages
         private async Task OnMissingAoButtonClicked()
         {
             isMissingDataLoading = true;
-            missingAos = await LambdaHelper.GetMissingAosAsync(Http, Region);
-            missingDates = missingAos.Select(x => x.Date.Date).Distinct().ToList();
+            var allMissingAos = await LambdaHelper.GetMissingAosAsync(Http, Region);
+
+            // Separate regular missing AOs from Q Source missing AOs based on HasQSource property
+            missingAos = allMissingAos.Where(x => !x.HasQSource).ToList();
+            missingQSourceAos = allMissingAos.Where(x => x.HasQSource).ToList();
+
+            // Combine both lists to get all unique missing dates
+            var allMissingDates = missingAos.Select(x => x.Date.Date)
+                .Union(missingQSourceAos.Select(x => x.Date.Date))
+                .Distinct()
+                .ToList();
+            missingDates = allMissingDates;
+
             if (!missingDates.Any())
             {
                 showNoMissingAoMessage = true;
@@ -84,11 +96,15 @@ namespace F3Wasm.Pages
             isMissingDataLoading = false;
         }
 
-        private async Task OnMissingAoSelected(Ao missingAo)
+        private async Task OnMissingAoSelected(Ao missingAo, bool isQSourceMissing = false)
         {
             qDate = missingAo.Date;
 
             await OnAoChanged(missingAo.Name);
+
+            // Set Q Source checkbox based on the type of missing entry
+            isQSource = isQSourceMissing;
+
             await InvokeAsync(StateHasChanged);
         }
 
@@ -205,15 +221,25 @@ namespace F3Wasm.Pages
             if (missingAos.Any(x => x.Name == ao && x.Date.Date == qDate.Value.Date))
             {
                 missingAos.Remove(missingAos.First(x => x.Name == ao && x.Date.Date == qDate.Value.Date));
-
-                // If there are no more missing aos, show the message
-                if (!missingAos.Any(x => x.Name != AoOtherValue))
-                {
-                    showNoMissingAoMessage = true;
-                }
-
-                missingDates = missingAos.Select(x => x.Date.Date).Distinct().ToList();
             }
+
+            // Also remove from Q Source missing list if applicable
+            if (missingQSourceAos.Any(x => x.Name == ao && x.Date.Date == qDate.Value.Date && isQSource))
+            {
+                missingQSourceAos.Remove(missingQSourceAos.First(x => x.Name == ao && x.Date.Date == qDate.Value.Date));
+            }
+
+            // If there are no more missing aos, show the message
+            if (!missingAos.Any(x => x.Name != AoOtherValue) && !missingQSourceAos.Any())
+            {
+                showNoMissingAoMessage = true;
+            }
+
+            var allMissingDates = missingAos.Select(x => x.Date.Date)
+                .Union(missingQSourceAos.Select(x => x.Date.Date))
+                .Distinct()
+                .ToList();
+            missingDates = allMissingDates;
 
 
             // Reset everything
@@ -234,6 +260,10 @@ namespace F3Wasm.Pages
             {
                 return "location-card missing";
             }
+            if (missingQSourceAos.Any(x => x.Name == ao.Name && x.Date.Date == qDate.Value.Date))
+            {
+                return "location-card missing-qsource";
+            }
             return ao.Name == this.ao ? "location-card selected" : "location-card";
         }
 
@@ -242,6 +272,10 @@ namespace F3Wasm.Pages
             if (missingAos.Any(x => x.Name == ao.Name && x.Date.Date == qDate.Value.Date))
             {
                 return "indicator missing";
+            }
+            if (missingQSourceAos.Any(x => x.Name == ao.Name && x.Date.Date == qDate.Value.Date))
+            {
+                return "indicator missing-qsource";
             }
             return ao.Name == this.ao ? "indicator selected" : "indicator";
         }
