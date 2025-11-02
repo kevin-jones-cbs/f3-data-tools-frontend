@@ -331,7 +331,15 @@ else
 
                              <PaxCalendar SelectedPaxPosts="@selectedPaxPosts" SelectedPaxQSourcePosts="@selectedPaxQSourcePosts" HasQSource="RegionInfo.HasQSourcePosts" ></PaxCalendar>
         
-                             @* <PaxKeyDates SelectedPaxPosts="@selectedPaxPosts"></PaxKeyDates> *@
+                                @if (!RegionInfo.HasHistoricalData)
+                                {
+                                    <PaxMilestoneChart
+                                        SelectedPaxPosts="@selectedPaxPosts"
+                                        SelectedPaxHistoricalData="@selectedPaxHistoricalData"
+                                        AllPossibleWorkoutDays="@allPossibleWorkoutDays"
+                                    >
+                                    </PaxMilestoneChart>
+                                }
                           </Column>
 
                           <Column>
@@ -345,9 +353,9 @@ else
                          </Column>
                      </Row>
 
-                     <PaxPostedWith 
-                         AllPosts="@allData.Posts" 
-                         RegionInfo="@RegionInfo" 
+                     <PaxPostedWith
+                         AllPosts="@allData.Posts"
+                         RegionInfo="@RegionInfo"
                          SelectedPaxPosts="@selectedPaxPosts"
                          SelectedPaxHistoricalData="@selectedPaxHistoricalData"
                      >
