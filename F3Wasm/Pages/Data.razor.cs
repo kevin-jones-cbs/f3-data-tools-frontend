@@ -81,11 +81,6 @@ namespace F3Wasm.Pages
             firstNonHistoricalDate = initialViewData.FirstNonHistoricalDate;
 
             loading = false;
-
-            Console.WriteLine($"Initial load of InitialView for region {Region} complete with {currentRows.Count} rows, {validYears.Count} years, {validMonths.Count} months.");
-
-            // Start loading full data in background (don't await)
-            //_ = LoadFullDataAsync();
         }
 
         private async Task LoadFullDataAsync()
@@ -454,6 +449,26 @@ namespace F3Wasm.Pages
             await RefreshDropdowns();
         }
 
+        private async Task ShowGoldStandard()
+        {
+            // This view requires full data - ensure it's loaded
+            await EnsureFullDataLoadedAsync();
+            currentView = OverallView.GoldStandard;
+        }
+
+        private async Task ShowTerracottaChallenge()
+        {
+            // This view requires full data - ensure it's loaded
+            await EnsureFullDataLoadedAsync();
+            currentView = OverallView.TerracottaChallenge;
+        }
+
+        private async Task ShowSouthForkChallenge()
+        {
+            // This view requires full data - ensure it's loaded
+            await EnsureFullDataLoadedAsync();
+            currentView = OverallView.SouthForkChallenge;
+        }
 
         private async Task RefreshDropdowns()
         {
