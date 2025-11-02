@@ -97,7 +97,7 @@ else
     <Row>
     <Column>
         <Button Color="currentView == OverallView.AllTime ? Color.Primary : Color.Light" Clicked="ShowAllTime">All Time</Button>
-        @if (fullDataLoaded && validYears != null)
+        @if (validYears != null)
         {
             <Dropdown @ref="yearDropdown" Display="Display.InlineBlock">
                 <DropdownToggle Color="currentView == OverallView.Year || currentView == OverallView.Month ? Color.Primary : Color.Light">Year @if (currentView == OverallView.Year || currentView == OverallView.Month) @currentYear</DropdownToggle>
@@ -174,7 +174,7 @@ else
             {
                 <Button>*Since @allData.QSourcePosts.Min(x => x.Date).ToShortDateString()</Button>
             }
-            else if (fullDataLoaded && lastUpdatedDate != DateTime.MinValue)
+            else if (lastUpdatedDate != DateTime.MinValue)
             {
                 <Button>Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
             }

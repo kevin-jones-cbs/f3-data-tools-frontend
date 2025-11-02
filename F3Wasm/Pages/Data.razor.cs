@@ -68,13 +68,21 @@ namespace F3Wasm.Pages
                 IsEmbed = isEmbed;
             }
 
-            // Fast initial load - get cached AllTime view
+            // Fast initial load - get cached InitialView with metadata
             loading = true;
             currentView = OverallView.AllTime;
-            currentRows = await LambdaHelper.GetAllTimeViewAsync(Http, Region);
+            var initialViewData = await LambdaHelper.GetInitialViewAsync(Http, Region);
+
+            // Extract data from InitialViewData
+            currentRows = initialViewData.CurrentRows;
+            validYears = initialViewData.ValidYears;
+            validMonths = initialViewData.ValidMonths;
+            lastUpdatedDate = initialViewData.LastUpdatedDate;
+            firstNonHistoricalDate = initialViewData.FirstNonHistoricalDate;
+
             loading = false;
 
-            Console.WriteLine($"Initial load of AllTime view for region {Region} complete with {currentRows.Count} rows.");
+            Console.WriteLine($"Initial load of InitialView for region {Region} complete with {currentRows.Count} rows, {validYears.Count} years, {validMonths.Count} months.");
 
             // Start loading full data in background (don't await)
             //_ = LoadFullDataAsync();
@@ -89,20 +97,8 @@ namespace F3Wasm.Pages
 
             allData = await LambdaHelper.GetAllDataAsync(Http, Region);
 
-            if (RegionInfo.HasHistoricalData)
-            {
-                firstNonHistoricalDate = allData.Posts.Min(x => x.Date);
-            }
-
-            validYears = allData.Posts.Select(p => p.Date.Year).Distinct().OrderByDescending(x => x).Where(x => x <= DateTime.Now.Year).ToList();
-            // Order the months by month number
-            validMonths = validMonths.OrderByDescending(x => DateTime.ParseExact(x, "MMM", System.Globalization.CultureInfo.InvariantCulture).Month).ToList();
-
-            lastUpdatedDate = allData.Posts.Where(x => x.Date.Year <= DateTime.Now.AddYears(1).Year).Max(x => x.Date);
-
+            // Remove legacy UPDATE post if present
             var lastUpdateItem = allData.Posts.FirstOrDefault(x => x.Site == "UPDATE");
-
-            // Legacy handling of the UPDATE post for last updated date.
             if (lastUpdateItem != null)
             {
                 allData.Posts.Remove(lastUpdateItem);
@@ -111,6 +107,16 @@ namespace F3Wasm.Pages
             allPossibleWorkoutDays = GetCurrentPossibleWorkoutDays(allData.Posts);
 
             fullDataLoaded = true;
+        }
+
+        private async Task EnsureFullDataLoadedAsync()
+        {
+            if (!fullDataLoaded)
+            {
+                loadingFullData = true;
+                await LoadFullDataAsync();
+                loadingFullData = false;
+            }
         }
 
         public static List<DisplayRow> SetCurrentRows(
@@ -298,12 +304,7 @@ namespace F3Wasm.Pages
         private async Task ShowYear(int year)
         {
             // This view requires full data - ensure it's loaded
-            if (!fullDataLoaded)
-            {
-                loadingFullData = true;
-                await LoadFullDataAsync();
-                loadingFullData = false;
-            }
+            await EnsureFullDataLoadedAsync();
 
             await Task.Delay(1);
             loading = true;
@@ -324,12 +325,7 @@ namespace F3Wasm.Pages
         private async Task ShowMonth(string month)
         {
             // This view requires full data - ensure it's loaded
-            if (!fullDataLoaded)
-            {
-                loadingFullData = true;
-                await LoadFullDataAsync();
-                loadingFullData = false;
-            }
+            await EnsureFullDataLoadedAsync();
 
             loading = true;
             currentView = OverallView.Month;
@@ -353,12 +349,7 @@ namespace F3Wasm.Pages
         private async Task ShowKotter()
         {
             // This view requires full data - ensure it's loaded
-            if (!fullDataLoaded)
-            {
-                loadingFullData = true;
-                await LoadFullDataAsync();
-                loadingFullData = false;
-            }
+            await EnsureFullDataLoadedAsync();
 
             loading = true;
             await Task.Delay(1);
@@ -386,12 +377,7 @@ namespace F3Wasm.Pages
         private async Task ShowQKotter()
         {
             // This view requires full data - ensure it's loaded
-            if (!fullDataLoaded)
-            {
-                loadingFullData = true;
-                await LoadFullDataAsync();
-                loadingFullData = false;
-            }
+            await EnsureFullDataLoadedAsync();
 
             loading = true;
             await Task.Delay(1);
@@ -414,12 +400,7 @@ namespace F3Wasm.Pages
         private async Task ShowAoChallenge()
         {
             // This view requires full data - ensure it's loaded
-            if (!fullDataLoaded)
-            {
-                loadingFullData = true;
-                await LoadFullDataAsync();
-                loadingFullData = false;
-            }
+            await EnsureFullDataLoadedAsync();
 
             loading = true;
             await Task.Delay(1);
@@ -438,12 +419,7 @@ namespace F3Wasm.Pages
         private async Task ShowAoList()
         {
             // This view requires full data - ensure it's loaded
-            if (!fullDataLoaded)
-            {
-                loadingFullData = true;
-                await LoadFullDataAsync();
-                loadingFullData = false;
-            }
+            await EnsureFullDataLoadedAsync();
 
             loading = true;
             await Task.Delay(1);
@@ -462,12 +438,7 @@ namespace F3Wasm.Pages
         private async Task ShowQSource()
         {
             // This view requires full data - ensure it's loaded
-            if (!fullDataLoaded)
-            {
-                loadingFullData = true;
-                await LoadFullDataAsync();
-                loadingFullData = false;
-            }
+            await EnsureFullDataLoadedAsync();
 
             loading = true;
             await Task.Delay(1);
@@ -544,12 +515,7 @@ namespace F3Wasm.Pages
             }
 
             // Modal requires full data - ensure it's loaded
-            if (!fullDataLoaded)
-            {
-                loadingFullData = true;
-                await LoadFullDataAsync();
-                loadingFullData = false;
-            }
+            await EnsureFullDataLoadedAsync();
 
             selectedPaxPosts = allData.Posts.Where(p => p.Pax == row.PaxName).OrderByDescending(x => x.Date).ToList();
             selectedPaxQSourcePosts = allData.QSourcePosts?.Where(p => p.Pax == row.PaxName).OrderByDescending(x => x.Date).ToList();
