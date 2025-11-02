@@ -3,7 +3,6 @@ using Blazorise.DataGrid;
 using F3Core;
 using F3Core.Regions;
 using F3Wasm.Data;
-using F3Wasm.Helpers;
 using F3Wasm.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
@@ -47,6 +46,8 @@ namespace F3Wasm.Pages
         private string customFilterValue;
 
         public bool loading { get; set; }
+        public bool loadingFullData { get; set; }
+        private bool fullDataLoaded { get; set; }
 
         // Don't show the modal for these PAX
         private static List<string> OptedOutPax = new List<string>();
@@ -55,6 +56,37 @@ namespace F3Wasm.Pages
         protected override async Task OnInitializedAsync()
         {
             RegionInfo = RegionList.All.FirstOrDefault(x => x.QueryStringValue == Region);
+
+            // Get IsEmbed from the query string
+            var uri = new Uri(NavigationManager.Uri);
+            var hasIsEmbedParam = HttpUtility.ParseQueryString(uri.Query).AllKeys.Contains("IsEmbed");
+
+            if (hasIsEmbedParam)
+            {
+                var isEmbedParam = HttpUtility.ParseQueryString(uri.Query)["IsEmbed"];
+                bool.TryParse(isEmbedParam, out var isEmbed);
+                IsEmbed = isEmbed;
+            }
+
+            // Fast initial load - get cached AllTime view
+            loading = true;
+            currentView = OverallView.AllTime;
+            currentRows = await LambdaHelper.GetAllTimeViewAsync(Http, Region);
+            loading = false;
+
+            Console.WriteLine($"Initial load of AllTime view for region {Region} complete with {currentRows.Count} rows.");
+
+            // Start loading full data in background (don't await)
+            //_ = LoadFullDataAsync();
+        }
+
+        private async Task LoadFullDataAsync()
+        {
+            if (fullDataLoaded)
+            {
+                return;
+            }
+
             allData = await LambdaHelper.GetAllDataAsync(Http, Region);
 
             if (RegionInfo.HasHistoricalData)
@@ -78,21 +110,19 @@ namespace F3Wasm.Pages
 
             allPossibleWorkoutDays = GetCurrentPossibleWorkoutDays(allData.Posts);
 
-            // Get IsEmbed from the query string
-            var uri = new Uri(NavigationManager.Uri);
-            var hasIsEmbedParam = HttpUtility.ParseQueryString(uri.Query).AllKeys.Contains("IsEmbed");
-
-            if (hasIsEmbedParam)
-            {
-                var isEmbedParam = HttpUtility.ParseQueryString(uri.Query)["IsEmbed"];
-                bool.TryParse(isEmbedParam, out var isEmbed);
-                IsEmbed = isEmbed;
-            }
-
-            await ShowAllTime();
+            fullDataLoaded = true;
         }
 
-        public void SetCurrentRows(List<Post> posts, DateTime? firstDay, DateTime lastDay, bool combineWithHistorical)
+        public static List<DisplayRow> SetCurrentRows(
+            List<Post> posts,
+            DateTime? firstDay,
+            DateTime lastDay,
+            bool combineWithHistorical,
+            List<WorkoutDay> allPossibleWorkoutDays,
+            Region regionInfo,
+            AllData allData,
+            OverallView currentView,
+            Func<List<Post>, int?> getCalDaysTo100Func)
         {
             var currentUniqueWorkoutDayCount = -1;
             if (firstDay != null)
@@ -102,7 +132,7 @@ namespace F3Wasm.Pages
 
             // Group the posts by pax name
             var paxPosts = posts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
-            currentRows = new List<DisplayRow>();
+            var rows = new List<DisplayRow>();
 
             // Add the pax to the display
             foreach (var pax in paxPosts)
@@ -111,7 +141,7 @@ namespace F3Wasm.Pages
                 var historicalQs = 0;
                 var historicalFirstDate = (DateTime?)null;
 
-                if (RegionInfo.HasHistoricalData && combineWithHistorical)
+                if (regionInfo.HasHistoricalData && combineWithHistorical)
                 {
                     var matchingHistoricalPost = allData.HistoricalData.FirstOrDefault(x => x.PaxName == pax.Key);
                     if (matchingHistoricalPost != null)
@@ -146,12 +176,12 @@ namespace F3Wasm.Pages
                 // Get the Q count
                 row.QCount = pax.Value.Where(p => p.IsQ).Count() + historicalQs;
 
-                (var streak, var streakStart) = StreakHelpers.CalculateStreak(pax.Value, RegionInfo);
+                (var streak, var streakStart) = StreakHelpers.CalculateStreak(pax.Value, regionInfo);
                 row.Streak = streak;
 
                 row.QRatio = row.QCount == 0 ? 0 : (double)row.QCount / row.PostCount * 100;
 
-                if (RegionInfo.HasExtraActivity)
+                if (regionInfo.HasExtraActivity)
                 {
                     row.ExtraActivityCount = pax.Value.Count(p => p.ExtraActivity);
                 }
@@ -180,26 +210,26 @@ namespace F3Wasm.Pages
 
                 if (currentView == OverallView.AllTime)
                 {
-                    row.CalendarDaysTo100 = GetCalDaysTo100(pax.Value);
+                    row.CalendarDaysTo100 = getCalDaysTo100Func(pax.Value);
                 }
 
-                currentRows.Add(row);
+                rows.Add(row);
             }
 
             if (currentView == OverallView.Kotter || currentView == OverallView.QKotter)
             {
-                currentRows = currentRows.OrderBy(r => r.KotterDays).ToList();
+                rows = rows.OrderBy(r => r.KotterDays).ToList();
             }
             else if (currentView == OverallView.AoChallenge || currentView == OverallView.AoList)
             {
-                currentRows = currentRows.OrderByDescending(r => r.AoPosts).ToList();
+                rows = rows.OrderByDescending(r => r.AoPosts).ToList();
             }
             else
             {
-                currentRows = currentRows.OrderByDescending(r => r.PostCount).ToList();
+                rows = rows.OrderByDescending(r => r.PostCount).ToList();
             }
 
-            loading = false;
+            return rows;
         }
 
         public int? GetCalDaysTo100(List<Post> selectedPaxPosts)
@@ -247,17 +277,36 @@ namespace F3Wasm.Pages
         #region Show AllTime, Years, Month, etc.
         private async Task ShowAllTime()
         {
+            // For AllTime view, we can use the cached version if available
+            // But if full data is loaded, recalculate for accuracy
+            if (!fullDataLoaded)
+            {
+                // Use the pre-loaded cached data that's already displayed
+                await RefreshDropdowns();
+                return;
+            }
+
             await Task.Delay(1);
             loading = true;
             currentView = OverallView.AllTime;
-            SetCurrentRows(allData.Posts, null, DateTime.Now, true);
+            currentRows = SetCurrentRows(allData.Posts, null, DateTime.Now, true, allPossibleWorkoutDays, RegionInfo, allData, currentView, GetCalDaysTo100);
+            loading = false;
 
             await RefreshDropdowns();
         }
 
         private async Task ShowYear(int year)
         {
+            // This view requires full data - ensure it's loaded
+            if (!fullDataLoaded)
+            {
+                loadingFullData = true;
+                await LoadFullDataAsync();
+                loadingFullData = false;
+            }
+
             await Task.Delay(1);
+            loading = true;
             currentView = OverallView.Year;
             currentYear = year;
             var posts = allData.Posts.Where(p => p.Date.Year == year).ToList();
@@ -267,12 +316,21 @@ namespace F3Wasm.Pages
             var lastDay = year == DateTime.Now.Year
                 ? DateTime.Now
                 : new DateTime(year, 12, 31);
-            SetCurrentRows(posts, firstDay, lastDay, false);
+            currentRows = SetCurrentRows(posts, firstDay, lastDay, false, allPossibleWorkoutDays, RegionInfo, allData, currentView, GetCalDaysTo100);
+            loading = false;
             await RefreshDropdowns();
         }
 
         private async Task ShowMonth(string month)
         {
+            // This view requires full data - ensure it's loaded
+            if (!fullDataLoaded)
+            {
+                loadingFullData = true;
+                await LoadFullDataAsync();
+                loadingFullData = false;
+            }
+
             loading = true;
             currentView = OverallView.Month;
             currentMonth = month;
@@ -287,12 +345,21 @@ namespace F3Wasm.Pages
 
             var firstDay = new DateTime(currentYear, monthInt, 1);
             var lastDay = firstDay.AddMonths(1).AddDays(-1);
-            SetCurrentRows(posts, firstDay, lastDay, false);
+            currentRows = SetCurrentRows(posts, firstDay, lastDay, false, allPossibleWorkoutDays, RegionInfo, allData, currentView, GetCalDaysTo100);
+            loading = false;
             await RefreshDropdowns();
         }
 
         private async Task ShowKotter()
         {
+            // This view requires full data - ensure it's loaded
+            if (!fullDataLoaded)
+            {
+                loadingFullData = true;
+                await LoadFullDataAsync();
+                loadingFullData = false;
+            }
+
             loading = true;
             await Task.Delay(1);
             currentView = OverallView.Kotter;
@@ -304,19 +371,28 @@ namespace F3Wasm.Pages
                         !p.Pax.Contains("2.0") &&
                         x.MaxDate < DateTime.Now.AddDays(-14) &&
                         x.MaxDate > DateTime.Now.AddDays(-365) &&
-                        (RegionInfo.RosterSheetColumns.Contains(RosterSheetColumn.NamingRegionName) ? x.Region == RegionInfo.DisplayName : 
+                        (RegionInfo.RosterSheetColumns.Contains(RosterSheetColumn.NamingRegionName) ? x.Region == RegionInfo.DisplayName :
                          RegionInfo.RosterSheetColumns.Contains(RosterSheetColumn.NamingRegionYN) ? x.Region == "N" :
-                         true) 
+                         true)
                            )).ToList();
 
             var firstDay = new DateTime(DateTime.Now.Year, 1, 1);
             var lastDay = DateTime.Now;
-            SetCurrentRows(posts, firstDay, lastDay, true);
+            currentRows = SetCurrentRows(posts, firstDay, lastDay, true, allPossibleWorkoutDays, RegionInfo, allData, currentView, GetCalDaysTo100);
+            loading = false;
             await RefreshDropdowns();
         }
 
         private async Task ShowQKotter()
         {
+            // This view requires full data - ensure it's loaded
+            if (!fullDataLoaded)
+            {
+                loadingFullData = true;
+                await LoadFullDataAsync();
+                loadingFullData = false;
+            }
+
             loading = true;
             await Task.Delay(1);
             currentView = OverallView.QKotter;
@@ -330,12 +406,21 @@ namespace F3Wasm.Pages
 
             var firstDay = new DateTime(DateTime.Now.Year, 1, 1);
             var lastDay = DateTime.Now;
-            SetCurrentRows(posts, firstDay, lastDay, true);
+            currentRows = SetCurrentRows(posts, firstDay, lastDay, true, allPossibleWorkoutDays, RegionInfo, allData, currentView, GetCalDaysTo100);
+            loading = false;
             await RefreshDropdowns();
         }
 
         private async Task ShowAoChallenge()
         {
+            // This view requires full data - ensure it's loaded
+            if (!fullDataLoaded)
+            {
+                loadingFullData = true;
+                await LoadFullDataAsync();
+                loadingFullData = false;
+            }
+
             loading = true;
             await Task.Delay(1);
             currentView = OverallView.AoChallenge;
@@ -344,7 +429,7 @@ namespace F3Wasm.Pages
 
             var firstDay = new DateTime(DateTime.Now.Year, 11, 1);
             var lastDay = new DateTime(DateTime.Now.Year, 12, 13);
-            SetCurrentRows(posts, firstDay, lastDay, false);
+            currentRows = SetCurrentRows(posts, firstDay, lastDay, false, allPossibleWorkoutDays, RegionInfo, allData, currentView, GetCalDaysTo100);
 
             loading = false;
             await RefreshDropdowns();
@@ -352,6 +437,14 @@ namespace F3Wasm.Pages
 
         private async Task ShowAoList()
         {
+            // This view requires full data - ensure it's loaded
+            if (!fullDataLoaded)
+            {
+                loadingFullData = true;
+                await LoadFullDataAsync();
+                loadingFullData = false;
+            }
+
             loading = true;
             await Task.Delay(1);
             currentView = OverallView.AoList;
@@ -360,7 +453,7 @@ namespace F3Wasm.Pages
 
             var firstDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
             var lastDay = DateTime.Now;
-            SetCurrentRows(posts, firstDay, lastDay, false);
+            currentRows = SetCurrentRows(posts, firstDay, lastDay, false, allPossibleWorkoutDays, RegionInfo, allData, currentView, GetCalDaysTo100);
 
             loading = false;
             await RefreshDropdowns();
@@ -368,6 +461,14 @@ namespace F3Wasm.Pages
 
         private async Task ShowQSource()
         {
+            // This view requires full data - ensure it's loaded
+            if (!fullDataLoaded)
+            {
+                loadingFullData = true;
+                await LoadFullDataAsync();
+                loadingFullData = false;
+            }
+
             loading = true;
             await Task.Delay(1);
             currentView = OverallView.QSource;
@@ -376,7 +477,7 @@ namespace F3Wasm.Pages
 
             var firstDay = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
             var lastDay = DateTime.Now;
-            SetCurrentRows(posts, null, DateTime.Now, false);
+            currentRows = SetCurrentRows(posts, null, DateTime.Now, false, allPossibleWorkoutDays, RegionInfo, allData, currentView, GetCalDaysTo100);
 
             loading = false;
             await RefreshDropdowns();
@@ -440,6 +541,14 @@ namespace F3Wasm.Pages
             {
                 // Don't show modal for opted out pax
                 return;
+            }
+
+            // Modal requires full data - ensure it's loaded
+            if (!fullDataLoaded)
+            {
+                loadingFullData = true;
+                await LoadFullDataAsync();
+                loadingFullData = false;
             }
 
             selectedPaxPosts = allData.Posts.Where(p => p.Pax == row.PaxName).OrderByDescending(x => x.Date).ToList();

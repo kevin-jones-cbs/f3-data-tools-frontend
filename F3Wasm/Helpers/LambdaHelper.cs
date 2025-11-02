@@ -46,6 +46,13 @@ namespace F3Wasm.Data
             return DecompressAll(response);
         }
 
+        public static async Task<List<DisplayRow>> GetAllTimeViewAsync(HttpClient client, string region)
+        {
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetAllTimeView", Region = region });
+            var rows = JsonSerializer.Deserialize<List<DisplayRow>>(response);
+            return rows;
+        }
+
         public static async Task<List<Ao>> GetAllLocationsAsync(HttpClient client, string region)
         {
             var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetLocations", Region = region });

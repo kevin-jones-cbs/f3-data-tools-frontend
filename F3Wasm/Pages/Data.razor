@@ -88,7 +88,7 @@
     }
 </style>
 
-@if (allData == null)
+@if (currentRows == null)
 {
     <p>Loading...</p>
 }
@@ -97,44 +97,50 @@ else
     <Row>
     <Column>
         <Button Color="currentView == OverallView.AllTime ? Color.Primary : Color.Light" Clicked="ShowAllTime">All Time</Button>
-        <Dropdown @ref="yearDropdown" Display="Display.InlineBlock">
-            <DropdownToggle Color="currentView == OverallView.Year || currentView == OverallView.Month ? Color.Primary : Color.Light">Year @if (currentView == OverallView.Year || currentView == OverallView.Month) @currentYear</DropdownToggle>
-            <DropdownMenu MaxMenuHeight="120px">
-                @foreach (var year in validYears)
-                {
-                    <DropdownItem Clicked="@(() => ShowYear(year))">@year</DropdownItem>
-                }
-            </DropdownMenu>
-        </Dropdown>
+        @if (fullDataLoaded && validYears != null)
+        {
+            <Dropdown @ref="yearDropdown" Display="Display.InlineBlock">
+                <DropdownToggle Color="currentView == OverallView.Year || currentView == OverallView.Month ? Color.Primary : Color.Light">Year @if (currentView == OverallView.Year || currentView == OverallView.Month) @currentYear</DropdownToggle>
+                <DropdownMenu MaxMenuHeight="120px">
+                    @foreach (var year in validYears)
+                    {
+                        <DropdownItem Clicked="@(() => ShowYear(year))">@year</DropdownItem>
+                    }
+                </DropdownMenu>
+            </Dropdown>
 
-        <Dropdown @ref="monthDropdown" Display="Display.InlineBlock">
-            <DropdownToggle Color="currentView == OverallView.Month ? Color.Primary : Color.Light">Month @if (currentView == OverallView.Month) @currentMonth</DropdownToggle>
-            <DropdownMenu MaxMenuHeight="240px">
-                @foreach (var month in validMonths)
-                {
-                    <DropdownItem Clicked="@(() => ShowMonth(month))">@month</DropdownItem>
-                }
-            </DropdownMenu>
-        </Dropdown>
+            <Dropdown @ref="monthDropdown" Display="Display.InlineBlock">
+                <DropdownToggle Color="currentView == OverallView.Month ? Color.Primary : Color.Light">Month @if (currentView == OverallView.Month) @currentMonth</DropdownToggle>
+                <DropdownMenu MaxMenuHeight="240px">
+                    @foreach (var month in validMonths)
+                    {
+                        <DropdownItem Clicked="@(() => ShowMonth(month))">@month</DropdownItem>
+                    }
+                </DropdownMenu>
+            </Dropdown>
+        }
     </Column>
     </Row>
 
-    <Row Class="mt-1">
-        <Column>
-            @if (RegionInfo.HasQSourcePosts)
-            {
-                <Button Color="currentView == OverallView.QSource ? Color.Primary : Color.Light" Clicked="ShowQSource" style="margin-right:4px;">Q Source</Button>
-            }
+    @if (fullDataLoaded)
+    {
+        <Row Class="mt-1">
+            <Column>
+                @if (RegionInfo.HasQSourcePosts)
+                {
+                    <Button Color="currentView == OverallView.QSource ? Color.Primary : Color.Light" Clicked="ShowQSource" style="margin-right:4px;">Q Source</Button>
+                }
 
-            <Button Color="currentView == OverallView.Kotter ? Color.Primary : Color.Light" Clicked="ShowKotter">Kotter</Button>
-            <Button Color="currentView == OverallView.QKotter ? Color.Primary : Color.Light" Clicked="ShowQKotter">Q Kotter</Button>
+                <Button Color="currentView == OverallView.Kotter ? Color.Primary : Color.Light" Clicked="ShowKotter">Kotter</Button>
+                <Button Color="currentView == OverallView.QKotter ? Color.Primary : Color.Light" Clicked="ShowQKotter">Q Kotter</Button>
 
-            @if (RegionInfo.DisplayName != "Gold Rush")
-            {
-                <Button Color="currentView == OverallView.AoList ? Color.Primary : Color.Light" Clicked="ShowAoList">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture) AOs</Button>
-            } 
-        </Column>
-    </Row>    
+                @if (RegionInfo.DisplayName != "Gold Rush")
+                {
+                    <Button Color="currentView == OverallView.AoList ? Color.Primary : Color.Light" Clicked="ShowAoList">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture) AOs</Button>
+                }
+            </Column>
+        </Row>
+    }    
 
     <Row Class="mt-1">
         <Column>
@@ -158,11 +164,17 @@ else
 
     <Row>
         <Column>
-            @if (currentView == OverallView.QSource)
+            @if (loadingFullData)
+            {
+                <Alert Color="Color.Info" Visible>
+                    <AlertDescription>Loading full data...</AlertDescription>
+                </Alert>
+            }
+            else if (fullDataLoaded && currentView == OverallView.QSource)
             {
                 <Button>*Since @allData.QSourcePosts.Min(x => x.Date).ToShortDateString()</Button>
             }
-            else if (lastUpdatedDate != DateTime.MinValue)
+            else if (fullDataLoaded && lastUpdatedDate != DateTime.MinValue)
             {
                 <Button>Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
             }
@@ -184,11 +196,11 @@ else
             <Button Color="Color.Secondary" Clicked="@ExportToCsv">Export to CSV</Button>
         }
 
-        @if (currentView == OverallView.GoldStandard)
+        @if (currentView == OverallView.GoldStandard && allData != null)
         {
             <GoldStandard AllData="allData" FilterValue="@customFilterValue"></GoldStandard>
         }
-        else if (currentView == OverallView.TerracottaChallenge)
+        else if (currentView == OverallView.TerracottaChallenge && allData != null)
         {
             <PaxOnFire AllData="allData" FilterValue="@customFilterValue" RegionInfo="@RegionInfo"></PaxOnFire>
         }
@@ -275,7 +287,7 @@ else
         }
     }
     <Modal @bind-Visible="@showPaxModal" id="SelectedPaxModal" Closing="@OnModalClosing">
-        @if (selectedPax != null)
+        @if (selectedPax != null && allData != null)
         {
             <ModalContent Centered Size="ModalSize.Fullscreen">
                  <ModalHeader>
@@ -340,12 +352,15 @@ else
          }
      </Modal>
 
-     <AoChallengeModal 
-         @bind-Visible="showAoChallengeModal"
-         SelectedPax="selectedPax"
-         SelectedPaxPosts="selectedPaxPosts"
-         Aos="allData.Aos"
-         RegionInfo="RegionInfo"
-         CurrentView="currentView"
-     />
+     @if (allData != null)
+     {
+         <AoChallengeModal
+             @bind-Visible="showAoChallengeModal"
+             SelectedPax="selectedPax"
+             SelectedPaxPosts="selectedPaxPosts"
+             Aos="allData.Aos"
+             RegionInfo="RegionInfo"
+             CurrentView="currentView"
+         />
+     }
 }
