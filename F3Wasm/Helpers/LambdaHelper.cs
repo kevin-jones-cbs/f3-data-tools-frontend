@@ -79,8 +79,12 @@ namespace F3Wasm.Data
 
         public static async Task<SectorData> GetSectorDataAsync(HttpClient client)
         {
-            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetSectorData"});
-            var sectorData = JsonSerializer.Deserialize<SectorData>(response);
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetSectorDataSummaryAsync"});
+
+            // Decompress the response (same as GetAllDataAsync)
+            var decompressed = Decompress(response);
+            var sectorData = JsonSerializer.Deserialize<SectorData>(decompressed, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
             return sectorData;
         }
 
@@ -101,30 +105,30 @@ namespace F3Wasm.Data
             allData.Posts = allData.Posts.Where(p => p != null).ToList();
 
             return allData;
+        }
 
-            string Decompress(string compressedText)
+        private static string Decompress(string compressedText)
+        {
+            var gZipBuffer = Convert.FromBase64String(compressedText);
+
+            using var memoryStream = new MemoryStream();
+            int dataLength = BitConverter.ToInt32(gZipBuffer, 0);
+            memoryStream.Write(gZipBuffer, 4, gZipBuffer.Length - 4);
+
+            var buffer = new byte[dataLength];
+            memoryStream.Position = 0;
+
+            using var gZipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
+
+            int totalRead = 0;
+            while (totalRead < buffer.Length)
             {
-                var gZipBuffer = Convert.FromBase64String(compressedText);
-
-                using var memoryStream = new MemoryStream();
-                int dataLength = BitConverter.ToInt32(gZipBuffer, 0);
-                memoryStream.Write(gZipBuffer, 4, gZipBuffer.Length - 4);
-
-                var buffer = new byte[dataLength];
-                memoryStream.Position = 0;
-
-                using var gZipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
-
-                int totalRead = 0;
-                while (totalRead < buffer.Length)
-                {
-                    int bytesRead = gZipStream.Read(buffer, totalRead, buffer.Length - totalRead);
-                    if (bytesRead == 0) break;
-                    totalRead += bytesRead;
-                }
-
-                return Encoding.UTF8.GetString(buffer);
+                int bytesRead = gZipStream.Read(buffer, totalRead, buffer.Length - totalRead);
+                if (bytesRead == 0) break;
+                totalRead += bytesRead;
             }
+
+            return Encoding.UTF8.GetString(buffer);
         }
 
         private static async Task<string> CallF3LambdaAsync(HttpClient client, object body)
