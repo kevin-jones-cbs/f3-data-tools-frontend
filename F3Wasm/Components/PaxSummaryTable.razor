@@ -1,67 +1,114 @@
 @using F3Core.Regions
 @using F3Core
 @using F3Wasm.Models
+@using Blazorise
 
-<Table Narrow Striped>
-    <TableBody>
-        <TableRow>
-            <TableRowHeader>Posts</TableRowHeader>
-            <TableRowCell>@(SelectedPaxPosts.Count + (SelectedPaxHistoricalData?.PostCount ?? 0))</TableRowCell>
-        </TableRow>
-        <TableRow>
-            <TableRowHeader>Qs</TableRowHeader>
-            <TableRowCell>@(SelectedPaxPosts.Count(x => x.IsQ == true) + (@SelectedPaxHistoricalData?.QCount ?? 0))</TableRowCell>
-        </TableRow>
-        <TableRow>
-            <TableRowHeader>First Post</TableRowHeader>
-            <TableRowCell>
-                @(
-                    SelectedPaxHistoricalData?.FirstPost?.ToShortDateString()
-                    ?? SelectedPaxPosts.Min(x => x.Date).ToShortDateString()
-                )
-            </TableRowCell>
-        </TableRow>
-        @if (SelectedPaxHistoricalData == null)
-        {
-            <TableRow>
-                <TableRowHeader>Named By</TableRowHeader>
-                <TableRowCell>@GetNamedBy()</TableRowCell>
-            </TableRow>
-            <TableRow>
-                <TableRowHeader>VQ</TableRowHeader>
-                <TableRowCell>
-                    @SelectedPaxPosts.LastOrDefault(x => x.IsQ)?.Date.ToShortDateString()
-                </TableRowCell>
-            </TableRow>
-            <TableRow>
-                <TableRowHeader>Calendar Days to 100</TableRowHeader>
-                <TableRowCell>
-                    @GetCalDaysTo100()
-                </TableRowCell>
-            </TableRow>
-        }
-        <TableRow>
-            <TableRowHeader>Last Post</TableRowHeader>
-            <TableRowCell>@SelectedPaxPosts.Max(x => x.Date).ToShortDateString()</TableRowCell>
-        </TableRow>
-        <TableRow>
-            <TableRowHeader>Post Percent @(SelectedPaxHistoricalData != null ? "*": "" )</TableRowHeader>
-            <TableRowCell>@(((double)SelectedPaxPosts.Count / GetSelectedPaxPossibleCount() * 100).ToString("0.00"))%</TableRowCell>
-        </TableRow>
-        <TableRow>
-            <TableRowHeader>Q Percent</TableRowHeader>
-            <TableRowCell>@(((double)SelectedPaxPosts.Count(x => x.IsQ == true) / (double)SelectedPaxPosts.Count * 100).ToString("0.00"))%</TableRowCell>
-        </TableRow>
-        <TableRow>
-            <TableRowHeader>Best Daily Streak @(SelectedPaxHistoricalData != null ? "*": "" )</TableRowHeader>
-            <TableRowCell>@(selectedPaxStreak)</TableRowCell>
-        </TableRow>
-        <TableRow>
-            <TableRowHeader>Streak Start</TableRowHeader>
-            <TableRowCell>@(selectedPaxStreakStart.ToShortDateString())</TableRowCell>
-        </TableRow>
-    </TableBody>
-</Table>
+<div class="row g-3">
+    <!-- Posts Section -->
+    <div class="col-xl-3 col-md-6 col-12 d-flex">
+        <Card Class="shadow-sm flex-fill" Style="min-width:225px;">
+            <CardBody>
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-success p-2 rounded-lg text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                            <Icon Name="IconName.CheckCircle" />
+                        </div>
+                        <div class="ms-2">
+                            <div class="fw-bold" style="font-size: 0.875rem;">POSTS</div>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold fs-3">@(SelectedPaxPosts.Count + (SelectedPaxHistoricalData?.PostCount ?? 0))</div>
+                        <div class="text-muted small">Post %@(SelectedPaxHistoricalData != null ? " *" : ""): <span class="fw-semibold">@(((double)SelectedPaxPosts.Count / GetSelectedPaxPossibleCount() * 100).ToString("0.00"))%</span></div>
+                        <div class="text-muted small">Last Post: <span class="fw-semibold">@SelectedPaxPosts.Max(x => x.Date).ToShortDateString()</span></div>
+                        @if (SelectedPaxHistoricalData == null)
+                        {
+                            <div class="text-muted small">Calendar Days to 100: <span class="fw-semibold">@GetCalDaysTo100()</span></div>
+                        }
+                    </div>
+                </div>
+            </CardBody>
+        </Card>
+    </div>
+
+    <!-- Qs Section -->
+    <div class="col-xl-3 col-md-6 col-12 d-flex">
+        <Card Class="shadow-sm flex-fill" Style="min-width:225px;">
+            <CardBody>
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary p-2 rounded-lg text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                            <Icon Name="IconName.Flag" />
+                        </div>
+                        <div class="ms-2">
+                            <div class="fw-bold" style="font-size: 0.875rem;">Qs</div>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold fs-3">@(SelectedPaxPosts.Count(x => x.IsQ == true) + (@SelectedPaxHistoricalData?.QCount ?? 0))</div>
+                        <div class="text-muted small">Q %: <span class="fw-semibold">@(((double)SelectedPaxPosts.Count(x => x.IsQ == true) / (double)SelectedPaxPosts.Count * 100).ToString("0.00"))%</span></div>
+                        @if (SelectedPaxHistoricalData == null)
+                        {
+                            <div class="text-muted small">VQ: <span class="fw-semibold">@(SelectedPaxPosts.LastOrDefault(x => x.IsQ)?.Date.ToShortDateString() ?? "N/A")</span></div>
+                        }
+                    </div>
+                </div>
+            </CardBody>
+        </Card>
+    </div>
+
+    <!-- First Post Section -->
+    <div class="col-xl-3 col-md-6 col-12 d-flex">
+        <Card Class="shadow-sm flex-fill" Style="min-width:225px;">
+            <CardBody>
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="p-2 rounded-lg text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px; background-color: #6f42c1;">
+                            <Icon Name="IconName.CalendarDay" />
+                        </div>
+                        <div class="ms-2">
+                            <div class="fw-bold" style="font-size: 0.875rem;">FIRST POST</div>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold fs-5">
+                            @(
+                                SelectedPaxHistoricalData?.FirstPost?.ToShortDateString()
+                                ?? SelectedPaxPosts.Min(x => x.Date).ToShortDateString()
+                            )
+                        </div>
+                        @if (SelectedPaxHistoricalData == null)
+                        {
+                            <div class="text-muted small">Named By: <span class="fw-semibold">@GetNamedBy()</span></div>
+                        }
+                    </div>
+                </div>
+            </CardBody>
+        </Card>
+    </div>
+
+    <!-- Streak Section -->
+    <div class="col-xl-3 col-md-6 col-12 d-flex">
+        <Card Class="shadow-sm flex-fill" Style="min-width:225px;">
+            <CardBody>
+                <div class="d-flex align-items-start justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-danger p-2 rounded-lg text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                            <Icon Name="IconName.Fire" />
+                        </div>
+                        <div class="ms-2">
+                            <div class="fw-bold" style="font-size: 0.875rem;">BEST STREAK@(SelectedPaxHistoricalData != null ? " *" : "")</div>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold fs-3">@(selectedPaxStreak)</div>
+                        <div class="text-muted small">Started: <span class="fw-semibold">@(selectedPaxStreakStart.ToShortDateString())</span></div>
+                    </div>
+                </div>
+            </CardBody>
+        </Card>
+    </div>
+</div>
 
 @code {
     [Parameter]
