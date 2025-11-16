@@ -51,9 +51,10 @@ dotnet test
 ### External Dependencies
 
 **F3Core.dll** - A critical external library located at `F3Wasm/Packages/F3Core.dll`. This DLL is referenced by both the main project and tests. It contains shared models and business logic including:
-- Core data models (Pax, Ao, Post, AllData, etc.)
+- Core data models (Pax, Ao, Post, AllData, InitialViewData, DisplayRow, etc.)
 - Region-specific logic (RegionList, RegionInfo classes)
 - Challenge data (TerracottaChallenge, etc.)
+- Data calculation helpers (DataHelper.SetCurrentRows, etc.)
 
 The F3Core library is built from a separate repository (`f3-data-tools-core`) and copied into the Packages directory.
 
@@ -64,13 +65,18 @@ The app communicates with an **AWS Lambda backend** via HTTP:
 - Exicon search Lambda: `https://wdd5t63r4ve5btbdv5yypcnugq0fgeow.lambda-url.us-west-1.on.aws/`
 
 All backend interactions go through `F3Wasm/Helpers/LambdaHelper.cs`, which provides methods for:
+- **GetInitialViewAsync** - Fetches pre-calculated AllTime view with metadata (validYears, validMonths, lastUpdatedDate, firstNonHistoricalDate) for fast initial page load
+- **GetAllDataAsync** - Fetches complete dataset (AllData) with all posts, PAX, and AOs
 - Fetching PAX data
 - Uploading workout posts
 - Managing locations (AOs)
-- Retrieving analytics data
 - Cache management
 
-Data returned from Lambda is often **GZip compressed** and base64-encoded for performance.
+**Performance Optimizations**:
+- `GetInitialView` returns cached `InitialViewData` object for instant page load (<200ms)
+- `GetAllData` returns GZip compressed and base64-encoded data for full dataset (slower, ~2-5s)
+- Initial page load uses cached InitialView ONLY - full data is NOT loaded until user clicks a view that requires it
+- True lazy loading: many users never load full data, saving bandwidth and processing time
 
 ### Project Structure
 
@@ -136,10 +142,18 @@ Region codes (e.g., "southfork", "sacramento", "terracotta") correspond to diffe
 5. Data is uploaded to backend (Google Sheets via Lambda)
 
 **Analytics View** (Data.razor):
-1. App fetches compressed AllData from Lambda
-2. Data is decompressed and displayed in tables/charts
-3. Various views: overall stats, calendar, locations, challenges
-4. Filtering and sorting options available
+1. **Fast Initial Load** - App calls `GetInitialView` Lambda endpoint to fetch pre-calculated AllTime view with metadata (validYears, validMonths, lastUpdatedDate, firstNonHistoricalDate)
+2. Page displays immediately with AllTime stats and functional dropdowns
+3. **True Lazy Loading** - Full AllData is ONLY loaded when user clicks a view that requires it (Year, Month, Kotter, QKotter, Challenges, or opens a PAX modal)
+4. Loading indicator displayed when full data is needed but not yet loaded
+5. Various views: overall stats, calendar, locations, challenges
+6. Filtering and sorting options available
+
+**Initial Load Optimization Strategy**:
+- `OnInitializedAsync()` - Calls `GetInitialView` for instant display of cached AllTime data with metadata
+- NO background loading - full data stays unloaded until needed
+- `EnsureFullDataLoadedAsync()` - Helper method that all views requiring full data call; shows loading indicator and loads data on first access
+- This approach ensures the page is interactive immediately and many users never need to load the full dataset (saving bandwidth and time)
 
 ### Component Communication
 

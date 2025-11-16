@@ -11,16 +11,15 @@
             @{
                 int currentStart = historicalPostCount;
                 int lastEnd = historicalPostCount;
+                var ranges = new List<(int index, int start, int end)>();
 
+                // Build list of all ranges
                 for (int i = 0; currentStart < totalPostCount; i++)
                 {
-                    var local = i;
                     var start = currentStart;
                     var end = ((start / 100) + 1) * 100;
                     end = Math.Min(end, totalPostCount);
-
-                    <ListGroupItem Name="@local.ToString()" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange(local.ToString()))">@start-@end</ListGroupItem>
-
+                    ranges.Add((i, start, end));
                     lastEnd = end;
                     currentStart = end;
                 }
@@ -30,9 +29,56 @@
                 // Only add "Recent100" if it doesn't overlap with the last range
                 if (recentStart > lastEnd)
                 {
-                    <ListGroupItem Name="Recent100" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange("Recent100"))">
-                        @recentStart-@totalPostCount
-                    </ListGroupItem>
+                    ranges.Add((-1, recentStart, totalPostCount));
+                }
+
+                // Show collapsible section if there are more than 5 ranges
+                if (ranges.Count > 5)
+                {
+                    var regularRanges = ranges.Where(r => r.index >= 0).ToList();
+                    var recent100 = ranges.FirstOrDefault(r => r.index == -1);
+
+                    <Accordion>
+                        <Collapse Visible="@showBy100s">
+                            <CollapseHeader>
+                                <Heading Size="HeadingSize.Is6">
+                                    <Button Clicked="@(() => showBy100s = !showBy100s)" Color="Color.Link" Size="Size.Small">
+                                        <Icon Name="@(showBy100s ? IconName.AngleDown : IconName.AngleRight)" />
+                                        By 100s
+                                    </Button>
+                                </Heading>
+                            </CollapseHeader>
+                            <CollapseBody>
+                                @foreach (var range in regularRanges)
+                                {
+                                    var local = range.index;
+                                    var start = range.start;
+                                    var end = range.end;
+                                    <ListGroupItem Name="@local.ToString()" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange(local.ToString()))">@start-@end</ListGroupItem>
+                                }
+                            </CollapseBody>
+                        </Collapse>
+                    </Accordion>
+
+                    // Add Recent100 if it exists
+                    if (recent100.index == -1)
+                    {
+                        <ListGroupItem Name="Recent100" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange("Recent100"))">
+                            @recent100.start-@recent100.end
+                        </ListGroupItem>
+                    }
+                }
+                else
+                {
+                    // If 5 or fewer ranges, just show them all
+                    foreach (var range in ranges)
+                    {
+                        var local = range.index;
+                        var start = range.start;
+                        var end = range.end;
+                        var name = local == -1 ? "Recent100" : local.ToString();
+                        <ListGroupItem Name="@name" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange(name))">@start-@end</ListGroupItem>
+                    }
                 }
             }
 
@@ -97,6 +143,7 @@
     public string allTimeWording;
     public int totalPostCount; // New property for total post count
     public int historicalPostCount;
+    private bool showBy100s = false;
 
     protected override void OnInitialized()
     {

@@ -1,0 +1,115 @@
+@using F3Core
+@using F3Wasm.Models
+@using Blazorise.Charts
+
+@if (TotalPosts > 200)
+{
+    <Card Margin="Margin.Is3.OnY">
+        <CardHeader>
+            <CardTitle>100 Progress (Possible Workout Days)</CardTitle>
+        </CardHeader>
+        <CardBody>
+            <LineChart @ref="lineChart" TItem="int" />
+        </CardBody>
+    </Card>
+}
+
+@code {
+    [Parameter]
+    public List<Post> SelectedPaxPosts { get; set; } = new();
+
+    [Parameter]
+    public HistoricalData SelectedPaxHistoricalData { get; set; }
+
+    [Parameter]
+    public List<WorkoutDay> AllPossibleWorkoutDays { get; set; } = new();
+
+    private LineChart<int> lineChart;
+    private int TotalPosts => SelectedPaxPosts.Count + (SelectedPaxHistoricalData?.PostCount ?? 0);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && TotalPosts > 200)
+        {
+            await HandleRedraw();
+        }
+    }
+
+    private async Task HandleRedraw()
+    {
+        await lineChart.Clear();
+
+        var milestoneData = CalculateMilestoneData();
+
+        await lineChart.AddLabelsDatasetsAndUpdate(
+            milestoneData.Labels.ToArray(),
+            GetLineChartDataset(milestoneData.WorkoutDays)
+        );
+    }
+
+    private LineChartDataset<int> GetLineChartDataset(List<int> data)
+    {
+        return new LineChartDataset<int>
+        {
+            Label = "Workout Days to Reach 100s",
+            Data = data,
+            BackgroundColor = new List<string> { "rgba(75, 192, 192, 0.2)" },
+            BorderColor = new List<string> { "rgb(75, 192, 192)" },
+            BorderWidth = 2,
+            Fill = true,
+            PointRadius = 5,
+            PointHoverRadius = 7
+        };
+    }
+
+    private (List<string> Labels, List<int> WorkoutDays) CalculateMilestoneData()
+    {
+        var labels = new List<string>();
+        var workoutDays = new List<int>();
+
+        // If historical data exists, we can't accurately calculate milestone data
+        // since we don't have individual posts
+        if (SelectedPaxHistoricalData != null)
+        {
+            // Return empty data if historical data exists
+            return (labels, workoutDays);
+        }
+
+        // Sort posts by date
+        var sortedPosts = SelectedPaxPosts.OrderBy(p => p.Date).ToList();
+
+        if (sortedPosts.Count < 100)
+        {
+            return (labels, workoutDays);
+        }
+
+        // Calculate milestones (100, 200, 300, etc.)
+        int currentMilestone = 100;
+        int previousMilestone = 0;
+
+        while (currentMilestone <= sortedPosts.Count)
+        {
+            // Get the start and end dates for this segment
+            // For first 100: post 1 to post 100
+            // For second 100: post 101 to post 200, etc.
+            var startPost = sortedPosts[previousMilestone];
+            var endPost = sortedPosts[currentMilestone - 1];
+
+            var startDate = startPost.Date.Date;
+            var endDate = endPost.Date.Date;
+
+            // Count how many possible workout days occurred in this segment
+            var possibleWorkoutDays = AllPossibleWorkoutDays
+                .Where(wd => wd.Date >= startDate && wd.Date <= endDate)
+                .Count();
+
+            labels.Add(currentMilestone.ToString());
+            workoutDays.Add(possibleWorkoutDays);
+
+            previousMilestone = currentMilestone;
+            currentMilestone += 100;
+        }
+
+        return (labels, workoutDays);
+    }
+}
