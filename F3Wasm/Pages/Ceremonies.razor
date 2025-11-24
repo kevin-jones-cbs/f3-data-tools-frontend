@@ -3,6 +3,7 @@
 @using F3Wasm.Models
 @using F3Wasm.Data
 @using F3Core.Regions
+@using F3Wasm.Components
 @using System.Text.Json
 @using System.Text
 @inject HttpClient Http
@@ -13,48 +14,13 @@
 }
 else
 {
-    <Table Narrow style="font-size:12px">
-        <TableHeader>
-            <TableRow>
-                <TableHeaderCell>PAX</TableHeaderCell>
-                <TableHeaderCell>Post Count</TableHeaderCell>
-                <TableHeaderCell>Maker</TableHeaderCell>
-                <TableHeaderCell>Date</TableHeaderCell>
-                <TableHeaderCell>AO</TableHeaderCell>
-                <TableHeaderCell>Actions</TableHeaderCell>
-            </TableRow>
-        </TableHeader>
-        <TableBody>
-            @foreach (var pax in close100s)
-            {
-                <TableRow Color="GetRowColor(pax)">
-                    <TableRowCell>@pax.Pax</TableRowCell>
-                    <TableRowCell>@pax.PostCount</TableRowCell>
-                    <TableRowCell>
-                        @pax.LinkMaker
-                        @if (pax.LinkMaker != null)
-                        {
-                            <Icon Name="@(pax.LinkMade ? IconName.Check : IconName.Times)" TextColor="@(pax.LinkMade ? TextColor.Success : TextColor.Danger)" Style="margin-left: 3px;" />
-                        }
-                    </TableRowCell>
-                    @* Show schedule date as formate 12/24, no year *@
-                    <TableRowCell>@(pax.ScheduledDate.HasValue ? pax.ScheduledDate.Value.ToString("MM/dd") : "")</TableRowCell>
-                    <TableRowCell>@pax.Location</TableRowCell>
-                    <TableRowCell>
-                        <Button Color="Color.Secondary" Size="Size.ExtraSmall" Clicked="@(() => ShowModal(pax))">
-                            <Icon Name="IconName.Edit" />
-                        </Button>
-                        @if (pax.PostCount % 100 < 90)
-                        {
-                            <Button Color="Color.Success" Size="Size.ExtraSmall" Clicked="@(() => Complete100(pax))">
-                                <Icon Name="IconName.Check" />
-                            </Button>
-                        }
-                    </TableRowCell>
-                </TableRow>
-            }
-        </TableBody>
-    </Table>
+    <h4>Active PAX Close to 100s</h4>
+    <CeremonyPaxTable PaxList="activePax"
+                      OnEdit="ShowModal"
+                      OnComplete="Complete100"
+                      GetRowColor="GetRowColor" />
+
+    <div>Total Active: @activePax.Count</div>
 
     <Modal @ref="modalRef">
         @if (selectedPax != null)
@@ -98,6 +64,12 @@ else
                             }
                         </Select>
                     </Field>
+                    <Field>
+                        <FieldLabel>Mark as Inactive</FieldLabel>
+                        <Check TValue="bool" @bind-Checked="@selectedPax.IsInactive">
+                            <FieldHelp>Inactive PAX will be shown at the bottom of the page</FieldHelp>
+                        </Check>
+                    </Field>
                 </ModalBody>
                 <ModalFooter>
                     <Button Color="Color.Secondary" Clicked="@HideModal">Close</Button>
@@ -106,8 +78,6 @@ else
             </ModalContent>
         }
     </Modal>
-
-    <div>Total: @close100s.Count</div>
 
     <hr/>
 
@@ -146,11 +116,24 @@ else
     @if (showCopy)
     {
         <div style="margin:12px 0px 12px 0px;">
-            @foreach (var pax in close100s.OrderByDescending(x => x.PostCount))
+            @foreach (var pax in activePax.OrderByDescending(x => x.PostCount))
             {
                 <pre style="margin:0px;">@pax.Pax.PadRight(10)			@pax.PostCount</pre>
             }
         </div>
+    }
+
+    @if (inactivePax.Any())
+    {
+        <hr/>
+
+        <h4>Inactive PAX Close to 100s</h4>
+        <CeremonyPaxTable PaxList="inactivePax"
+                          TableStyle="opacity: 0.6;"
+                          OnEdit="ShowModal"
+                          OnComplete="Complete100" />
+
+        <div>Total Inactive: @inactivePax.Count</div>
     }
 }
 
@@ -158,8 +141,10 @@ else
     [Parameter]
     public string Region { get; set; }
     public Region RegionInfo { get; set; }
-    public AllData allData { get; set; }
+    public InitialViewData initialViewData { get; set; }
     public List<Close100> close100s { get; set; }
+    public List<Close100> activePax => close100s?.Where(x => !x.IsInactive).ToList() ?? new List<Close100>();
+    public List<Close100> inactivePax => close100s?.Where(x => x.IsInactive).ToList() ?? new List<Close100>();
     public CeremonyData ceremonyData { get; set; }
     public List<string> aos { get; set; }
     public bool showCopy { get; set; }
@@ -202,7 +187,8 @@ else
         ceremony.LinkMaker = selectedPax.LinkMaker;
         ceremony.LinkMade = selectedPax.LinkMade;
         ceremony.ScheduledDate = selectedPax.ScheduledDate;
-        ceremony.Location = selectedPax.Location;            
+        ceremony.Location = selectedPax.Location;
+        ceremony.IsInactive = selectedPax.IsInactive;
 
         await LambdaHelper.SaveJsonAsync(Http, Region, 1, JsonSerializer.Serialize(ceremonyData));
         await HideModal();
@@ -229,25 +215,28 @@ else
             throw new Exception("Invalid Region");
         }
 
-        var allDataTask = LambdaHelper.GetAllDataAsync(Http, Region);
+        var initialViewTask = LambdaHelper.GetInitialViewAsync(Http, Region);
+        var locationsTask = LambdaHelper.GetAllLocationsAsync(Http, Region);
         var ceremonyDataTask = LambdaHelper.GetJsonAsync(Http, Region, 1);
 
-        await Task.WhenAll(allDataTask, ceremonyDataTask);
-        allData = allDataTask.Result;
+        await Task.WhenAll(initialViewTask, locationsTask, ceremonyDataTask);
+        initialViewData = initialViewTask.Result;
+        var locations = locationsTask.Result;
 
         ceremonyData = JsonSerializer.Deserialize<CeremonyData>(ceremonyDataTask.Result);
 
-        aos = allData.Aos.OrderBy(x => x.DayOfWeek).Select(x => x.Name).ToList();
+        aos = locations.OrderBy(x => x.DayOfWeek).Select(x => x.Name).ToList();
         var ceremonyPax = ceremonyData.PaxData.Select(x => x.Pax).ToList();
-        var paxPostCount = allData.Posts.GroupBy(x => x.Pax).Select(x => new Close100 { Pax = x.Key, PostCount = x.Count() }).ToList();
-        
+
+        // Extract post counts from CurrentRows in InitialViewData
+        var paxPostCount = initialViewData.CurrentRows
+            .Select(x => new Close100 { Pax = x.PaxName, PostCount = x.PostCount })
+            .ToList();
+
         // Grab anyone close to a 100, or anyone who already passed that's in the data.
         close100s = paxPostCount
                 .Where(x => x.PostCount % 100 >= 90 || ceremonyPax.Contains(x.Pax))
                 .OrderByDescending(x => x.PostCount % 100).ToList();
-
-        var inactiveList = new List<string> { "OrderUp", "Bandwagon" };
-        close100s = close100s.Where(x => !inactiveList.Contains(x.Pax)).ToList();
 
         // Join the two lists
         foreach (var pax in close100s)
@@ -259,6 +248,7 @@ else
                 pax.LinkMade = ceremony.LinkMade;
                 pax.ScheduledDate = ceremony.ScheduledDate;
                 pax.Location = ceremony.Location;
+                pax.IsInactive = ceremony.IsInactive;
             }
         }
     }
@@ -286,6 +276,7 @@ else
         public bool LinkMade { get; set; }
         public DateTime? ScheduledDate { get; set; }
         public string Location { get; set; }
+        public bool IsInactive { get; set; }
     }
 
     public class CeremonyData

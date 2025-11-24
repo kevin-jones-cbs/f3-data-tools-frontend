@@ -1,0 +1,68 @@
+@using F3Core
+@using static F3Wasm.Pages.Ceremonies
+
+<Table Narrow style="@GetTableStyle()">
+    <TableHeader>
+        <TableRow>
+            <TableHeaderCell>PAX</TableHeaderCell>
+            <TableHeaderCell>Post Count</TableHeaderCell>
+            <TableHeaderCell>Maker</TableHeaderCell>
+            <TableHeaderCell>Date</TableHeaderCell>
+            <TableHeaderCell>AO</TableHeaderCell>
+            <TableHeaderCell>Actions</TableHeaderCell>
+        </TableRow>
+    </TableHeader>
+    <TableBody>
+        @foreach (var pax in PaxList)
+        {
+            <TableRow Color="GetColor(pax)">
+                <TableRowCell>@pax.Pax</TableRowCell>
+                <TableRowCell>@pax.PostCount</TableRowCell>
+                <TableRowCell>
+                    @pax.LinkMaker
+                    @if (pax.LinkMaker != null)
+                    {
+                        <Icon Name="@(pax.LinkMade ? IconName.Check : IconName.Times)" TextColor="@(pax.LinkMade ? TextColor.Success : TextColor.Danger)" Style="margin-left: 3px;" />
+                    }
+                </TableRowCell>
+                @* Show schedule date as format 12/24, no year *@
+                <TableRowCell>@(pax.ScheduledDate.HasValue ? pax.ScheduledDate.Value.ToString("MM/dd") : "")</TableRowCell>
+                <TableRowCell>@pax.Location</TableRowCell>
+                <TableRowCell>
+                    <Button Color="Color.Secondary" Size="Size.ExtraSmall" Clicked="@(() => OnEdit.InvokeAsync(pax))">
+                        <Icon Name="IconName.Edit" />
+                    </Button>
+                    @if (pax.PostCount % 100 < 90)
+                    {
+                        <Button Color="Color.Success" Size="Size.ExtraSmall" Clicked="@(() => OnComplete.InvokeAsync(pax))">
+                            <Icon Name="IconName.Check" />
+                        </Button>
+                    }
+                </TableRowCell>
+            </TableRow>
+        }
+    </TableBody>
+</Table>
+
+@code {
+    [Parameter]
+    public List<Close100> PaxList { get; set; } = new();
+
+    [Parameter]
+    public string TableStyle { get; set; } = "";
+
+    [Parameter]
+    public EventCallback<Close100> OnEdit { get; set; }
+
+    [Parameter]
+    public EventCallback<Close100> OnComplete { get; set; }
+
+    [Parameter]
+    public Func<Close100, Color>? GetRowColor { get; set; }
+
+    private Color GetColor(Close100 pax) => GetRowColor?.Invoke(pax) ?? Color.Default;
+
+    private string GetTableStyle() => string.IsNullOrEmpty(TableStyle)
+        ? "font-size:12px;"
+        : $"font-size:12px; {TableStyle}";
+}
