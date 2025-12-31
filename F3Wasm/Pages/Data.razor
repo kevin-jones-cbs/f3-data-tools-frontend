@@ -188,6 +188,12 @@ else
             {
                 <Button Outline="currentView != OverallView.SouthForkChallenge" Color="Color.Warning" Clicked="ShowSouthForkChallenge">High Water Mark</Button>
             }
+
+            @* ForgeChallenge *@
+            @if (RegionInfo.DisplayName == "Mother Lode")
+            {
+                <Button Outline="currentView != OverallView.ForgeChallenge" Color="Color.Warning" Clicked="ShowForgeChallenge">The Forge Challenge</Button>
+            }
         </Column>
     </Row>
 
@@ -230,6 +236,10 @@ else
         else if (currentView == OverallView.SouthForkChallenge)
         {
             <HighWaterMark AllData="allData" FilterValue="@customFilterValue" RegionInfo="@RegionInfo"></HighWaterMark>
+        }
+        else if (currentView == OverallView.ForgeChallenge && allData != null)
+        {
+            <Forge AllData="allData" FilterValue="@customFilterValue" RegionInfo="@RegionInfo"></Forge>
         }
         else
         {

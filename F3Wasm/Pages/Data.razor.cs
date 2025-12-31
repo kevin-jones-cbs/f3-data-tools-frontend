@@ -470,6 +470,13 @@ namespace F3Wasm.Pages
             currentView = OverallView.SouthForkChallenge;
         }
 
+        private async Task ShowForgeChallenge()
+        {
+            // This view requires full data - ensure it's loaded
+            await EnsureFullDataLoadedAsync();
+            currentView = OverallView.ForgeChallenge;
+        }
+
         private async Task RefreshDropdowns()
         {
             await Task.Delay(1);

@@ -18,8 +18,20 @@
                     <div class="aoChallengeContainer">
                         @foreach (var location in Aos.OrderBy(x => x.DayOfWeek).ToList())
                         {
-                            <Button class="aoChallengeButton"
-                                style="@GetAoChallengeButtonColor(location)">@location.Name</Button>
+                            @if (RegionInfo.DisplayName == "Mother Lode" && CurrentView == OverallView.ForgeChallenge)
+                            {
+                                var postCount = GetPostCountForLocation(location);
+                                <Button class="aoChallengeButton"
+                                    style="@GetAoChallengeButtonColor(location)">
+                                    @location.Name<br/>
+                                    <span style="font-size: .8em;">@postCount</span>
+                                </Button>
+                            }
+                            else
+                            {
+                                <Button class="aoChallengeButton"
+                                    style="@GetAoChallengeButtonColor(location)">@location.Name</Button>
+                            }
                         }
                         @if (RegionInfo.DisplayName == "South Fork")
                         {
@@ -84,6 +96,12 @@
         return Task.CompletedTask;
     }
 
+    private int GetPostCountForLocation(Ao location)
+    {
+        var now = DateTime.Now;
+        return SelectedPaxPosts.Where(x => x.Date.Year == now.Year && x.Site == location.Name).Count();
+    }
+
     private string GetAoChallengeButtonColor(Ao location)
     {
         // Full Moon Ruck is always black
@@ -110,6 +128,16 @@
         else if (CurrentView == OverallView.TerracottaChallenge)
         {
             hasPosted = SelectedPaxPosts.Where(x => x.Date.Year == now.Year && x.Site == location.Name).Any();
+        }
+        else if (CurrentView == OverallView.ForgeChallenge)
+        {
+            // For Forge Challenge, show filled if 4+ posts, otherwise outlined
+            var postCount = GetPostCountForLocation(location);
+            if (postCount >= 4)
+            {
+                return $"background-color: {hex}; color: white;";
+            }
+            return $"border: solid 1px {hex}; color:{hex}";
         }
         else
         {

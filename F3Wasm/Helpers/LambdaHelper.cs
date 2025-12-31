@@ -95,6 +95,13 @@ namespace F3Wasm.Data
             return terracottaChallengeData;
         }
 
+        public static async Task<List<ForgeChallenge>> GetForgeChallengeDataAsync(HttpClient client)
+        {
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetForgeChallenge", Region = "motherlode" });
+            var forgeChallengeData = JsonSerializer.Deserialize<List<ForgeChallenge>>(response);
+            return forgeChallengeData;
+        }
+
         public static AllData DecompressAll(string compressedString)
         {
             var decompressed = Decompress(compressedString);
