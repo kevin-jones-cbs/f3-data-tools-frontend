@@ -109,7 +109,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        var thisYear = DateTime.Now.Year;
+        var thisYear = 2025;
         var posts = AllData.Posts.Where(x => x.Date.Year == thisYear).ToList();
         var qSourcePosts = AllData.QSourcePosts.Where(x => x.Date.Year == thisYear).ToList();
         var allValidAos = AllData.Aos;
