@@ -18,25 +18,43 @@
                     <div class="aoChallengeContainer">
                         @foreach (var location in Aos.OrderBy(x => x.DayOfWeek).ToList())
                         {
+                            var hasQd = HasQdAtLocation(location);
                             @if (RegionInfo.DisplayName == "Mother Lode" && CurrentView == OverallView.ForgeChallenge)
                             {
                                 var postCount = GetPostCountForLocation(location);
                                 <Button class="aoChallengeButton"
-                                    style="@GetAoChallengeButtonColor(location)">
+                                    style="@($"{GetAoChallengeButtonColor(location)} position: relative;")">
                                     @location.Name<br/>
                                     <span style="font-size: .8em;">@postCount</span>
+                                    @if (hasQd)
+                                    {
+                                        <span style="position: absolute; top: 4px; right: 4px; font-size: .7em; font-weight: bold; background-color: rgba(255,255,255,0.9); color: #000; padding: 2px 5px; border-radius: 3px; line-height: 1;">✓Q</span>
+                                    }
                                 </Button>
                             }
                             else
                             {
                                 <Button class="aoChallengeButton"
-                                    style="@GetAoChallengeButtonColor(location)">@location.Name</Button>
+                                    style="@($"{GetAoChallengeButtonColor(location)} position: relative;")">
+                                    @location.Name
+                                    @if (hasQd)
+                                    {
+                                        <span style="position: absolute; bottom: 4px; right: 4px; font-size: .7em; font-weight: bold; background-color: rgba(255,255,255,0.9); color: #000; padding: 2px 5px; border-radius: 3px; line-height: 1;">✓Q</span>
+                                    }
+                                </Button>
                             }
                         }
                         @if (RegionInfo.DisplayName == "South Fork")
                         {
+                            var hasQd = HasQdAtLocation(FullMoonRuckAo);
                             <Button class="aoChallengeButton"
-                                style="@GetAoChallengeButtonColor(FullMoonRuckAo)">Full Moon Ruck</Button>
+                                style="@($"{GetAoChallengeButtonColor(FullMoonRuckAo)} position: relative;")">
+                                Full Moon Ruck
+                                @if (hasQd)
+                                {
+                                    <span style="position: absolute; bottom: 4px; right: 4px; font-size: .7em; font-weight: bold; background-color: rgba(255,255,255,0.9); color: #000; padding: 2px 5px; border-radius: 3px; line-height: 1;">✓Q</span>
+                                }
+                            </Button>
                         }
                     </div>
                 </Column>
@@ -102,6 +120,12 @@
         return SelectedPaxPosts.Where(x => x.Date.Year == now.Year && x.Site == location.Name).Count();
     }
 
+    private bool HasQdAtLocation(Ao location)
+    {
+        var now = DateTime.Now;
+        return SelectedPaxPosts.Any(x => x.Date.Year == now.Year && x.Site == location.Name && x.IsQ);
+    }
+
     private string GetAoChallengeButtonColor(Ao location)
     {
         // Full Moon Ruck is always black
@@ -122,8 +146,8 @@
         }
         else if (CurrentView == OverallView.SouthForkChallenge)
         {
-            // Only show posts from April 1st onwards
-            hasPosted = SelectedPaxPosts.Where(x => x.Date.Year == now.Year && x.Date.Month > 3 && x.Site == location.Name).Any();
+            // Show posts for entire year
+            hasPosted = SelectedPaxPosts.Where(x => x.Date.Year == now.Year && x.Site == location.Name).Any();
         }
         else if (CurrentView == OverallView.TerracottaChallenge)
         {

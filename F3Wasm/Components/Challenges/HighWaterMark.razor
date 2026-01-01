@@ -15,7 +15,7 @@
     }
 </style>
 
-<div class="mb-2" style="font-style:italic">The High Water Mark is achieving 150 posts, 10 Q's, 20 Q Source Posts, 1 Q Source Q, and visiting all locations starting April 1, 2025</div>
+<div class="mb-2" style="font-style:italic">The High Water Mark is achieving 200 posts, 15 Q's, 20 Q Source Posts, 1 Q Source Q, 1 Downrange post, Q at 5 unique AOs, and visiting all AOs in 2026</div>
 
 <DataGrid TItem="DisplayRow"
           Data="@HighWaterMarkRows"
@@ -50,6 +50,8 @@
                     <ProgressContainer Label="Qs" Value="@context.QCount" MaxValue="QCountMax" Color="Color.Info" />
                     <ProgressContainer Label="Q Source" Value="@context.QSourceCount" MaxValue="QSourceCountMax" Color="Color.Warning" />
                     <ProgressContainer Label="Q Source Qs" Value="@context.QSourceQCount" MaxValue="QSourceQCountMax" Color="Color.Danger" />
+                    <ProgressContainer Label="Downrange" Value="@context.DownrangePostCount" MaxValue="DownrangePostMax" Color="Color.Secondary" />
+                    <ProgressContainer Label="Q Sites" Value="@context.UniqueQSites" MaxValue="UniqueQSitesMax" Color="Color.Dark" />
                     <ProgressContainer Label="Locations" Value="@context.LocationsVisited" MaxValue="LocationsMax" Color="Color.Primary" />
                 </div>
             </DisplayTemplate>
@@ -87,17 +89,19 @@
     private Pax selectedPax { get; set; }
     private List<Post> selectedPaxPosts { get; set; }
 
-    private static int PostCountMax = 150;
-    private static int QCountMax = 10;
+    private static int PostCountMax = 200;
+    private static int QCountMax = 15;
     private static int QSourceCountMax = 20;
     private static int QSourceQCountMax = 1;
+    private static int DownrangePostMax = 1;
+    private static int UniqueQSitesMax = 5;
     private static int LocationsMax = 19;
 
     protected override void OnParametersSet()
     {
         var thisYear = DateTime.Now.Year;
-        var posts = AllData.Posts.Where(x => x.Date.Year == thisYear && x.Date.Month > 3).ToList();
-        var qSourcePosts = AllData.QSourcePosts.Where(x => x.Date.Year == thisYear && x.Date.Month > 3).ToList();
+        var posts = AllData.Posts.Where(x => x.Date.Year == thisYear).ToList();
+        var qSourcePosts = AllData.QSourcePosts.Where(x => x.Date.Year == thisYear).ToList();
 
         var paxPosts = posts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
         var paxQSourcePosts = qSourcePosts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
@@ -110,6 +114,12 @@
             var qCount = paxPosts[pax].Count(x => x.IsQ);
             var qSourceCount = paxQSourcePosts.ContainsKey(pax) ? paxQSourcePosts[pax].Count : 0;
             var qSourceQCount = paxQSourcePosts.ContainsKey(pax) ? paxQSourcePosts[pax].Count(x => x.IsQ) : 0;
+
+            // Calculate Downrange posts (location is "Downrange")
+            var downrangePostCount = paxPosts[pax].Count(x => x.Site.Equals("Downrange", StringComparison.OrdinalIgnoreCase));
+
+            // Calculate unique Q sites
+            var uniqueQSites = paxPosts[pax].Where(x => x.IsQ).Select(x => x.Site).Distinct().Count();
 
             // Calculate unique locations visited
             var officialLocations = AllData.Aos.ToList();
@@ -124,8 +134,10 @@
                     QCount = qCount,
                     QSourceCount = qSourceCount,
                     QSourceQCount = qSourceQCount,
+                    DownrangePostCount = downrangePostCount,
+                    UniqueQSites = uniqueQSites,
                     LocationsVisited = locationsVisited,
-                    HighWaterMarkPercent = GetHighWaterMarkPercent(postCount, qCount, qSourceCount, qSourceQCount, locationsVisited)
+                    HighWaterMarkPercent = GetHighWaterMarkPercent(postCount, qCount, qSourceCount, qSourceQCount, downrangePostCount, uniqueQSites, locationsVisited)
                 });
         }
 
@@ -145,7 +157,7 @@
 
         selectedPax = AllData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
         var thisYear = DateTime.Now.Year;
-        selectedPaxPosts = AllData.Posts.Where(p => p.Pax == row.PaxName && p.Date.Year == thisYear && p.Date.Month > 3).ToList();
+        selectedPaxPosts = AllData.Posts.Where(p => p.Pax == row.PaxName && p.Date.Year == thisYear).ToList();
         showAoChallengeModal = true;
     }
 
@@ -154,13 +166,15 @@
         return (int)((double)value / max * 100);
     }
 
-    private int GetHighWaterMarkPercent(int postCount, int qCount, int qSourceCount, int qSourceQCount, int locationsVisited)
+    private int GetHighWaterMarkPercent(int postCount, int qCount, int qSourceCount, int qSourceQCount, int downrangePostCount, int uniqueQSites, int locationsVisited)
     {
-        var totalReq = PostCountMax + QCountMax + QSourceCountMax + QSourceQCountMax + LocationsMax;
+        var totalReq = PostCountMax + QCountMax + QSourceCountMax + QSourceQCountMax + DownrangePostMax + UniqueQSitesMax + LocationsMax;
         var paxTotal = Math.Min(postCount, PostCountMax) +
                        Math.Min(qCount, QCountMax) +
                        Math.Min(qSourceCount, QSourceCountMax) +
                        Math.Min(qSourceQCount, QSourceQCountMax) +
+                       Math.Min(downrangePostCount, DownrangePostMax) +
+                       Math.Min(uniqueQSites, UniqueQSitesMax) +
                        Math.Min(locationsVisited, LocationsMax);
 
         var highWaterMarkPercent = ((double)paxTotal / totalReq) * 100;
@@ -173,12 +187,12 @@
         var csv = new StringBuilder();
 
         // Add header row
-        csv.AppendLine("PaxName,PostCount,QCount,QSourceCount,QSourceQCount,LocationsVisited,HWPercent");
+        csv.AppendLine("PaxName,PostCount,QCount,QSourceCount,QSourceQCount,DownrangePostCount,UniqueQSites,LocationsVisited,HWPercent");
 
         // Add data rows
         foreach (var item in HighWaterMarkRows)
         {
-            csv.AppendLine($"{item.PaxName},{item.PostCount},{item.QCount},{item.QSourceCount},{item.QSourceQCount},{item.LocationsVisited},{item.HighWaterMarkPercent}");
+            csv.AppendLine($"{item.PaxName},{item.PostCount},{item.QCount},{item.QSourceCount},{item.QSourceQCount},{item.DownrangePostCount},{item.UniqueQSites},{item.LocationsVisited},{item.HighWaterMarkPercent}");
         }
 
         await JSRuntime.InvokeVoidAsync("downloadFile", $"HighWaterMark_{DateTime.Now.ToShortDateString()}.csv", csv.ToString());
@@ -191,6 +205,8 @@
         public int QCount { get; set; }
         public int QSourceCount { get; set; }
         public int QSourceQCount { get; set; }
+        public int DownrangePostCount { get; set; }
+        public int UniqueQSites { get; set; }
         public int LocationsVisited { get; set; }
         public int HighWaterMarkPercent { get; set; }
     }
