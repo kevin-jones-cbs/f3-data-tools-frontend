@@ -19,7 +19,8 @@
                         @foreach (var location in Aos.OrderBy(x => x.DayOfWeek).ToList())
                         {
                             var hasQd = HasQdAtLocation(location);
-                            @if (RegionInfo.DisplayName == "Mother Lode" && CurrentView == OverallView.ForgeChallenge)
+                            @if ((RegionInfo.DisplayName == "Mother Lode" && CurrentView == OverallView.ForgeChallenge) ||
+                                 (RegionInfo.DisplayName == "SacTown" && CurrentView == OverallView.TowerChallenge))
                             {
                                 var postCount = GetPostCountForLocation(location);
                                 <Button class="aoChallengeButton"
@@ -153,9 +154,9 @@
         {
             hasPosted = SelectedPaxPosts.Where(x => x.Date.Year == now.Year && x.Site == location.Name).Any();
         }
-        else if (CurrentView == OverallView.ForgeChallenge)
+        else if (CurrentView == OverallView.ForgeChallenge || CurrentView == OverallView.TowerChallenge)
         {
-            // For Forge Challenge, show filled if 4+ posts, otherwise outlined
+            // For Forge and Tower Challenge, show filled if 4+ posts, otherwise outlined
             var postCount = GetPostCountForLocation(location);
             if (postCount >= 4)
             {

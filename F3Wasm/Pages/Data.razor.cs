@@ -477,6 +477,13 @@ namespace F3Wasm.Pages
             currentView = OverallView.ForgeChallenge;
         }
 
+        private async Task ShowTowerChallenge()
+        {
+            // This view requires full data - ensure it's loaded
+            await EnsureFullDataLoadedAsync();
+            currentView = OverallView.TowerChallenge;
+        }
+
         private async Task RefreshDropdowns()
         {
             await Task.Delay(1);

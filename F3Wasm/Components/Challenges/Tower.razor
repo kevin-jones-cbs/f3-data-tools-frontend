@@ -1,0 +1,244 @@
+@using Blazorise.DataGrid
+@using F3Core
+@using F3Core.Regions
+@using F3Wasm.Data
+@using F3Wasm.Models
+@using System.Text
+@inject HttpClient Http
+
+<style>
+    th {
+        font-size: 12px;
+    }
+
+    table td {
+        vertical-align: middle !important;
+    }
+</style>
+
+<div class="mb-2" style="font-style:italic">The Tower Challenge is achieving 150 posts, attending each location 4 times, 15 Qs, leading 1 Q Source session, attending Q Source 20 times, and attending 1 qualifying 1st F event in @DateTime.Now.Year.</div>
+
+<button class="btn btn-primary mb-2" @onclick="ExportToCsv">Export To Csv</button>
+
+<DataGrid TItem="TowerDisplayRow"
+          Data="@TowerRows"
+          ShowPager="true"
+          SortMode="DataGridSortMode.Single"
+          PageSize="25"
+          Responsive="true"
+          ShowPageSizes="true"
+          PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }"
+          SelectedRowChanged="OnSelectedRowChanged">
+    <DataGridColumns>
+
+        <!-- PAX Name -->
+        <DataGridColumn TItem="TowerDisplayRow"
+                        Caption="Name"
+                        Sortable="true"
+                        Width="90px"
+                        SortField="@nameof(TowerDisplayRow.PaxName)">
+            <DisplayTemplate>
+                <Span Style="font-weight:600;font-size:12px;vertical-align:middle;">@context.PaxName</Span>
+            </DisplayTemplate>
+        </DataGridColumn>
+
+        <DataGridColumn TItem="TowerDisplayRow"
+                        Caption="The Tower Challenge %"
+                        Filterable="false"
+                        Sortable="true">
+            <DisplayTemplate>
+                <!-- Multi-row flex container with wrapping -->
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start;">
+                    <ProgressContainer Label="Posts" Value="@context.TotalPosts" MaxValue="TotalPostsMax" Color="Color.Success" />
+                    <ProgressContainer Label="All Sites 4x" Value="@context.CompletedSites" MaxValue="CompletedSitesMax" Color="Color.Info" />
+                    <ProgressContainer Label="Qs" Value="@context.QCount" MaxValue="QCountMax" Color="Color.Warning" />
+                    <ProgressContainer Label="Q Source" Value="@context.QSourceAttendCount" MaxValue="QSourceAttendMax" Color="Color.Link" />
+                    <ProgressContainer Label="Q Source Qs" Value="@context.QSourceLeadCount" MaxValue="QSourceLeadMax" Color="Color.Primary" />
+                    <ProgressContainer Label="1st F Events" Value="@context.FirstFEvents" MaxValue="FirstFEventsMax" Color="Color.Danger" />
+                </div>
+            </DisplayTemplate>
+        </DataGridColumn>
+
+    </DataGridColumns>
+</DataGrid>
+
+<AoChallengeModal
+    @bind-Visible="showAoChallengeModal"
+    SelectedPax="selectedPax"
+    SelectedPaxPosts="selectedPaxPosts"
+    Aos="AllData.Aos"
+    RegionInfo="RegionInfo"
+    CurrentView="OverallView.TowerChallenge"
+/>
+
+@code {
+    [Parameter]
+    public AllData AllData { get; set; }
+
+    [Parameter]
+    public string FilterValue { get; set; }
+
+    [Parameter]
+    public Region RegionInfo { get; set; }
+
+    private List<TowerChallenge> TowerChallengeData { get; set; }
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; }
+
+    public List<TowerDisplayRow> TowerRows { get; set; }
+    private bool showAoChallengeModal { get; set; }
+    private Pax selectedPax { get; set; }
+    private List<Post> selectedPaxPosts { get; set; }
+
+    // Challenge requirements constants
+    private static int TotalPostsMax = 150;
+    private static int QCountMax = 15;
+    private static int QSourceAttendMax = 20;
+    private static int QSourceLeadMax = 1;
+    private static int FirstFEventsMax = 1;
+    private int CompletedSitesMax = 0; // Will be calculated based on number of AOs
+
+    protected override async Task OnInitializedAsync()
+    {
+        TowerChallengeData = await LambdaHelper.GetTowerChallengeDataAsync(Http);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var thisYear = DateTime.Now.Year;
+        var posts = AllData.Posts.Where(x => x.Date.Year == thisYear).ToList();
+        var qSourcePosts = AllData.QSourcePosts?.Where(x => x.Date.Year == thisYear).ToList() ?? new List<Post>();
+        var allValidAos = AllData.Aos;
+
+        // Calculate CompletedSitesMax: total number of AOs that need to be visited 4 times
+        CompletedSitesMax = allValidAos.Count;
+
+        // Group posts by PAX
+        var paxPosts = posts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
+        var paxQSourcePosts = qSourcePosts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
+
+        TowerRows = new List<TowerDisplayRow>();
+
+        // Create a dictionary to quickly look up the Tower challenge data by PAX name
+        var challengeDataByPax = TowerChallengeData.ToDictionary(c => c.PaxName, c => c);
+
+        foreach (var pax in paxPosts.Keys)
+        {
+            var postCount = paxPosts[pax].Count;
+            var qCount = paxPosts[pax].Count(x => x.IsQ);
+            var qSourceAttendCount = paxQSourcePosts.ContainsKey(pax) ? paxQSourcePosts[pax].Count : 0;
+            var qSourceLeadCount = paxQSourcePosts.ContainsKey(pax) ? paxQSourcePosts[pax].Count(x => x.IsQ) : 0;
+
+            // Get the Tower challenge data for this PAX, or use default values if not found
+            var challengeData = challengeDataByPax.ContainsKey(pax) ? challengeDataByPax[pax] : new TowerChallenge();
+
+            // Calculate how many sites have been attended 4+ times
+            var siteAttendanceCounts = paxPosts[pax]
+                .Where(x => allValidAos.Any(ao => ao.Name == x.Site))
+                .GroupBy(x => x.Site)
+                .Select(g => new { Site = g.Key, Count = g.Count() })
+                .ToList();
+
+            var completedSites = siteAttendanceCounts.Count(x => x.Count >= 4);
+
+            TowerRows.Add(new TowerDisplayRow
+            {
+                PaxName = pax,
+                TotalPosts = postCount,
+                QCount = qCount,
+                QSourceAttendCount = qSourceAttendCount,
+                QSourceLeadCount = qSourceLeadCount,
+                FirstFEvents = challengeData?.FirstFEvents ?? 0,
+                CompletedSites = completedSites,
+                ChallengePercent = CalculateChallengePercent(
+                    postCount, completedSites, qCount,
+                    qSourceAttendCount, qSourceLeadCount,
+                    challengeData?.FirstFEvents ?? 0)
+            });
+        }
+
+        if (!string.IsNullOrEmpty(FilterValue))
+        {
+            TowerRows = TowerRows
+                .Where(row => row.PaxName.Contains(FilterValue, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        TowerRows = TowerRows.OrderByDescending(x => x.ChallengePercent).ToList();
+    }
+
+    private int CalculateChallengePercent(
+        int totalPosts, int completedSites, int qCount,
+        int qSourceAttendCount, int qSourceLeadCount,
+        int firstFEvents)
+    {
+        // Calculate individual percentages (capped at 100%)
+        int totalPostsPercent = Math.Min(100, GetPercent(totalPosts, TotalPostsMax));
+        int completedSitesPercent = Math.Min(100, GetPercent(completedSites, CompletedSitesMax));
+        int qCountPercent = Math.Min(100, GetPercent(qCount, QCountMax));
+        int qSourceAttendPercent = Math.Min(100, GetPercent(qSourceAttendCount, QSourceAttendMax));
+        int qSourceLeadPercent = Math.Min(100, GetPercent(qSourceLeadCount, QSourceLeadMax));
+        int firstFEventsPercent = Math.Min(100, GetPercent(firstFEvents, FirstFEventsMax));
+
+        // Sum of all max values
+        int totalMax = TotalPostsMax + CompletedSitesMax + QCountMax + QSourceAttendMax +
+                      QSourceLeadMax + FirstFEventsMax;
+
+        // Sum of actual values (capped at their respective maximums)
+        int totalActual = Math.Min(totalPosts, TotalPostsMax) +
+                         Math.Min(completedSites, CompletedSitesMax) +
+                         Math.Min(qCount, QCountMax) +
+                         Math.Min(qSourceAttendCount, QSourceAttendMax) +
+                         Math.Min(qSourceLeadCount, QSourceLeadMax) +
+                         Math.Min(firstFEvents, FirstFEventsMax);
+
+        // Overall percentage
+        return (int)((double)totalActual / totalMax * 100);
+    }
+
+    private int GetPercent(int value, int max)
+    {
+        if (max == 0) return 0;
+        return (int)((double)value / max * 100);
+    }
+
+    private async Task ExportToCsv()
+    {
+        var csv = new StringBuilder();
+
+        // Add header row
+        csv.AppendLine("PaxName,TotalPosts,CompletedSites,QCount,QSourceAttendCount,QSourceLeadCount,FirstFEvents,ChallengePercent");
+
+        // Add data rows
+        foreach (var item in TowerRows)
+        {
+            csv.AppendLine($"{item.PaxName},{item.TotalPosts},{item.CompletedSites},{item.QCount}," +
+                          $"{item.QSourceAttendCount},{item.QSourceLeadCount},{item.FirstFEvents},{item.ChallengePercent}");
+        }
+
+        await JSRuntime.InvokeVoidAsync("downloadFile", $"TowerChallenge_{DateTime.Now.ToShortDateString()}.csv", csv.ToString());
+    }
+
+    private async Task OnSelectedRowChanged(TowerDisplayRow row)
+    {
+        if (row == null) return;
+
+        selectedPax = AllData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
+        var thisYear = DateTime.Now.Year;
+        selectedPaxPosts = AllData.Posts.Where(p => p.Pax == row.PaxName && p.Date.Year == thisYear).ToList();
+        showAoChallengeModal = true;
+    }
+
+    public class TowerDisplayRow
+    {
+        public string PaxName { get; set; }
+        public int TotalPosts { get; set; }
+        public int CompletedSites { get; set; }
+        public int QCount { get; set; }
+        public int QSourceAttendCount { get; set; }
+        public int QSourceLeadCount { get; set; }
+        public int FirstFEvents { get; set; }
+        public int ChallengePercent { get; set; }
+    }
+}

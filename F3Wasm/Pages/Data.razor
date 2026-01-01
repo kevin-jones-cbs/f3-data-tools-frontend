@@ -194,6 +194,12 @@ else
             {
                 <Button Outline="currentView != OverallView.ForgeChallenge" Color="Color.Warning" Clicked="ShowForgeChallenge">The Forge Challenge</Button>
             }
+
+            @* TowerChallenge *@
+            @if (RegionInfo.DisplayName == "SacTown")
+            {
+                <Button Outline="currentView != OverallView.TowerChallenge" Color="Color.Warning" Clicked="ShowTowerChallenge">The Tower Challenge</Button>
+            }
         </Column>
     </Row>
 
@@ -240,6 +246,10 @@ else
         else if (currentView == OverallView.ForgeChallenge && allData != null)
         {
             <Forge AllData="allData" FilterValue="@customFilterValue" RegionInfo="@RegionInfo"></Forge>
+        }
+        else if (currentView == OverallView.TowerChallenge && allData != null)
+        {
+            <Tower AllData="allData" FilterValue="@customFilterValue" RegionInfo="@RegionInfo"></Tower>
         }
         else
         {
