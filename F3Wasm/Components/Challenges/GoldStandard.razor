@@ -101,8 +101,14 @@
             qSourcePosts.AddRange(bedrockData.QSourcePosts.Where(x => x.Date.Year == thisYear));
         }
 
-        var paxPosts = posts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
-        var paxQSourcePosts = qSourcePosts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
+        var paxPosts = posts
+            .Where(p => !string.IsNullOrWhiteSpace(p.Pax))
+            .GroupBy(p => p.Pax.Trim())
+            .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
+        var paxQSourcePosts = qSourcePosts
+            .Where(p => !string.IsNullOrWhiteSpace(p.Pax))
+            .GroupBy(p => p.Pax.Trim())
+            .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
 
         GoldStandardRows = new List<DisplayRow>();
 

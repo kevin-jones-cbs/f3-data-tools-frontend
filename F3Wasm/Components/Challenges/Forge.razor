@@ -117,13 +117,22 @@
         CompletedSitesMax = allValidAos.Count;
 
         // Group posts by PAX
-        var paxPosts = posts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
-        var paxQSourcePosts = qSourcePosts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
+        var paxPosts = posts
+            .Where(p => !string.IsNullOrWhiteSpace(p.Pax))
+            .GroupBy(p => p.Pax.Trim())
+            .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
+        var paxQSourcePosts = qSourcePosts
+            .Where(p => !string.IsNullOrWhiteSpace(p.Pax))
+            .GroupBy(p => p.Pax.Trim())
+            .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
 
         ForgeRows = new List<ForgeDisplayRow>();
 
         // Create a dictionary to quickly look up the Forge challenge data by PAX name
-        var challengeDataByPax = ForgeChallengeData.ToDictionary(c => c.PaxName, c => c);
+        var challengeDataByPax = ForgeChallengeData
+            .Where(c => !string.IsNullOrWhiteSpace(c.PaxName))
+            .GroupBy(c => c.PaxName.Trim())
+            .ToDictionary(g => g.Key, g => g.First());
 
         foreach (var pax in paxPosts.Keys)
         {
@@ -137,8 +146,8 @@
 
             // Calculate how many sites have been attended 4+ times
             var siteAttendanceCounts = paxPosts[pax]
-                .Where(x => allValidAos.Any(ao => ao.Name == x.Site))
-                .GroupBy(x => x.Site)
+                .Where(x => allValidAos.Any(ao => ao.Name?.Trim() == x.Site?.Trim()))
+                .GroupBy(x => x.Site?.Trim() ?? string.Empty)
                 .Select(g => new { Site = g.Key, Count = g.Count() })
                 .ToList();
 

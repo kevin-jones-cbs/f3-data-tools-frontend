@@ -103,8 +103,14 @@
         var posts = AllData.Posts.Where(x => x.Date.Year == thisYear).ToList();
         var qSourcePosts = AllData.QSourcePosts.Where(x => x.Date.Year == thisYear).ToList();
 
-        var paxPosts = posts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
-        var paxQSourcePosts = qSourcePosts.GroupBy(p => p.Pax).ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
+        var paxPosts = posts
+            .Where(p => !string.IsNullOrWhiteSpace(p.Pax))
+            .GroupBy(p => p.Pax.Trim())
+            .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
+        var paxQSourcePosts = qSourcePosts
+            .Where(p => !string.IsNullOrWhiteSpace(p.Pax))
+            .GroupBy(p => p.Pax.Trim())
+            .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
 
         HighWaterMarkRows = new List<DisplayRow>();
 
@@ -116,16 +122,16 @@
             var qSourceQCount = paxQSourcePosts.ContainsKey(pax) ? paxQSourcePosts[pax].Count(x => x.IsQ) : 0;
 
             // Calculate Downrange posts (location is "Downrange")
-            var downrangePostCount = paxPosts[pax].Count(x => x.Site.Equals("Downrange", StringComparison.OrdinalIgnoreCase));
+            var downrangePostCount = paxPosts[pax].Count(x => x.Site?.Trim().Equals("Downrange", StringComparison.OrdinalIgnoreCase) ?? false);
 
             // Calculate unique Q sites
-            var uniqueQSites = paxPosts[pax].Where(x => x.IsQ).Select(x => x.Site).Distinct().Count();
+            var uniqueQSites = paxPosts[pax].Where(x => x.IsQ).Select(x => x.Site?.Trim()).Distinct().Count();
 
             // Calculate unique locations visited
             var officialLocations = AllData.Aos.ToList();
-            var allLocationsVisited = paxPosts[pax].Select(x => x.Site).Distinct().Count();
+            var allLocationsVisited = paxPosts[pax].Select(x => x.Site?.Trim()).Distinct().Count();
 
-            var locationsVisited = officialLocations.Count(x => paxPosts[pax].Any(y => y.Site == x.Name));
+            var locationsVisited = officialLocations.Count(x => paxPosts[pax].Any(y => y.Site?.Trim() == x.Name?.Trim()));
 
             HighWaterMarkRows.Add(new DisplayRow
                 {
@@ -155,9 +161,9 @@
     {
         if (row == null) return;
 
-        selectedPax = AllData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
+        selectedPax = AllData.Pax.FirstOrDefault(p => p.Name?.Trim() == row.PaxName?.Trim());
         var thisYear = DateTime.Now.Year;
-        selectedPaxPosts = AllData.Posts.Where(p => p.Pax == row.PaxName && p.Date.Year == thisYear).ToList();
+        selectedPaxPosts = AllData.Posts.Where(p => p.Pax?.Trim() == row.PaxName?.Trim() && p.Date.Year == thisYear).ToList();
         showAoChallengeModal = true;
     }
 
