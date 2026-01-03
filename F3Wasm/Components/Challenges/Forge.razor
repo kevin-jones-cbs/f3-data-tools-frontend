@@ -230,9 +230,9 @@
     {
         if (row == null) return;
 
-        selectedPax = AllData.Pax.FirstOrDefault(p => p.Name == row.PaxName);
+        selectedPax = AllData.Pax.FirstOrDefault(p => p.Name?.Trim() == row.PaxName?.Trim());
         var thisYear = DateTime.Now.Year;
-        selectedPaxPosts = AllData.Posts.Where(p => p.Pax == row.PaxName && p.Date.Year == thisYear).ToList();
+        selectedPaxPosts = AllData.Posts.Where(p => p.Pax?.Trim() == row.PaxName?.Trim() && p.Date.Year == thisYear).ToList();
         showAoChallengeModal = true;
     }
 
