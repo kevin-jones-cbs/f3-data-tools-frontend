@@ -1,4 +1,4 @@
-﻿@page "/upload/{region}"
+@page "/upload/{region}"
 @using F3Wasm.Models
 @using F3Wasm.Data
 @using F3Core.Regions
@@ -271,7 +271,7 @@ else
         <TableBody>
             @foreach (var p in pax.Where(x => x.IsOfficial).ToList())
             {
-                <TableRow Color="@(p.IsQ ? Color.Primary : Color.Default)">
+                <TableRow @key="@p" Color="@(p.IsQ ? Color.Primary : Color.Default)">
                     <TableRowCell>
                         @p.Name
                     </TableRowCell>
@@ -296,7 +296,7 @@ else
 
             @foreach (var p in pax.Where(x => !x.IsOfficial).ToList())
             {
-                <TableRow Color="@(string.IsNullOrEmpty(p.Name) ? Color.Danger : p.IsFng ? Color.Success : Color.Default)">
+                <TableRow @key="@p" Color="@(string.IsNullOrEmpty(p.Name) ? Color.Danger : p.IsFng ? Color.Success : Color.Default)">
                     <TableRowCell>
                         @p.Name
 
