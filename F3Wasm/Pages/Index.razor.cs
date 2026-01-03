@@ -127,6 +127,11 @@ namespace F3Wasm.Pages
         private async Task OnAoChanged(string aoValue)
         {
             ao = aoValue;
+            var selectedAo = aoList.FirstOrDefault(x => x.Name == aoValue);
+            if (selectedAo != null && selectedAo.IsQSourceOnly)
+            {
+                isQSource = true;
+            }
         }
 
         private async Task OnCommentButtonClicked()
