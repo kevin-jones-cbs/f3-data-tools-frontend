@@ -16,7 +16,7 @@
     }
 </style>
 
-<div class="mb-2" style="font-style:italic">The Forged in Fire Challenge is achieving 156 posts total (including 100 in Terracotta), 15 Q's, 12 downrange posts, 4 different downrange regions, 4 cold plunges, hitting all 15 Terracotta sites at least once, and 25 volunteer/Q-Source posts in @DateTime.Now.Year.</div>
+<div class="mb-2" style="font-style:italic">The Forged in Fire Challenge is achieving 160 posts total (including 100 in Terracotta), 20 Q's, 10 downrange posts, 20 Q-Source posts, 5 volunteer posts, and hitting all 15 Terracotta sites at least once in @DateTime.Now.Year.</div>
 
 <button class="btn btn-primary mb-2" @onclick="ExportToCsv">Export To Csv</button>
 
@@ -49,14 +49,13 @@
             <DisplayTemplate>
                 <!-- Multi-row flex container with wrapping -->
                 <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start;">
-                    <ProgressContainer Label="156 Total Posts" Value="@context.TotalPosts" MaxValue="TotalPostsMax" Color="Color.Success" />
+                    <ProgressContainer Label="160 Total Posts" Value="@context.TotalPosts" MaxValue="TotalPostsMax" Color="Color.Success" />
                     <ProgressContainer Label="100 in Terracotta" Value="@context.TerracottaPosts" MaxValue="TerracottaPostsMax" Color="Color.Info" />
-                    <ProgressContainer Label="15 Qs" Value="@context.QCount" MaxValue="QCountMax" Color="Color.Warning" />
-                    <ProgressContainer Label="12 DR Posts" Value="@context.DownrangePosts" MaxValue="12" Color="Color.Link" />
-                    <ProgressContainer Label="4 DR Regions" Value="@context.RegionCount" MaxValue="RegionCountMax" Color="Color.Link" />
-                    <ProgressContainer Label="4 Cold Plunges" Value="@context.ColdPlunges" MaxValue="ColdPlungesMax" Color="Color.Danger" />
+                    <ProgressContainer Label="20 Qs" Value="@context.QCount" MaxValue="QCountMax" Color="Color.Warning" />
+                    <ProgressContainer Label="10 DR Posts" Value="@context.DownrangePosts" MaxValue="DownrangePostsMax" Color="Color.Link" />
+                    <ProgressContainer Label="20 QS" Value="@context.QSourceCount" MaxValue="QSourceMax" Color="Color.Danger" />
+                    <ProgressContainer Label="5 Volunteer" Value="@context.VolunteerCount" MaxValue="VolunteerMax" Color="Color.Dark" />
                     <ProgressContainer Label="15 Sites" Value="@context.TerracottaSites" MaxValue="TerracottaSitesMax" Color="Color.Secondary" />
-                    <ProgressContainer Label="25 Vol/QS" Value="@context.VolunteerQSourceCount" MaxValue="VolunteerQSourceMax" Color="Color.Dark" />
                 </div>
             </DisplayTemplate>
         </DataGridColumn>
@@ -94,13 +93,13 @@
     private List<Post> selectedPaxPosts { get; set; }
 
     // Challenge requirements constants
-    private static int TotalPostsMax = 156;
+    private static int TotalPostsMax = 160;
     private static int TerracottaPostsMax = 100;
-    private static int QCountMax = 15;
-    private static int RegionCountMax = 4;
-    private static int ColdPlungesMax = 4;
+    private static int QCountMax = 20;
+    private static int DownrangePostsMax = 10;
+    private static int QSourceMax = 20;
+    private static int VolunteerMax = 5;
     private static int TerracottaSitesMax = 15;
-    private static int VolunteerQSourceMax = 25;
 
     protected override async Task OnInitializedAsync()
     {
@@ -109,7 +108,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        var thisYear = 2025;
+        var thisYear = 2026;
         var posts = AllData.Posts.Where(x => x.Date.Year == thisYear).ToList();
         var qSourcePosts = AllData.QSourcePosts.Where(x => x.Date.Year == thisYear).ToList();
         var allValidAos = AllData.Aos;
@@ -145,8 +144,8 @@
                 .Distinct()
                 .Count();
 
-            // Calculate volunteer + Q Source count
-            var volunteerQSourceCount = (challengeData?.Volunteers ?? 0) + qSourceCount;
+            // Get volunteer count
+            var volunteerCount = challengeData?.Volunteers ?? 0;
 
             TerracottaRows.Add(new TerracottaDisplayRow
                 {
@@ -154,17 +153,13 @@
                     TotalPosts = totalPosts,
                     TerracottaPosts = postCount,
                     QCount = qCount,
-                    RegionCount = challengeData?.RegionCount ?? 0,
-                    ColdPlunges = challengeData?.ColdPlunges ?? 0,
                     TerracottaSites = terracottaSites,
-                    VolunteerQSourceCount = volunteerQSourceCount,
+                    QSourceCount = qSourceCount,
+                    VolunteerCount = volunteerCount,
                     DownrangePosts = downrangePosts,
                     ChallengePercent = CalculateChallengePercent(
-                        totalPosts, postCount, qCount,
-                        challengeData?.RegionCount ?? 0,
-                        challengeData?.ColdPlunges ?? 0,
-                        terracottaSites,
-                        volunteerQSourceCount)
+                        totalPosts, postCount, qCount, downrangePosts,
+                        qSourceCount, volunteerCount, terracottaSites)
                 });
         }
 
@@ -180,30 +175,21 @@
 
     private int CalculateChallengePercent(
         int totalPosts, int terracottaPosts, int qCount,
-        int regionCount, int coldPlunges, int terracottaSites,
-        int volunteerQSourceCount)
+        int downrangePosts, int qSourceCount, int volunteerCount,
+        int terracottaSites)
     {
-        // Calculate individual percentages (capped at 100%)
-        int totalPostsPercent = Math.Min(100, GetPercent(totalPosts, TotalPostsMax));
-        int terracottaPostsPercent = Math.Min(100, GetPercent(terracottaPosts, TerracottaPostsMax));
-        int qCountPercent = Math.Min(100, GetPercent(qCount, QCountMax));
-        int regionCountPercent = Math.Min(100, GetPercent(regionCount, RegionCountMax));
-        int coldPlungesPercent = Math.Min(100, GetPercent(coldPlunges, ColdPlungesMax));
-        int terracottaSitesPercent = Math.Min(100, GetPercent(terracottaSites, TerracottaSitesMax));
-        int volunteerQSourcePercent = Math.Min(100, GetPercent(volunteerQSourceCount, VolunteerQSourceMax));
-
         // Sum of all max values
-        int totalMax = TotalPostsMax + TerracottaPostsMax + QCountMax + RegionCountMax +
-                      ColdPlungesMax + TerracottaSitesMax + VolunteerQSourceMax;
+        int totalMax = TotalPostsMax + TerracottaPostsMax + QCountMax + DownrangePostsMax +
+                      QSourceMax + VolunteerMax + TerracottaSitesMax;
 
         // Sum of actual values (capped at their respective maximums)
         int totalActual = Math.Min(totalPosts, TotalPostsMax) +
                          Math.Min(terracottaPosts, TerracottaPostsMax) +
                          Math.Min(qCount, QCountMax) +
-                         Math.Min(regionCount, RegionCountMax) +
-                         Math.Min(coldPlunges, ColdPlungesMax) +
-                         Math.Min(terracottaSites, TerracottaSitesMax) +
-                         Math.Min(volunteerQSourceCount, VolunteerQSourceMax);
+                         Math.Min(downrangePosts, DownrangePostsMax) +
+                         Math.Min(qSourceCount, QSourceMax) +
+                         Math.Min(volunteerCount, VolunteerMax) +
+                         Math.Min(terracottaSites, TerracottaSitesMax);
 
         // Overall percentage
         return (int)((double)totalActual / totalMax * 100);
@@ -219,13 +205,13 @@
         var csv = new StringBuilder();
 
         // Add header row
-        csv.AppendLine("PaxName,TotalPosts,TerracottaPosts,QCount,RegionCount,ColdPlunges,TerracottaSites,VolunteerQSourceCount,DownrangePosts,ChallengePercent");
+        csv.AppendLine("PaxName,TotalPosts,TerracottaPosts,QCount,DownrangePosts,QSourceCount,VolunteerCount,TerracottaSites,ChallengePercent");
 
         // Add data rows
         foreach (var item in TerracottaRows)
         {
-            csv.AppendLine($"{item.PaxName},{item.TotalPosts},{item.TerracottaPosts},{item.QCount},{item.RegionCount}," +
-                          $"{item.ColdPlunges},{item.TerracottaSites},{item.VolunteerQSourceCount},{item.DownrangePosts},{item.ChallengePercent}");
+            csv.AppendLine($"{item.PaxName},{item.TotalPosts},{item.TerracottaPosts},{item.QCount},{item.DownrangePosts}," +
+                          $"{item.QSourceCount},{item.VolunteerCount},{item.TerracottaSites},{item.ChallengePercent}");
         }
 
         await JSRuntime.InvokeVoidAsync("downloadFile", $"TerracottaChallenge_{DateTime.Now.ToShortDateString()}.csv", csv.ToString());
@@ -247,11 +233,10 @@
         public int TotalPosts { get; set; }
         public int TerracottaPosts { get; set; }
         public int QCount { get; set; }
-        public int RegionCount { get; set; }
-        public int ColdPlunges { get; set; }
-        public int TerracottaSites { get; set; }
-        public int VolunteerQSourceCount { get; set; }
         public int DownrangePosts { get; set; }
+        public int QSourceCount { get; set; }
+        public int VolunteerCount { get; set; }
+        public int TerracottaSites { get; set; }
         public int ChallengePercent { get; set; }
     }
 }
