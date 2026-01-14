@@ -15,7 +15,7 @@
     }
 </style>
 
-<div class="mb-2" style="font-style:italic">The Gold Standard is achieving 200 posts, 12 Q's, 30 Q Source Posts, and 3 Q Source Q's in @DateTime.Now.Year in Gold Rush, Junction or Bedrock.</div>
+<div class="mb-2" style="font-style:italic">The Gold Standard is achieving 200 posts and 30 Q's in @DateTime.Now.Year in Gold Rush.</div>
 
 <DataGrid TItem="DisplayRow"
           Data="@GoldStandardRows"
@@ -47,8 +47,6 @@
                 <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start;">
                     <ProgressContainer Label="Posts" Value="@context.PostCount" MaxValue="PostCountMax" Color="Color.Success" />
                     <ProgressContainer Label="Qs" Value="@context.QCount" MaxValue="QCountMax" Color="Color.Info" />
-                    <ProgressContainer Label="Q Source" Value="@context.QSourceCount" MaxValue="QSourceCountMax" Color="Color.Warning" />
-                    <ProgressContainer Label="Q Source Qs" Value="@context.QSourceQCount" MaxValue="QSourceQCountMax" Color="Color.Danger" />
                 </div>
             </DisplayTemplate>
         </DataGridColumn>
@@ -71,41 +69,14 @@
     public List<DisplayRow> GoldStandardRows { get; set; }
 
     private static int PostCountMax = 200;
-    private static int QCountMax = 12;
-    private static int QSourceCountMax = 30;
-    private static int QSourceQCountMax = 3;
+    private static int QCountMax = 30;
 
     protected override async Task OnParametersSetAsync()
     {
-        // Get Junction and Bedrock for this too
-        var junctionTask = LambdaHelper.GetAllDataAsync(Http, "junction");
-        var bedrockTask = LambdaHelper.GetAllDataAsync(Http, "bedrock");
-        await Task.WhenAll(junctionTask, bedrockTask);
-
-        var thisYear = 2025;
+        var thisYear = DateTime.Now.Year;
         var posts = AllData.Posts.Where(x => x.Date.Year == thisYear).ToList();
-        var qSourcePosts = AllData.QSourcePosts.Where(x => x.Date.Year == thisYear).ToList();
-
-        // Combine Junction and Bedrock posts for this year
-        var junctionData = await junctionTask;
-        var bedrockData = await bedrockTask;
-        if (junctionData?.Posts != null)
-        {
-            posts.AddRange(junctionData.Posts.Where(x => x.Date.Year == thisYear));
-            qSourcePosts.AddRange(junctionData.QSourcePosts.Where(x => x.Date.Year == thisYear));
-        }
-
-        if (bedrockData?.Posts != null)
-        {
-            posts.AddRange(bedrockData.Posts.Where(x => x.Date.Year == thisYear));
-            qSourcePosts.AddRange(bedrockData.QSourcePosts.Where(x => x.Date.Year == thisYear));
-        }
 
         var paxPosts = posts
-            .Where(p => !string.IsNullOrWhiteSpace(p.Pax))
-            .GroupBy(p => p.Pax.Trim())
-            .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
-        var paxQSourcePosts = qSourcePosts
             .Where(p => !string.IsNullOrWhiteSpace(p.Pax))
             .GroupBy(p => p.Pax.Trim())
             .ToDictionary(g => g.Key, g => g.OrderBy(x => x.Date).ToList());
@@ -116,17 +87,13 @@
         {
             var postCount = paxPosts[pax].Count;
             var qCount = paxPosts[pax].Count(x => x.IsQ);
-            var qSourceCount = paxQSourcePosts.ContainsKey(pax) ? paxQSourcePosts[pax].Count : 0;
-            var qSourceQCount = paxQSourcePosts.ContainsKey(pax) ? paxQSourcePosts[pax].Count(x => x.IsQ) : 0;
 
             GoldStandardRows.Add(new DisplayRow
                 {
                     PaxName = pax,
                     PostCount = postCount,
                     QCount = qCount,
-                    QSourceCount = qSourceCount,
-                    QSourceQCount = qSourceQCount,
-                    GoldStandardPercent = GetGoldStandardPercent(postCount, qCount, qSourceCount, qSourceQCount)
+                    GoldStandardPercent = GetGoldStandardPercent(postCount, qCount)
                 });
         }
 
@@ -145,10 +112,10 @@
         return (int)((double)value / max * 100);
     }
 
-    private int GetGoldStandardPercent(int postCount, int qCount, int qSourceCount, int qSourceQCount)
+    private int GetGoldStandardPercent(int postCount, int qCount)
     {
-        var totalReq = PostCountMax + QCountMax + QSourceCountMax + QSourceQCountMax;
-        var paxTotal = postCount + qCount + qSourceCount + qSourceQCount;
+        var totalReq = PostCountMax + QCountMax;
+        var paxTotal = postCount + qCount;
 
         var goldStandardPercent = ((double)paxTotal / totalReq) * 100;
 
@@ -170,12 +137,12 @@
         var csv = new StringBuilder();
 
         // Add header row
-        csv.AppendLine("PaxName,PostCount,QCount,QSourceCount,QSourceQCount,GSPercent");
+        csv.AppendLine("PaxName,PostCount,QCount,GSPercent");
 
         // Add data rows
         foreach (var item in GoldStandardRows)
         {
-            csv.AppendLine($"{item.PaxName},{item.PostCount},{item.QCount},{item.QSourceCount},{item.QSourceQCount},{GetGoldStandardPercent(item.PostCount, item.QCount, item.QSourceCount, item.QSourceQCount)}");
+            csv.AppendLine($"{item.PaxName},{item.PostCount},{item.QCount},{GetGoldStandardPercent(item.PostCount, item.QCount)}");
         }
 
         await JSRuntime.InvokeVoidAsync("downloadFile", $"GoldStandard_{DateTime.Now.ToShortDateString()}.csv", csv.ToString());
