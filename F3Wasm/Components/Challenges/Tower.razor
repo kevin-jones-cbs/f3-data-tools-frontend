@@ -16,7 +16,7 @@
     }
 </style>
 
-<div class="mb-2" style="font-style:italic">The Tower Challenge is achieving 150 posts, attending each location 4 times, 15 Qs, leading 1 Q Source session, attending Q Source 20 times, and attending 1 qualifying 1st F event in @DateTime.Now.Year.</div>
+<div class="mb-2" style="font-style:italic">The Tower Challenge is achieving 150 posts, attending each challenge location 3 times, 15 Qs, leading 1 Q Source session, attending Q Source 20 times, and attending 1 qualifying 1st F event in @DateTime.Now.Year.</div>
 
 <button class="btn btn-primary mb-2" @onclick="ExportToCsv">Export To Csv</button>
 
@@ -50,7 +50,7 @@
                 <!-- Multi-row flex container with wrapping -->
                 <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start;">
                     <ProgressContainer Label="Posts" Value="@context.TotalPosts" MaxValue="TotalPostsMax" Color="Color.Success" />
-                    <ProgressContainer Label="All Sites 4x" Value="@context.CompletedSites" MaxValue="CompletedSitesMax" Color="Color.Info" />
+                    <ProgressContainer Label="All Sites 3x" Value="@context.CompletedSites" MaxValue="CompletedSitesMax" Color="Color.Info" />
                     <ProgressContainer Label="Qs" Value="@context.QCount" MaxValue="QCountMax" Color="Color.Warning" />
                     <ProgressContainer Label="Q Source" Value="@context.QSourceAttendCount" MaxValue="QSourceAttendMax" Color="Color.Link" />
                     <ProgressContainer Label="Q Source Qs" Value="@context.QSourceLeadCount" MaxValue="QSourceLeadMax" Color="Color.Primary" />
@@ -66,7 +66,7 @@
     @bind-Visible="showAoChallengeModal"
     SelectedPax="selectedPax"
     SelectedPaxPosts="selectedPaxPosts"
-    Aos="AllData.Aos"
+    Aos="ChallengeAos"
     RegionInfo="RegionInfo"
     CurrentView="OverallView.TowerChallenge"
 />
@@ -81,7 +81,8 @@
     [Parameter]
     public Region RegionInfo { get; set; }
 
-    private List<TowerChallenge> TowerChallengeData { get; set; }
+    private TowerChallengeResponse TowerChallengeResponse { get; set; } = new();
+    private List<Ao> ChallengeAos { get; set; } = new();
 
     [Inject]
     private IJSRuntime JSRuntime { get; set; }
@@ -93,6 +94,7 @@
 
     // Challenge requirements constants
     private static int TotalPostsMax = 150;
+    private static int SiteVisitRequirement = 3;
     private static int QCountMax = 15;
     private static int QSourceAttendMax = 20;
     private static int QSourceLeadMax = 1;
@@ -101,7 +103,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        TowerChallengeData = await LambdaHelper.GetTowerChallengeDataAsync(Http);
+        TowerChallengeResponse = await LambdaHelper.GetTowerChallengeDataAsync(Http) ?? new TowerChallengeResponse();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -109,10 +111,16 @@
         var thisYear = DateTime.Now.Year;
         var posts = AllData.Posts.Where(x => x.Date.Year == thisYear).ToList();
         var qSourcePosts = AllData.QSourcePosts?.Where(x => x.Date.Year == thisYear).ToList() ?? new List<Post>();
-        var allValidAos = AllData.Aos;
+        var challengeSiteNames = new HashSet<string>(
+            TowerChallengeResponse.ChallengeSites ?? new List<string>(),
+            StringComparer.OrdinalIgnoreCase);
 
-        // Calculate CompletedSitesMax: total number of AOs that need to be visited 4 times
-        CompletedSitesMax = allValidAos.Count;
+        ChallengeAos = AllData.Aos
+            .Where(ao => !string.IsNullOrWhiteSpace(ao.Name) && challengeSiteNames.Contains(ao.Name.Trim()))
+            .ToList();
+
+        // Calculate CompletedSitesMax: total number of challenge AOs that need to be visited 3 times
+        CompletedSitesMax = ChallengeAos.Count;
 
         // Group posts by PAX
         var paxPosts = posts
@@ -127,7 +135,7 @@
         TowerRows = new List<TowerDisplayRow>();
 
         // Create a dictionary to quickly look up the Tower challenge data by PAX name
-        var challengeDataByPax = TowerChallengeData
+        var challengeDataByPax = (TowerChallengeResponse.ChallengeData ?? new List<TowerChallenge>())
             .Where(c => !string.IsNullOrWhiteSpace(c.PaxName))
             .GroupBy(c => c.PaxName.Trim())
             .ToDictionary(g => g.Key, g => g.First());
@@ -142,14 +150,14 @@
             // Get the Tower challenge data for this PAX, or use default values if not found
             var challengeData = challengeDataByPax.ContainsKey(pax) ? challengeDataByPax[pax] : new TowerChallenge();
 
-            // Calculate how many sites have been attended 4+ times
+            // Calculate how many challenge sites have been attended 3+ times
             var siteAttendanceCounts = paxPosts[pax]
-                .Where(x => allValidAos.Any(ao => ao.Name?.Trim() == x.Site?.Trim()))
+                .Where(x => !string.IsNullOrWhiteSpace(x.Site) && challengeSiteNames.Contains(x.Site.Trim()))
                 .GroupBy(x => x.Site?.Trim() ?? string.Empty)
                 .Select(g => new { Site = g.Key, Count = g.Count() })
                 .ToList();
 
-            var completedSites = siteAttendanceCounts.Count(x => x.Count >= 4);
+            var completedSites = siteAttendanceCounts.Count(x => x.Count >= SiteVisitRequirement);
 
             TowerRows.Add(new TowerDisplayRow
             {

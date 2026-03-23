@@ -102,11 +102,11 @@ namespace F3Wasm.Data
             return forgeChallengeData;
         }
 
-        public static async Task<List<TowerChallenge>> GetTowerChallengeDataAsync(HttpClient client)
+        public static async Task<TowerChallengeResponse> GetTowerChallengeDataAsync(HttpClient client)
         {
             var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetTowerChallenge", Region = "sactown" });
-            var towerChallengeData = JsonSerializer.Deserialize<List<TowerChallenge>>(response);
-            return towerChallengeData;
+            var towerChallengeData = JsonSerializer.Deserialize<TowerChallengeResponse>(response);
+            return towerChallengeData ?? new TowerChallengeResponse();
         }
 
         public static AllData DecompressAll(string compressedString)

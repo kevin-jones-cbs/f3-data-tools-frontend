@@ -156,9 +156,10 @@
         }
         else if (CurrentView == OverallView.ForgeChallenge || CurrentView == OverallView.TowerChallenge)
         {
-            // For Forge and Tower Challenge, show filled if 4+ posts, otherwise outlined
+            // Forge requires 4 posts per site; Tower requires 3.
             var postCount = GetPostCountForLocation(location);
-            if (postCount >= 4)
+            var requiredPosts = CurrentView == OverallView.TowerChallenge ? 3 : 4;
+            if (postCount >= requiredPosts)
             {
                 return $"background-color: {hex}; color: white;";
             }
