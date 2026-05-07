@@ -128,7 +128,7 @@
     protected override void OnInitialized()
     {
         var paxPostsAsc = SelectedPaxPosts.OrderBy(p => p.Date).ToList();
-        (selectedPaxStreak, selectedPaxStreakStart) = StreakHelpers.CalculateStreak(paxPostsAsc, RegionInfo);
+        (selectedPaxStreak, selectedPaxStreakStart) = StreakHelpers.CalculateStreak(paxPostsAsc, RegionInfo, AllPossibleWorkoutDays);
     }
 
     private double GetSelectedPaxPossibleCount()
