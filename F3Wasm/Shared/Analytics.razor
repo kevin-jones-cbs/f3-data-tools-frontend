@@ -1,0 +1,38 @@
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        NavigationManager.LocationChanged += OnLocationChanged;
+        await TrackPageViewAsync();
+    }
+
+    private async void OnLocationChanged(object? sender, LocationChangedEventArgs args)
+    {
+        await TrackPageViewAsync();
+    }
+
+    private async Task TrackPageViewAsync()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("f3Analytics.trackPageView");
+        }
+        catch (JSException)
+        {
+            // Analytics should never interrupt the app if GA is unavailable.
+        }
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}
