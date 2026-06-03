@@ -23,12 +23,38 @@
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("f3Analytics.trackPageView");
+            await JSRuntime.InvokeVoidAsync("f3Analytics.trackPageView", GetPageTitle());
         }
         catch (JSException)
         {
             // Analytics should never interrupt the app if GA is unavailable.
         }
+    }
+
+    private string? GetPageTitle()
+    {
+        var path = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?')[0].Trim('/');
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return "F3 Tools Home Page";
+        }
+
+        var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length == 0)
+        {
+            return "F3 Tools Home Page";
+        }
+
+        return segments[0].ToLowerInvariant() switch
+        {
+            "data" when segments.Length > 1 => $"F3 {segments[1].ToUpperInvariant()} Data",
+            "upload" when segments.Length > 1 => $"F3 {segments[1].ToUpperInvariant()} Importer",
+            "ceremonies" when segments.Length > 1 => $"F3 {segments[1].ToUpperInvariant()} Ceremonies",
+            "sectordata" => "F3 Sacramento Sector Data",
+            "exicon" => "F3 Exicon",
+            "downrange" => "Add Downrange",
+            _ => null
+        };
     }
 
     public void Dispose()
