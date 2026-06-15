@@ -12,14 +12,14 @@ namespace F3Wasm.Data
         // Get Missing Aos
         public static async Task<List<Ao>> GetMissingAosAsync(HttpClient client, string region)
         {
-            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetMissingAos", Region = region });
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.GetMissingAos, Region = region });
             var missingAos = JsonSerializer.Deserialize<List<Ao>>(response);
             return missingAos;
         }
 
         public static async Task<List<string>> GetPaxNamesAsync(HttpClient client, string region)
         {
-            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetPax", Region = region });
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.GetPax, Region = region });
             var paxNames = JsonSerializer.Deserialize<List<string>>(response);
             return paxNames;
         }
@@ -27,7 +27,7 @@ namespace F3Wasm.Data
         // Get Pax from Comment
         public static async Task<List<Pax>> GetPaxFromCommentAsync(HttpClient client, string region, string comment)
         {
-            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetPaxFromComment", Region = region, Comment = comment });
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.GetPaxFromComment, Region = region, Comment = comment });
             var pax = JsonSerializer.Deserialize<List<Pax>>(response);
             return pax;
         }
@@ -35,51 +35,51 @@ namespace F3Wasm.Data
         // Upload Pax 
         public static async Task UploadPaxAsync(HttpClient client, string region, List<Pax> pax, string ao, DateTime qDate, bool isQSource)
         {
-            var input = new FunctionInput { Action = "AddPax", AoName = ao, QDate = qDate, Pax = pax, Region = region, IsQSource = isQSource };
+            var input = new FunctionInput { Action = LambdaActions.AddPax, AoName = ao, QDate = qDate, Pax = pax, Region = region, IsQSource = isQSource };
             var json = JsonSerializer.Serialize(input);
             var response = await CallF3LambdaAsync(client, input);
         }
 
         public static async Task<AllData> GetAllDataAsync(HttpClient client, string region)
         {
-            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetAllPosts", Region = region });
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.GetAllPosts, Region = region });
             return DecompressAll(response);
         }
 
         public static async Task<InitialViewData> GetInitialViewAsync(HttpClient client, string region)
         {
-            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetInitialView", Region = region });
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.GetInitialView, Region = region });
             var initialViewData = JsonSerializer.Deserialize<InitialViewData>(response);
             return initialViewData;
         }
 
         public static async Task<List<Ao>> GetAllLocationsAsync(HttpClient client, string region)
         {
-            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetLocations", Region = region });
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.GetLocations, Region = region });
             var locations = JsonSerializer.Deserialize<List<Ao>>(response);
             return locations;
         }
 
         public static async Task<string> GetJsonAsync(HttpClient client, string region, short jsonRow)
         {
-            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetJson", Region = region, JsonRow = jsonRow });
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.GetJson, Region = region, JsonRow = jsonRow });
             return response;
         }
 
         public static async Task SaveJsonAsync(HttpClient client, string region, short jsonRow, string json)
         {
-            var input = new FunctionInput { Action = "SaveJson", Region = region, JsonRow = jsonRow, Json = json };
+            var input = new FunctionInput { Action = LambdaActions.SaveJson, Region = region, JsonRow = jsonRow, Json = json };
             var response = await CallF3LambdaAsync(client, input);
         }
 
         public static async Task ClearCacheAsync(HttpClient client, string region)
         {
-            await CallF3LambdaAsync(client, new FunctionInput { Action = "ClearCache", Region = region });
+            await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.ClearCache, Region = region });
         }
 
         public static async Task<SectorData> GetSectorDataAsync(HttpClient client)
         {
-            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetSectorDataSummaryAsync"});
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.GetSectorDataSummaryAsync});
 
             // Decompress the response (same as GetAllDataAsync)
             var decompressed = Decompress(response);
@@ -90,21 +90,21 @@ namespace F3Wasm.Data
 
         public static async Task<List<TerracottaChallenge>> GetTerracottaChallengeDataAsync(HttpClient client)
         {
-            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetTerracottaChallenge", Region = "terracotta" });
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.GetTerracottaChallenge, Region = "terracotta" });
             var terracottaChallengeData = JsonSerializer.Deserialize<List<TerracottaChallenge>>(response);
             return terracottaChallengeData;
         }
 
         public static async Task<List<ForgeChallenge>> GetForgeChallengeDataAsync(HttpClient client)
         {
-            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetForgeChallenge", Region = "motherlode" });
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.GetForgeChallenge, Region = "motherlode" });
             var forgeChallengeData = JsonSerializer.Deserialize<List<ForgeChallenge>>(response);
             return forgeChallengeData;
         }
 
         public static async Task<TowerChallengeResponse> GetTowerChallengeDataAsync(HttpClient client)
         {
-            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = "GetTowerChallenge", Region = "sactown" });
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.GetTowerChallenge, Region = "sactown" });
             var towerChallengeData = JsonSerializer.Deserialize<TowerChallengeResponse>(response);
             return towerChallengeData ?? new TowerChallengeResponse();
         }
