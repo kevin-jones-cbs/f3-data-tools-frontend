@@ -7,10 +7,15 @@ namespace F3Wasm.Tests
 {
     public class AnalyticRuns
     {
+        private static HttpClient CreateClient() => new()
+        {
+            BaseAddress = new Uri("https://s6oww3m3a5svbuxq5pf35pjigu0xxaqk.lambda-url.us-west-1.on.aws/")
+        };
+
         [Fact]
         public async Task GetLocationCountsForMonth()
         {
-            var client = new HttpClient();
+            var client = CreateClient();
             var allData = await LambdaHelper.GetAllDataAsync(client, "southfork");
             var thisMonthPosts = allData.Posts.Where(p => p.Date.Year == DateTime.Now.Year && p.Date.Month == 4).ToList();
 
@@ -27,7 +32,7 @@ namespace F3Wasm.Tests
         [Fact]
         public async Task GetAllFullMoonRucks()
         {
-            var client = new HttpClient();
+            var client = CreateClient();
             var allData = await LambdaHelper.GetAllDataAsync(client, "southfork");
             var rucks = allData.Posts.Where(x => x.Site == "Full Moon Ruck").ToList();
 
@@ -44,7 +49,7 @@ namespace F3Wasm.Tests
         [Fact]
         public async Task GetQSummary()
         {
-            var client = new HttpClient();
+            var client = CreateClient();
             var allData = await LambdaHelper.GetAllDataAsync(client, "southfork");
             var thisMonthPosts = allData.Posts.Where(p => p.Date.Year == DateTime.Now.Year && p.Date.Month == 4).ToList();
 
@@ -61,7 +66,7 @@ namespace F3Wasm.Tests
         [Fact]
         public async Task GetStaleRoster()
         {
-            var client = new HttpClient();
+            var client = CreateClient();
             var allData = await LambdaHelper.GetAllDataAsync(client, "southfork");
 
             // Get a list of Pax with their post count, and the date of their last post
@@ -92,7 +97,7 @@ namespace F3Wasm.Tests
         [Fact]
         public async Task GetAveragePostsPerDay()
         {
-            var client = new HttpClient();
+            var client = CreateClient();
             var allData = await LambdaHelper.GetAllDataAsync(client, "southfork");
             var thisYearPosts = allData.Posts.Where(p => p.Date.Year == DateTime.Now.Year).ToList();
 
@@ -100,7 +105,7 @@ namespace F3Wasm.Tests
             var postsByDate = thisYearPosts.GroupBy(p => p.Date.Date).ToList();
 
             // Get the average posts per day
-            var averagePostsPerDay = postsByDate.Average(g => g.Count());
+            var averagePostsPerDay = postsByDate.Select(g => g.Count()).DefaultIfEmpty(0).Average();
 
             // Group this year posts by ao, order by count descending
             var postsByAo = thisYearPosts.GroupBy(p => p.Site).OrderByDescending(g => g.Count()).ToList();
@@ -119,7 +124,12 @@ namespace F3Wasm.Tests
             var saturdays = thisYearPosts.Where(p => p.Date.DayOfWeek == DayOfWeek.Saturday).Select(p => p.Date.Date).Distinct().ToList();
 
             // Get the average posts per day on saturdays at the grid
-            var averagePostsPerDayOnSaturdays = gridPostsNoKids.Where(p => p.Date.DayOfWeek == DayOfWeek.Saturday).GroupBy(p => p.Date.Date).Average(g => g.Count());
+            var averagePostsPerDayOnSaturdays = gridPostsNoKids
+                .Where(p => p.Date.DayOfWeek == DayOfWeek.Saturday)
+                .GroupBy(p => p.Date.Date)
+                .Select(g => g.Count())
+                .DefaultIfEmpty(0)
+                .Average();
 
 
         }
@@ -132,7 +142,7 @@ namespace F3Wasm.Tests
             var minDaysSinceLastPost = 25;
             var maxDaysSinceLastPost = 200;
 
-            var client = new HttpClient();
+            var client = CreateClient();
             var allData = await LambdaHelper.GetAllDataAsync(client, "southfork");
             var asgardData = await LambdaHelper.GetAllDataAsync(client, "asgard");
             var posts = allData.Posts;
@@ -213,7 +223,7 @@ namespace F3Wasm.Tests
         [Fact]
         public async Task GetTopPostCountsPerLocation()
         {
-            var client = new HttpClient();
+            var client = CreateClient();
             var allData = await LambdaHelper.GetAllDataAsync(client, "southfork");
             var pax = allData.Pax;
             var posts = allData.Posts;
@@ -240,7 +250,7 @@ namespace F3Wasm.Tests
         [Fact]
         public async Task GetTopPostersPerLocation()
         {
-            var client = new HttpClient();
+            var client = CreateClient();
             var allData = await LambdaHelper.GetAllDataAsync(client, "southfork");
             var pax = allData.Pax;
             var posts = allData.Posts;

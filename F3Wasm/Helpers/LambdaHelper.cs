@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using F3Wasm.Models;
 using F3Core;
+using F3Core.Regions;
 
 namespace F3Wasm.Data
 {
@@ -51,6 +52,40 @@ namespace F3Wasm.Data
             var response = await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.GetInitialView, Region = region });
             var initialViewData = JsonSerializer.Deserialize<InitialViewData>(response);
             return initialViewData;
+        }
+
+        public static async Task<List<RegionMetadata>> GetRegionsAsync(HttpClient client)
+        {
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.GetRegions });
+            return JsonSerializer.Deserialize<List<RegionMetadata>>(response, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<RegionMetadata>();
+        }
+
+        public static async Task<Region> GetRegionAsync(HttpClient client, string region)
+        {
+            var hardCodedRegion = RegionList.All.FirstOrDefault(x => x.QueryStringValue == region);
+            if (hardCodedRegion != null)
+            {
+                return hardCodedRegion;
+            }
+
+            var metadata = (await GetRegionsAsync(client))
+                .FirstOrDefault(x => string.Equals(x.QueryStringValue, region, StringComparison.OrdinalIgnoreCase));
+
+            if (metadata == null)
+            {
+                return null;
+            }
+
+            return new ConfiguredRegion(new RegionConfig
+            {
+                QueryStringValue = metadata.QueryStringValue,
+                DisplayName = metadata.DisplayName,
+                SupportsDownrange = metadata.SupportsDownrange,
+                HasQSourcePosts = metadata.HasQSourcePosts,
+                HasExtraActivity = metadata.HasExtraActivity,
+                IncludeInSector = metadata.IncludeInSector,
+                IsActive = true
+            });
         }
 
         public static async Task<List<Ao>> GetAllLocationsAsync(HttpClient client, string region)
@@ -150,9 +185,7 @@ namespace F3Wasm.Data
             var json = JsonSerializer.Serialize(body);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var lambdaUrl = "https://s6oww3m3a5svbuxq5pf35pjigu0xxaqk.lambda-url.us-west-1.on.aws/";
-
-            var request = new HttpRequestMessage(HttpMethod.Post, lambdaUrl) { Content = content };
+            var request = new HttpRequestMessage(HttpMethod.Post, string.Empty) { Content = content };
             request.Headers.Add("Access-Control-Allow-Origin", "*");
             request.Headers.Add("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
             var response = await client.SendAsync(request);

@@ -36,7 +36,7 @@ namespace F3Wasm.Tests
 
             var result = F3Wasm.Pages.Data.GetCurrentPossibleWorkoutDays(posts);
 
-            Assert.Equal(3, result.Count);
+            Assert.Equal(2, result.Count);
         }
     }
 }

@@ -18,6 +18,7 @@ builder.Services
     .AddBootstrapProviders()
     .AddFontAwesomeIcons();
 
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://s6oww3m3a5svbuxq5pf35pjigu0xxaqk.lambda-url.us-west-1.on.aws/") });
+var lambdaUrl = builder.Configuration["LambdaUrl"] ?? "https://s6oww3m3a5svbuxq5pf35pjigu0xxaqk.lambda-url.us-west-1.on.aws/";
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(lambdaUrl) });
 
 await builder.Build().RunAsync();

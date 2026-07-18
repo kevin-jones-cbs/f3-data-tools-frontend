@@ -37,7 +37,7 @@ namespace F3Wasm.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            RegionInfo = RegionList.All.FirstOrDefault(x => x.QueryStringValue == Region);
+            RegionInfo = await LambdaHelper.GetRegionAsync(Http, Region);
             if (RegionInfo == null)
             {
                 throw new Exception("Invalid Region");
