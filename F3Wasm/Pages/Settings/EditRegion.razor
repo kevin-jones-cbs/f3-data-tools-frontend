@@ -1,0 +1,415 @@
+@page "/settings/regions/{Region}/edit"
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@using F3Core
+@using F3Core.Regions
+@using F3Wasm.Data
+@using F3Wasm.Components.RegionSettings
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+<PageTitle>Edit Region Settings</PageTitle>
+<NavigationLock ConfirmExternalNavigation="@IsDirty" OnBeforeInternalNavigation="OnBeforeInternalNavigation" />
+
+<div class="region-editor">
+    <header class="editor-header">
+        <div>
+            <a href="/settings/regions" class="back-link">← Region Settings</a>
+            <h1>@(draft?.DisplayName ?? begin?.Region?.DisplayName ?? Region)</h1>
+            @if (authorization != null)
+            {
+                <div class="status-line">
+                    <span class="status-connected">Connected</span>
+                    <span>@authorization.GoogleEmail</span>
+                    <span>Loaded @authorization.CatalogVersion</span>
+                    <span>@authorization.Source</span>
+                    @if (!string.IsNullOrWhiteSpace(authorization.S3VersionId)) { <span>S3 @authorization.S3VersionId</span> }
+                    @if (authorization.LastModifiedUtc.HasValue) { <span>Modified @authorization.LastModifiedUtc.Value.ToLocalTime()</span> }
+                    @if (IsDirty) { <strong>Unsaved changes</strong> }
+                </div>
+            }
+        </div>
+        @if (authorization != null)
+        {
+            <div class="header-actions">
+                <button class="btn btn-outline-secondary btn-sm" disabled="@isBusy" @onclick="ReverifyAsync">Verify again</button>
+                <button class="btn btn-primary" disabled="@(!CanSave || isSaving)" @onclick="SaveAsync">@(isSaving ? "Saving…" : "Save changes")</button>
+            </div>
+        }
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(error))
+    {
+        <div class="alert alert-danger" role="alert">@error</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(saveMessage))
+    {
+        <div class="alert alert-success" role="status">@saveMessage</div>
+    }
+
+    @if (begin == null)
+    {
+        <p>Loading region…</p>
+    }
+    else if (authorization == null)
+    {
+        <section class="editor-card verification-card">
+            <h2>Verify with Google</h2>
+            <p>Select the current spreadsheet for <strong>@begin.Region?.DisplayName</strong>. Google will ask for per-file access; the backend also requires effective edit and modify-content permission.</p>
+            @if (string.IsNullOrWhiteSpace(begin.GoogleClientId) || string.IsNullOrWhiteSpace(begin.GooglePickerApiKey))
+            {
+                <div class="alert alert-warning">Google Region Editor credentials are not configured on the backend.</div>
+            }
+            <button class="btn btn-primary" disabled="@isBusy" @onclick="VerifyAsync">@(isBusy ? "Verifying…" : "Verify with Google")</button>
+        </section>
+    }
+    else if (draft != null && inspection != null)
+    {
+        <CascadingValue Value="validation">
+        <section class="editor-card">
+            <h2>Basics</h2>
+            <div class="form-grid three">
+                <RegionEditorField Label="Display name" Path="displayName">
+                    <input class="form-control" value="@draft.DisplayName" @oninput="e => Change(() => draft.DisplayName = e.Value?.ToString() ?? string.Empty)" />
+                </RegionEditorField>
+                <RegionEditorField Label="Slug" Path="queryStringValue">
+                    <input class="form-control" value="@draft.QueryStringValue" @oninput="e => Change(() => draft.QueryStringValue = e.Value?.ToString() ?? string.Empty)" />
+                </RegionEditorField>
+                <div class="toggle-stack">
+                    <label><input type="checkbox" checked="@draft.IsActive" @onchange="e => Change(() => draft.IsActive = (bool)e.Value!)" /> Active</label>
+                    <label><input type="checkbox" checked="@draft.IncludeInSector" @onchange="e => Change(() => draft.IncludeInSector = (bool)e.Value!)" /> Include in sector</label>
+                </div>
+            </div>
+        </section>
+
+        <section class="editor-card">
+            <div class="card-title-row"><h2>Google Sheet Connection</h2><span class="status-connected">Verified as @authorization.GoogleEmail</span></div>
+            <div class="sheet-identity"><strong>@inspection.SpreadsheetTitle</strong><code>@draft.SpreadsheetId</code></div>
+            <p>Service account access: <strong>@(inspection.ServiceAccountCanAccess ? "Connected" : "Unavailable")</strong></p>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="SelectReplacementAsync">Select replacement spreadsheet</button>
+            @if (spreadsheetMappingsNeedReview)
+            {
+                <div class="alert alert-warning mt-3">The spreadsheet changed. Review every tab and column mapping before validation.</div>
+            }
+        </section>
+
+        <section class="editor-card">
+            <h2>Master Data</h2>
+            <p class="help">Select and order every historical/current Master Data tab. The last tab is the current write tab.</p>
+            <div class="tab-list">
+                @for (var index = 0; index < draft.MasterDataSheetIds.Count; index++)
+                {
+                    var itemIndex = index;
+                    var tab = inspection.Tabs.FirstOrDefault(x => x.SheetId == draft.MasterDataSheetIds[itemIndex]);
+                    <div class="tab-row">
+                        <span>@(itemIndex + 1). @(tab?.Title ?? draft.MasterDataSheetNames[itemIndex]) <small>ID @draft.MasterDataSheetIds[itemIndex]</small></span>
+                        <div>
+                            <button class="btn btn-sm btn-light" disabled="@(itemIndex == 0)" @onclick="@(() => MoveMasterTab(itemIndex, -1))">↑</button>
+                            <button class="btn btn-sm btn-light" disabled="@(itemIndex == draft.MasterDataSheetIds.Count - 1)" @onclick="@(() => MoveMasterTab(itemIndex, 1))">↓</button>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="@(() => RemoveMasterTab(itemIndex))">Remove</button>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="input-group mt-2">
+                <select class="form-control" @bind="masterTabToAdd">
+                    <option value="">Add a tab…</option>
+                    @foreach (var tab in inspection.Tabs.Where(x => !draft.MasterDataSheetIds.Contains(x.SheetId)))
+                    {
+                        <option value="@tab.SheetId">@tab.Title — ID @tab.SheetId</option>
+                    }
+                </select>
+                <div class="input-group-append"><button class="btn btn-outline-primary" @onclick="AddMasterTab">Add</button></div>
+            </div>
+            <RegionEditorField Label="Missing-data row offset" Path="missingDataRowOffset">
+                <input class="form-control short-input" type="number" min="0" value="@draft.MissingDataRowOffset" @onchange="SetMissingOffset" />
+            </RegionEditorField>
+            @if (masterPreview != null)
+            {
+                <div class="mapping-grid">
+                    <Mapping Label="Date" Path="masterDataColumnIndicies.date"><ColumnSelector Columns="masterPreview.Columns" Value="draft.MasterDataColumnIndicies.Date" ValueChanged="v => Change(() => draft.MasterDataColumnIndicies.Date = v ?? 0)" /></Mapping>
+                    <Mapping Label="Location" Path="masterDataColumnIndicies.location"><ColumnSelector Columns="masterPreview.Columns" Value="draft.MasterDataColumnIndicies.Location" ValueChanged="v => Change(() => draft.MasterDataColumnIndicies.Location = v ?? 0)" /></Mapping>
+                    <Mapping Label="PAX name" Path="masterDataColumnIndicies.paxName"><ColumnSelector Columns="masterPreview.Columns" Value="draft.MasterDataColumnIndicies.PaxName" ValueChanged="v => Change(() => draft.MasterDataColumnIndicies.PaxName = v ?? 0)" /></Mapping>
+                    <Mapping Label="FNG" Path="masterDataColumnIndicies.fng"><ColumnSelector Columns="masterPreview.Columns" Value="draft.MasterDataColumnIndicies.Fng" ValueChanged="v => Change(() => draft.MasterDataColumnIndicies.Fng = v ?? 0)" /></Mapping>
+                    <Mapping Label="Post" Path="masterDataColumnIndicies.post"><ColumnSelector Columns="masterPreview.Columns" Value="draft.MasterDataColumnIndicies.Post" ValueChanged="v => Change(() => draft.MasterDataColumnIndicies.Post = v ?? 0)" /></Mapping>
+                    <Mapping Label="Q" Path="masterDataColumnIndicies.q"><ColumnSelector Columns="masterPreview.Columns" Value="draft.MasterDataColumnIndicies.Q" ValueChanged="v => Change(() => draft.MasterDataColumnIndicies.Q = v ?? 0)" /></Mapping>
+                    <Mapping Label="Q Source post" Path="masterDataColumnIndicies.qSourcePost"><ColumnSelector Columns="masterPreview.Columns" Optional Value="draft.MasterDataColumnIndicies.QSourcePost" ValueChanged="v => Change(() => draft.MasterDataColumnIndicies.QSourcePost = v)" /></Mapping>
+                    <Mapping Label="Q Source Q" Path="masterDataColumnIndicies.qSourceQ"><ColumnSelector Columns="masterPreview.Columns" Optional Value="draft.MasterDataColumnIndicies.QSourceQ" ValueChanged="v => Change(() => draft.MasterDataColumnIndicies.QSourceQ = v)" /></Mapping>
+                    <Mapping Label="Extra activity" Path="masterDataColumnIndicies.extraActivity"><ColumnSelector Columns="masterPreview.Columns" Optional Value="draft.MasterDataColumnIndicies.ExtraActivity" ValueChanged="v => Change(() => draft.MasterDataColumnIndicies.ExtraActivity = v)" /></Mapping>
+                </div>
+            }
+        </section>
+
+        <section class="editor-card">
+            <h2>Roster</h2>
+            <div class="form-grid two">
+                <RegionEditorField Label="Roster tab" Path="rosterSheetId">
+                    <select class="form-control" value="@draft.RosterSheetId" @onchange="ChangeRosterTab">
+                        @foreach (var tab in inspection.Tabs) { <option value="@tab.SheetId">@tab.Title — ID @tab.SheetId</option> }
+                    </select>
+                </RegionEditorField>
+                @if (rosterPreview != null)
+                {
+                    <RegionEditorField Label="Name column" Path="rosterNameColumn">
+                        <select class="form-control" value="@draft.RosterNameColumn" @onchange="ChangeRosterNameColumn">
+                            @foreach (var column in rosterPreview.Columns) { <option value="@column.Letter">@column.Letter — @column.Header</option> }
+                        </select>
+                    </RegionEditorField>
+                }
+            </div>
+            <h3>Ordered column roles</h3>
+            @for (var index = 0; index < draft.RosterSheetColumns.Count; index++)
+            {
+                var roleIndex = index;
+                <div class="role-row"><strong>@ColumnLetter(roleIndex)</strong><select class="form-control" value="@draft.RosterSheetColumns[roleIndex]" @onchange="@(e => ChangeRosterRole(roleIndex, e))">@foreach (var role in Enum.GetValues<RosterSheetColumn>()) { <option value="@role">@role</option> }</select><button class="btn btn-sm btn-outline-danger" @onclick="@(() => RemoveRosterRole(roleIndex))">Remove</button></div>
+            }
+            <button class="btn btn-sm btn-outline-primary" @onclick="AddRosterRole">Add trailing position</button>
+        </section>
+
+        <section class="editor-card">
+            <h2>AO / Sites</h2>
+            <RegionEditorField Label="AO tab" Path="aosSheetName">
+                <select class="form-control" value="@draft.AosSheetName" @onchange="ChangeAoTab">
+                    @foreach (var tab in inspection.Tabs) { <option value="@tab.Title">@tab.Title</option> }
+                </select>
+            </RegionEditorField>
+            @if (aoPreview != null)
+            {
+                <div class="mapping-grid">
+                    <Mapping Label="AO name" Path="aoColumnIndicies.name"><ColumnSelector Columns="aoPreview.Columns" Value="draft.AoColumnIndicies.Name" ValueChanged="v => Change(() => draft.AoColumnIndicies.Name = v ?? 0)" /></Mapping>
+                    <Mapping Label="City" Path="aoColumnIndicies.city"><ColumnSelector Columns="aoPreview.Columns" Value="draft.AoColumnIndicies.City" ValueChanged="v => Change(() => draft.AoColumnIndicies.City = v ?? 0)" /></Mapping>
+                    <Mapping Label="Day of week" Path="aoColumnIndicies.dayOfWeek"><ColumnSelector Columns="aoPreview.Columns" Value="draft.AoColumnIndicies.DayOfWeek" ValueChanged="v => Change(() => draft.AoColumnIndicies.DayOfWeek = v ?? 0)" /></Mapping>
+                    <Mapping Label="Active/non-retired status" Path="aoColumnIndicies.retired"><ColumnSelector Columns="aoPreview.Columns" Optional Value="draft.AoColumnIndicies.Retired" ValueChanged="v => Change(() => draft.AoColumnIndicies.Retired = v)" /></Mapping>
+                    <Mapping Label="Has Q Source" Path="aoColumnIndicies.hasQSource"><ColumnSelector Columns="aoPreview.Columns" Optional Value="draft.AoColumnIndicies.HasQSource" ValueChanged="v => Change(() => draft.AoColumnIndicies.HasQSource = v)" /></Mapping>
+                    <Mapping Label="Q Source only" Path="aoColumnIndicies.isQSourceOnly"><ColumnSelector Columns="aoPreview.Columns" Optional Value="draft.AoColumnIndicies.IsQSourceOnly" ValueChanged="v => Change(() => draft.AoColumnIndicies.IsQSourceOnly = v)" /></Mapping>
+                </div>
+            }
+            <RegionEditorField Label="Value that identifies an active/non-retired AO row" Path="aosRetiredIndicator">
+                <input class="form-control" list="retired-values" value="@draft.AosRetiredIndicator" @oninput="e => Change(() => draft.AosRetiredIndicator = e.Value?.ToString() ?? string.Empty)" />
+                <datalist id="retired-values">@foreach (var value in RetiredSamples) { <option value="@value"></option> }</datalist>
+            </RegionEditorField>
+        </section>
+
+        <section class="editor-card">
+            <h2>Features and Advanced Settings</h2>
+            <div class="toggle-grid">
+                <label><input type="checkbox" checked="@draft.SupportsDownrange" @onchange="e => Change(() => draft.SupportsDownrange = (bool)e.Value!)" /> Supports downrange</label>
+                <label><input type="checkbox" checked="@draft.HasHistoricalData" @onchange="e => Change(() => draft.HasHistoricalData = (bool)e.Value!)" /> Has historical data</label>
+                <label><input type="checkbox" checked="@draft.HasQSourcePosts" @onchange="e => Change(() => draft.HasQSourcePosts = (bool)e.Value!)" /> Has Q Source posts</label>
+                <label><input type="checkbox" checked="@draft.HasExtraActivity" @onchange="e => Change(() => draft.HasExtraActivity = (bool)e.Value!)" /> Has extra activity</label>
+            </div>
+            <details class="mt-3"><summary>Catalog-level downrange naming regions (read only)</summary><ul>@foreach (var option in downrangeNamingRegions) { <li>@option.Index — @option.DisplayName</li> }</ul></details>
+            <details class="mt-3"><summary>View JSON</summary><pre>@DraftJson</pre></details>
+            <div class="mt-3"><button class="btn btn-sm btn-outline-secondary" @onclick="CheckLiveVersionAsync">Check live version</button>@if (!string.IsNullOrWhiteSpace(liveVersionMessage)) { <span class="ml-2 text-muted">@liveVersionMessage</span> }</div>
+        </section>
+
+        <section class="editor-card">
+            <div class="card-title-row"><h2>Validation</h2><button class="btn btn-outline-primary" disabled="@isValidating" @onclick="ValidateAsync">@(isValidating ? "Validating…" : "Run validation")</button></div>
+            @if (validation == null) { <p>Run authoritative validation before saving.</p> }
+            else
+            {
+                <p><strong>@(validation.IsValid ? "All blocking checks passed" : $"{validation.Errors.Count} blocking checks failed")</strong> • @validation.Warnings.Count warnings • @validation.ValidatedUtc.ToLocalTime()</p>
+                @foreach (var item in validation.Errors) { <div class="validation-error"><code>@item.Field</code> @item.Message</div> }
+                @foreach (var item in validation.Warnings) { <div class="validation-warning"><code>@item.Field</code> @item.Message</div> }
+                @if (validation.Counts.Count > 0) { <p>@string.Join(" • ", validation.Counts.Select(x => $"{x.Key}: {x.Value:N0}"))</p> }
+            }
+        </section>
+
+        @if (IsDirty)
+        {
+            <section class="editor-card">
+                <h2>Change Review</h2>
+                <ul>@foreach (var change in Changes) { <li><code>@change</code></li> }</ul>
+            </section>
+        }
+        </CascadingValue>
+    }
+</div>
+
+@code {
+    [Parameter] public string Region { get; set; } = string.Empty;
+    private BeginRegionConfigEditResult? begin;
+    private CompleteRegionEditAuthorizationResult? authorization;
+    private RegionConfig? original;
+    private RegionConfig? draft;
+    private SpreadsheetInspectionResult? inspection;
+    private SheetSchemaPreviewResult? masterPreview;
+    private SheetSchemaPreviewResult? rosterPreview;
+    private SheetSchemaPreviewResult? aoPreview;
+    private RegionConfigValidationResult? validation;
+    private List<RegionNamingOption> downrangeNamingRegions = new();
+    private string googleAccessToken = string.Empty;
+    private string masterTabToAdd = string.Empty;
+    private string error = string.Empty;
+    private string saveMessage = string.Empty;
+    private string liveVersionMessage = string.Empty;
+    private bool isBusy, isValidating, isSaving, spreadsheetMappingsNeedReview;
+    private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
+
+    private bool IsDirty => original != null && draft != null && Serialize(original) != Serialize(draft);
+    private bool CanSave => validation?.IsValid == true && IsDirty && !spreadsheetMappingsNeedReview;
+    private string DraftJson => draft == null ? string.Empty : JsonSerializer.Serialize(draft, JsonOptions);
+    private IEnumerable<string> RetiredSamples => draft?.AoColumnIndicies.Retired is short index && aoPreview != null ? aoPreview.Columns.FirstOrDefault(x => x.Index == index)?.Samples ?? Enumerable.Empty<string>() : Enumerable.Empty<string>();
+    private List<string> Changes => GetChanges();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            begin = await LambdaHelper.BeginRegionConfigEditAsync(Http, Region);
+            downrangeNamingRegions = await LambdaHelper.GetDownrangeNamingRegionsAsync(Http);
+        }
+        catch (Exception ex) { error = ex.Message; }
+    }
+
+    private async Task VerifyAsync()
+    {
+        error = string.Empty; isBusy = true;
+        try
+        {
+            var selection = await JS.InvokeAsync<GoogleSheetSelection>("f3RegionEditor.authorizeAndPick", begin!.GoogleClientId, begin.GooglePickerApiKey);
+            googleAccessToken = selection.AccessToken;
+            authorization = await LambdaHelper.CompleteRegionEditAuthorizationAsync(Http, new RegionConfigEditorRequest { OriginalRegion = Region, GoogleAccessToken = googleAccessToken, SelectedSpreadsheetId = selection.FileId });
+            original = Clone(authorization.RegionConfig); draft = Clone(authorization.RegionConfig);
+            await InspectAndLoadPreviewsAsync(draft.SpreadsheetId);
+        }
+        catch (Exception ex) { error = ex.Message; }
+        finally { isBusy = false; }
+    }
+
+    private async Task SelectReplacementAsync()
+    {
+        error = string.Empty;
+        try
+        {
+            var selection = await JS.InvokeAsync<GoogleSheetSelection>("f3RegionEditor.authorizeAndPick", begin!.GoogleClientId, begin.GooglePickerApiKey);
+            googleAccessToken = selection.AccessToken;
+            Change(() => draft!.SpreadsheetId = selection.FileId);
+            inspection = await LambdaHelper.InspectSpreadsheetAsync(Http, Request(selection.FileId));
+            await ReloadPreviewsAsync();
+            spreadsheetMappingsNeedReview = true;
+        }
+        catch (Exception ex) { error = ex.Message; }
+    }
+
+    private async Task ReverifyAsync()
+    {
+        error = string.Empty; isBusy = true;
+        try
+        {
+            var selection = await JS.InvokeAsync<GoogleSheetSelection>("f3RegionEditor.authorizeAndPick", begin!.GoogleClientId, begin.GooglePickerApiKey);
+            googleAccessToken = selection.AccessToken;
+            var refreshed = await LambdaHelper.CompleteRegionEditAuthorizationAsync(Http, new RegionConfigEditorRequest
+            {
+                OriginalRegion = authorization!.RegionConfig.QueryStringValue,
+                GoogleAccessToken = googleAccessToken,
+                SelectedSpreadsheetId = selection.FileId
+            });
+            authorization.SessionToken = refreshed.SessionToken;
+            authorization.ExpiresUtc = refreshed.ExpiresUtc;
+            authorization.ETag = refreshed.ETag;
+            authorization.CatalogVersion = refreshed.CatalogVersion;
+            authorization.S3VersionId = refreshed.S3VersionId;
+            authorization.RegionConfig = refreshed.RegionConfig;
+        }
+        catch (Exception ex) { error = ex.Message; }
+        finally { isBusy = false; }
+    }
+
+    private async Task InspectAndLoadPreviewsAsync(string spreadsheetId)
+    {
+        inspection = await LambdaHelper.InspectSpreadsheetAsync(Http, Request(spreadsheetId));
+        await ReloadPreviewsAsync();
+    }
+
+    private async Task ReloadPreviewsAsync()
+    {
+        if (draft == null || inspection == null) return;
+        masterPreview = await PreviewAsync(draft.MasterDataSheetIds.LastOrDefault(), draft.MasterDataSheetNames.LastOrDefault() ?? string.Empty);
+        rosterPreview = await PreviewAsync(draft.RosterSheetId, draft.RosterSheetName);
+        var aoTab = inspection.Tabs.FirstOrDefault(x => x.Title == draft.AosSheetName);
+        aoPreview = aoTab == null ? null : await PreviewAsync(aoTab.SheetId, aoTab.Title);
+    }
+
+    private Task<SheetSchemaPreviewResult> PreviewAsync(int sheetId, string name) => LambdaHelper.GetSheetSchemaPreviewAsync(Http, new RegionConfigEditorRequest
+    {
+        OriginalRegion = Region, SessionToken = authorization!.SessionToken, GoogleAccessToken = googleAccessToken,
+        SelectedSpreadsheetId = draft!.SpreadsheetId, SheetId = sheetId, SheetName = name, MaxRows = 10
+    });
+
+    private async Task ValidateAsync()
+    {
+        error = string.Empty; isValidating = true;
+        try
+        {
+            validation = await LambdaHelper.ValidateRegionConfigAsync(Http, Request(draft!.SpreadsheetId, draft));
+            spreadsheetMappingsNeedReview = false;
+        }
+        catch (Exception ex) { error = ex.Message; }
+        finally { isValidating = false; }
+    }
+
+    private async Task SaveAsync()
+    {
+        var highImpact = Changes.Where(x => new[] { "queryStringValue", "spreadsheetId", "isActive", "masterDataSheetIds", "masterDataSheetNames", "masterDataColumnIndicies.date", "masterDataColumnIndicies.location", "masterDataColumnIndicies.paxName" }.Any(path => x.StartsWith(path, StringComparison.Ordinal))).ToList();
+        var prompt = highImpact.Count == 0
+            ? "Save these production region configuration changes?"
+            : $"Save these production changes? High-impact settings changed:\n\n{string.Join("\n", highImpact)}";
+        if (!await JS.InvokeAsync<bool>("confirm", prompt)) return;
+        error = string.Empty; isSaving = true;
+        try
+        {
+            var request = Request(draft!.SpreadsheetId, draft); request.ValidationHash = validation!.ValidationHash;
+            var saved = await LambdaHelper.SaveRegionConfigAsync(Http, request);
+            authorization!.CatalogVersion = saved.CatalogVersion; authorization.ETag = saved.ETag; authorization.S3VersionId = saved.S3VersionId;
+            authorization.SessionToken = saved.SessionToken;
+            authorization.ExpiresUtc = saved.ExpiresUtc;
+            authorization.RegionConfig = Clone(draft);
+            Region = draft.QueryStringValue;
+            original = Clone(draft); validation = null; saveMessage = saved.Message;
+            await JS.InvokeVoidAsync("f3RegionEditor.replaceUrl", $"/settings/regions/{Uri.EscapeDataString(Region)}/edit");
+        }
+        catch (Exception ex) { error = ex.Message; }
+        finally { isSaving = false; }
+    }
+
+    private async Task CheckLiveVersionAsync()
+    {
+        try
+        {
+            var live = await LambdaHelper.GetRegionConfigLiveVersionAsync(Http, Request(draft!.SpreadsheetId));
+            liveVersionMessage = $"This request sees {live.CatalogVersion} ({live.Source}).";
+        }
+        catch (Exception ex) { error = ex.Message; }
+    }
+
+    private RegionConfigEditorRequest Request(string spreadsheetId, RegionConfig? candidate = null) => new()
+    {
+        OriginalRegion = Region, SessionToken = authorization!.SessionToken, GoogleAccessToken = googleAccessToken,
+        SelectedSpreadsheetId = spreadsheetId, ExpectedETag = authorization.ETag, Candidate = candidate == null ? null : Clone(candidate)
+    };
+
+    private void Change(Action mutation) { mutation(); validation = null; saveMessage = string.Empty; }
+    private void SetMissingOffset(ChangeEventArgs e) { if (int.TryParse(e.Value?.ToString(), out var value)) Change(() => draft!.MissingDataRowOffset = value); }
+    private async Task ChangeRosterTab(ChangeEventArgs e) { if (!int.TryParse(e.Value?.ToString(), out var id)) return; var tab = inspection!.Tabs.First(x => x.SheetId == id); Change(() => { draft!.RosterSheetId = id; draft.RosterSheetName = tab.Title; }); rosterPreview = await PreviewAsync(id, tab.Title); }
+    private void ChangeRosterNameColumn(ChangeEventArgs e) => Change(() => draft!.RosterNameColumn = e.Value?.ToString() ?? string.Empty);
+    private void ChangeRosterRole(int index, ChangeEventArgs e) { if (Enum.TryParse<RosterSheetColumn>(e.Value?.ToString(), out var role)) Change(() => draft!.RosterSheetColumns[index] = role); }
+    private void AddRosterRole() => Change(() => draft!.RosterSheetColumns.Add(RosterSheetColumn.Empty));
+    private void RemoveRosterRole(int index) => Change(() => draft!.RosterSheetColumns.RemoveAt(index));
+    private async Task ChangeAoTab(ChangeEventArgs e) { var title = e.Value?.ToString() ?? string.Empty; var tab = inspection!.Tabs.First(x => x.Title == title); Change(() => draft!.AosSheetName = title); aoPreview = await PreviewAsync(tab.SheetId, title); }
+    private void AddMasterTab() { if (!int.TryParse(masterTabToAdd, out var id)) return; var tab = inspection!.Tabs.First(x => x.SheetId == id); Change(() => { draft!.MasterDataSheetIds.Add(id); draft.MasterDataSheetNames.Add(tab.Title); }); masterTabToAdd = string.Empty; _ = ReloadMasterPreviewAsync(); }
+    private void RemoveMasterTab(int index) { Change(() => { draft!.MasterDataSheetIds.RemoveAt(index); draft.MasterDataSheetNames.RemoveAt(index); }); _ = ReloadMasterPreviewAsync(); }
+    private void MoveMasterTab(int index, int delta) { var target = index + delta; Change(() => { (draft!.MasterDataSheetIds[index], draft.MasterDataSheetIds[target]) = (draft.MasterDataSheetIds[target], draft.MasterDataSheetIds[index]); (draft.MasterDataSheetNames[index], draft.MasterDataSheetNames[target]) = (draft.MasterDataSheetNames[target], draft.MasterDataSheetNames[index]); }); _ = ReloadMasterPreviewAsync(); }
+    private async Task ReloadMasterPreviewAsync() { if (draft!.MasterDataSheetIds.Count > 0) masterPreview = await PreviewAsync(draft.MasterDataSheetIds[^1], draft.MasterDataSheetNames[^1]); }
+    private async Task OnBeforeInternalNavigation(LocationChangingContext context) { if (IsDirty && !await JS.InvokeAsync<bool>("confirm", "Discard unsaved region configuration changes?")) context.PreventNavigation(); }
+    private static string ColumnLetter(int index) { var result = string.Empty; while (index >= 0) { result = (char)('A' + index % 26) + result; index = index / 26 - 1; } return result; }
+    private static RegionConfig Clone(RegionConfig value) => JsonSerializer.Deserialize<RegionConfig>(Serialize(value), JsonOptions)!;
+    private static string Serialize(RegionConfig value) => JsonSerializer.Serialize(value, JsonOptions);
+    private List<string> GetChanges() { if (original == null || draft == null) return new(); using var left = JsonDocument.Parse(Serialize(original)); using var right = JsonDocument.Parse(Serialize(draft)); var result = new List<string>(); Compare(left.RootElement, right.RootElement, string.Empty, result); return result; }
+    private static void Compare(JsonElement a, JsonElement b, string path, List<string> result) { if (a.ValueKind == JsonValueKind.Object && b.ValueKind == JsonValueKind.Object) { var aa = a.EnumerateObject().ToDictionary(x => x.Name, x => x.Value); var bb = b.EnumerateObject().ToDictionary(x => x.Name, x => x.Value); foreach (var key in aa.Keys.Union(bb.Keys)) { if (!aa.TryGetValue(key, out var av) || !bb.TryGetValue(key, out var bv)) result.Add(string.IsNullOrEmpty(path) ? key : $"{path}.{key}"); else Compare(av, bv, string.IsNullOrEmpty(path) ? key : $"{path}.{key}", result); } } else if (a.GetRawText() != b.GetRawText()) result.Add($"{path}: {DisplayValue(a)} → {DisplayValue(b)}"); }
+    private static string DisplayValue(JsonElement value) => value.ValueKind switch { JsonValueKind.String => value.GetString() ?? "(blank)", JsonValueKind.Null => "Not used", JsonValueKind.Array => string.Join(", ", value.EnumerateArray().Select(DisplayValue)), _ => value.GetRawText() };
+    private static JsonSerializerOptions CreateJsonOptions() { var o = new JsonSerializerOptions { PropertyNameCaseInsensitive = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = true }; o.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)); return o; }
+    private sealed class GoogleSheetSelection { public string AccessToken { get; set; } = string.Empty; public string FileId { get; set; } = string.Empty; }
+
+}

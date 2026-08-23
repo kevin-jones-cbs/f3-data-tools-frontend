@@ -1,0 +1,28 @@
+.region-editor { max-width: 1060px; margin: 1.5rem auto 6rem; color: #172033; }
+.editor-header { position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 0; background: rgba(255,255,255,.96); border-bottom: 1px solid #e4e9f1; }
+.editor-header h1 { margin: .2rem 0; font-size: 1.8rem; }
+.back-link { color: #526077; }
+.status-line, .card-title-row, .sheet-identity { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+.header-actions { display: flex; gap: .5rem; align-items: center; }
+.status-connected { color: #16794b; background: #e8f7ef; border-radius: 999px; padding: .2rem .55rem; font-weight: 600; }
+.editor-card { background: #fff; border: 1px solid #e2e7ef; border-radius: 12px; padding: 1.4rem; margin: 1rem 0; box-shadow: 0 5px 18px rgba(20,33,61,.045); }
+.editor-card h2 { font-size: 1.25rem; margin: 0 0 1rem; }
+.editor-card h3 { font-size: 1rem; margin-top: 1.25rem; }
+.card-title-row { justify-content: space-between; }
+.form-grid, .mapping-grid, .toggle-grid { display: grid; gap: 1rem; }
+.form-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.form-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.mapping-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 1rem; }
+.toggle-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.toggle-stack { display: flex; flex-direction: column; gap: .65rem; padding-top: 1.8rem; }
+.field { margin-top: .9rem; }
+.field > label { display: flex; justify-content: space-between; font-weight: 600; margin-bottom: .35rem; }
+.field code, .mapping-grid code { color: #6b7280; font-size: .72rem; }
+.field-error, .validation-error { color: #b42318; display: block; margin-top: .3rem; }
+.validation-warning { color: #946200; margin-top: .3rem; }
+.tab-row, .role-row { display: flex; justify-content: space-between; align-items: center; gap: .75rem; padding: .55rem 0; border-bottom: 1px solid #edf0f4; }
+.role-row strong { width: 2rem; }.role-row select { max-width: 360px; margin-right: auto; }
+.tab-row small { color: #738096; }.short-input { max-width: 240px; }.help { color: #607089; }
+.sheet-identity { justify-content: space-between; padding: .75rem; background: #f5f7fa; border-radius: 8px; }
+pre { max-height: 420px; overflow: auto; background: #101827; color: #d7e2f0; padding: 1rem; border-radius: 8px; }
+@media (max-width: 760px) { .form-grid.two, .form-grid.three, .mapping-grid, .toggle-grid { grid-template-columns: 1fr; } .editor-header { position: static; } }

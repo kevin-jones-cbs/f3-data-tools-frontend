@@ -1,0 +1,19 @@
+@using F3Core
+<div class="field">
+    <label>@Label <code>@Path</code></label>
+    @ChildContent
+    @if (Validation != null)
+    {
+        @foreach (var message in Validation.Errors.Where(x => x.Field == Path))
+        {
+            <small class="field-error">@message.Message</small>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public string Path { get; set; } = string.Empty;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [CascadingParameter] public RegionConfigValidationResult? Validation { get; set; }
+}

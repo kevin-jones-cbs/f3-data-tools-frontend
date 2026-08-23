@@ -34,6 +34,7 @@ namespace F3Wasm.Pages
         public bool isSiteClosed { get; set; }
 
         private List<DateTime> missingDates = new List<DateTime>();
+        private List<RegionNamingOption> downrangeNamingRegions = new();
 
         protected override async Task OnInitializedAsync()
         {
@@ -44,6 +45,7 @@ namespace F3Wasm.Pages
             }
 
             aoList = await LambdaHelper.GetAllLocationsAsync(Http, Region);
+            downrangeNamingRegions = await LambdaHelper.GetDownrangeNamingRegionsAsync(Http);
 
             // Add Other to each day of week
             foreach (var day in Enum.GetValues(typeof(DayOfWeek)).Cast<DayOfWeek>())

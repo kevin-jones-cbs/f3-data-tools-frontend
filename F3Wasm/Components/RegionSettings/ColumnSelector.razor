@@ -1,0 +1,41 @@
+@using F3Core
+
+<div class="column-selector">
+    <select class="form-control" value="@SelectedText" @onchange="OnChanged" disabled="@Disabled">
+        @if (Optional)
+        {
+            <option value="">Not used</option>
+        }
+        @foreach (var column in Columns)
+        {
+            <option value="@column.Index">@column.Letter — @(string.IsNullOrWhiteSpace(column.Header) ? "(blank header)" : column.Header)</option>
+        }
+    </select>
+    @if (SelectedColumn != null)
+    {
+        <small class="text-muted">
+            Index @SelectedColumn.Index
+            @if (SelectedColumn.Samples.Count > 0)
+            {
+                <span> • @string.Join(", ", SelectedColumn.Samples)</span>
+            }
+        </small>
+    }
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<SheetColumnDescriptor> Columns { get; set; } = Array.Empty<SheetColumnDescriptor>();
+    [Parameter] public short? Value { get; set; }
+    [Parameter] public EventCallback<short?> ValueChanged { get; set; }
+    [Parameter] public bool Optional { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private string SelectedText => Value?.ToString() ?? string.Empty;
+    private SheetColumnDescriptor? SelectedColumn => Columns.FirstOrDefault(x => x.Index == Value);
+
+    private Task OnChanged(ChangeEventArgs args)
+    {
+        short? value = short.TryParse(args.Value?.ToString(), out var parsed) ? parsed : null;
+        return ValueChanged.InvokeAsync(value);
+    }
+}

@@ -1,0 +1,54 @@
+@page "/settings/regions"
+@using F3Core.Regions
+@using F3Wasm.Data
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Region Settings</PageTitle>
+
+<div class="region-settings-entry">
+    <h1>Region Settings</h1>
+    <p class="lead">Choose an existing region, then verify through Google that you can edit its configured spreadsheet.</p>
+
+    @if (!string.IsNullOrWhiteSpace(error))
+    {
+        <div class="alert alert-danger" role="alert">@error</div>
+    }
+    else if (regions == null)
+    {
+        <p>Loading regions…</p>
+    }
+    else
+    {
+        <div class="card settings-card">
+            <div class="card-body">
+                <label for="region-picker">Region</label>
+                <select id="region-picker" class="form-control" @bind="selectedRegion">
+                    <option value="">Select a region</option>
+                    @foreach (var region in regions)
+                    {
+                        <option value="@region.QueryStringValue">@region.DisplayName@(region.IsActive ? string.Empty : " (inactive)")</option>
+                    }
+                </select>
+                <button class="btn btn-primary mt-3" disabled="@string.IsNullOrWhiteSpace(selectedRegion)" @onclick="Continue">
+                    Continue with Google
+                </button>
+            </div>
+        </div>
+        <p class="text-muted mt-3">Viewer and commenter access is not sufficient. Configuration details remain hidden until verification succeeds.</p>
+    }
+</div>
+
+@code {
+    private List<RegionMetadata>? regions;
+    private string selectedRegion = string.Empty;
+    private string error = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { regions = await LambdaHelper.GetRegionsForConfigEditAsync(Http); }
+        catch (Exception ex) { error = ex.Message; }
+    }
+
+    private void Continue() => Navigation.NavigateTo($"/settings/regions/{Uri.EscapeDataString(selectedRegion)}/edit");
+}

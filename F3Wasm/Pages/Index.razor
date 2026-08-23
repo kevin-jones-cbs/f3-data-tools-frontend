@@ -309,9 +309,9 @@ else
                                 <div style="font-size:10px; margin: 4px;color: #4b4646">Marking Downrange adds the PAX to the roster with the selected naming region, but doesn't mark as FNG</div>
                                 <Select TValue="int" @bind-SelectedValue="@p.NamingRegionIndex">
                                     <SelectItem Value="0">Select a Naming Region</SelectItem>
-                                    @foreach (var region in RegionList.AllRegionValues)
+                                    @foreach (var region in downrangeNamingRegions)
                                     {
-                                        <SelectItem Value="@region.Key">@region.Value</SelectItem>
+                                        <SelectItem Value="@region.Index">@region.DisplayName</SelectItem>
                                     }
                                 </Select>
                             }
@@ -387,4 +387,3 @@ else
 </Alert>
 
 </div>
-

@@ -5,6 +5,7 @@ using System.Text.Json;
 using F3Wasm.Models;
 using F3Core;
 using F3Core.Regions;
+using System.Text.Json.Serialization;
 
 namespace F3Wasm.Data
 {
@@ -62,18 +63,13 @@ namespace F3Wasm.Data
 
         public static async Task<Region> GetRegionAsync(HttpClient client, string region)
         {
-            var hardCodedRegion = RegionList.All.FirstOrDefault(x => x.QueryStringValue == region);
-            if (hardCodedRegion != null)
-            {
-                return hardCodedRegion;
-            }
-
             var metadata = (await GetRegionsAsync(client))
                 .FirstOrDefault(x => string.Equals(x.QueryStringValue, region, StringComparison.OrdinalIgnoreCase));
 
             if (metadata == null)
             {
-                return null;
+                return RegionList.All.FirstOrDefault(x =>
+                    string.Equals(x.QueryStringValue, region, StringComparison.OrdinalIgnoreCase));
             }
 
             return new ConfiguredRegion(new RegionConfig
@@ -83,9 +79,73 @@ namespace F3Wasm.Data
                 SupportsDownrange = metadata.SupportsDownrange,
                 HasQSourcePosts = metadata.HasQSourcePosts,
                 HasExtraActivity = metadata.HasExtraActivity,
+                HasHistoricalData = metadata.HasHistoricalData,
                 IncludeInSector = metadata.IncludeInSector,
                 IsActive = true
             });
+        }
+
+        public static async Task<List<RegionNamingOption>> GetDownrangeNamingRegionsAsync(HttpClient client)
+        {
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.GetDownrangeNamingRegions });
+            return JsonSerializer.Deserialize<List<RegionNamingOption>>(response, EditorJsonOptions) ?? new();
+        }
+
+        public static Task<BeginRegionConfigEditResult> BeginRegionConfigEditAsync(HttpClient client, string region) =>
+            CallEditorAsync<BeginRegionConfigEditResult>(client, LambdaActions.BeginRegionConfigEdit,
+                new RegionConfigEditorRequest { OriginalRegion = region });
+
+        public static async Task<List<RegionMetadata>> GetRegionsForConfigEditAsync(HttpClient client)
+        {
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.GetRegionsForConfigEdit });
+            return JsonSerializer.Deserialize<List<RegionMetadata>>(response, EditorJsonOptions) ?? new();
+        }
+
+        public static Task<CompleteRegionEditAuthorizationResult> CompleteRegionEditAuthorizationAsync(
+            HttpClient client, RegionConfigEditorRequest request) =>
+            CallEditorAsync<CompleteRegionEditAuthorizationResult>(client, LambdaActions.CompleteRegionEditAuthorization, request);
+
+        public static Task<SpreadsheetInspectionResult> InspectSpreadsheetAsync(HttpClient client, RegionConfigEditorRequest request) =>
+            CallEditorAsync<SpreadsheetInspectionResult>(client, LambdaActions.InspectSpreadsheet, request);
+
+        public static Task<SheetSchemaPreviewResult> GetSheetSchemaPreviewAsync(HttpClient client, RegionConfigEditorRequest request) =>
+            CallEditorAsync<SheetSchemaPreviewResult>(client, LambdaActions.GetSheetSchemaPreview, request);
+
+        public static Task<RegionConfigValidationResult> ValidateRegionConfigAsync(HttpClient client, RegionConfigEditorRequest request) =>
+            CallEditorAsync<RegionConfigValidationResult>(client, LambdaActions.ValidateRegionConfig, request);
+
+        public static Task<SaveRegionConfigResult> SaveRegionConfigAsync(HttpClient client, RegionConfigEditorRequest request) =>
+            CallEditorAsync<SaveRegionConfigResult>(client, LambdaActions.SaveRegionConfig, request);
+
+        public static Task<RegionConfigLiveVersionResult> GetRegionConfigLiveVersionAsync(HttpClient client, RegionConfigEditorRequest request) =>
+            CallEditorAsync<RegionConfigLiveVersionResult>(client, LambdaActions.GetRegionConfigLiveVersion, request);
+
+        private static readonly JsonSerializerOptions EditorJsonOptions = CreateEditorJsonOptions();
+
+        private static async Task<T> CallEditorAsync<T>(HttpClient client, string action, RegionConfigEditorRequest request)
+        {
+            var response = await CallF3LambdaAsync(client, new FunctionInput
+            {
+                Action = action,
+                RegionConfigEditor = request
+            });
+            try
+            {
+                return JsonSerializer.Deserialize<T>(response, EditorJsonOptions)
+                    ?? throw new InvalidOperationException("The region editor returned an empty response.");
+            }
+            catch (JsonException)
+            {
+                var message = JsonSerializer.Deserialize<string>(response) ?? response;
+                throw new InvalidOperationException(message);
+            }
+        }
+
+        private static JsonSerializerOptions CreateEditorJsonOptions()
+        {
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+            return options;
         }
 
         public static async Task<List<Ao>> GetAllLocationsAsync(HttpClient client, string region)

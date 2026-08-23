@@ -24,6 +24,9 @@
                 <a class="nav-link" href="@($"/data/{region.QueryStringValue}")" target="_blank">@region.DisplayName</a>
             }
         </div>
+        <div class="nav-item px-3 mt-3">
+            <a class="nav-link" href="/settings/regions"><span class="fas fa-cog mr-2"></span>Region Settings</a>
+        </div>
     </nav>
 </div>
 
@@ -45,7 +48,12 @@
 
         var uri = Navigation.Uri;
 
-        if (uri.Contains("sectordata"))
+        if (uri.Contains("/settings/regions"))
+        {
+            MenuTitle = "F3 Tools";
+            ShowRegionList = true;
+        }
+        else if (uri.Contains("sectordata"))
         {
             MenuTitle = "F3 Greater Sacramento";
             ShowRegionList = true;

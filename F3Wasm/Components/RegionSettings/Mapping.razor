@@ -1,0 +1,8 @@
+@using F3Core
+<RegionEditorField Label="@Label" Path="@Path">@ChildContent</RegionEditorField>
+
+@code {
+    [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public string Path { get; set; } = string.Empty;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}
