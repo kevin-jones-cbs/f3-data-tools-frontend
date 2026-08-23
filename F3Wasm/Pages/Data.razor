@@ -118,6 +118,93 @@
         font-weight: 500;
         color: #333;
     }
+
+    .pax-details {
+        max-width: 1480px;
+        margin: 0 auto;
+    }
+
+    .pax-details-grid {
+        display: grid;
+        grid-template-columns: minmax(320px, 2fr) minmax(480px, 3fr);
+        gap: 1rem;
+        margin-top: 1rem;
+        align-items: start;
+    }
+
+    .pax-details-panel {
+        min-width: 0;
+        padding: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: .5rem;
+        background: #fff;
+        box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .045);
+    }
+
+    .pax-details-panel-title {
+        margin: 0 0 .75rem;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .pax-details-calendar .flatpickr-calendar {
+        box-shadow: none;
+    }
+
+    .pax-details-locations .pax-locations-scroll {
+        max-height: 28rem;
+        overflow: auto;
+    }
+
+    .pax-details-locations table {
+        margin-bottom: 0;
+    }
+
+    .pax-details-locations thead {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: #fff;
+    }
+
+    .pax-details-secondary {
+        margin-top: 1rem;
+    }
+
+    @@media (min-width: 992px) {
+        #SelectedPaxModal .pax-details-modal {
+            width: calc(100vw - 3rem);
+            max-width: 1560px;
+            height: calc(100vh - 3rem);
+            margin: 1.5rem auto;
+        }
+
+        #SelectedPaxModal .pax-details-modal .modal-content {
+            height: 100%;
+            border-radius: .6rem;
+            overflow: hidden;
+        }
+
+        #SelectedPaxModal .modal-header,
+        #SelectedPaxModal .modal-footer {
+            flex: 0 0 auto;
+        }
+
+        #SelectedPaxModal .modal-body {
+            overflow-y: auto;
+            padding: 1.25rem 1.5rem;
+        }
+    }
+
+    @@media (max-width: 991.98px) {
+        .pax-details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .pax-details-panel {
+            padding: .75rem;
+        }
+    }
 </style>
 
 @if (currentRows == null)
@@ -327,69 +414,77 @@ else
     <Modal @bind-Visible="@showPaxModal" id="SelectedPaxModal" Closing="@OnModalClosing">
         @if (selectedPax != null && allData != null)
         {
-            <ModalContent Centered Size="ModalSize.Fullscreen">
+            <ModalContent Centered Size="ModalSize.Fullscreen" Class="pax-details-modal">
                  <ModalHeader>
                      <ModalTitle>@selectedPax.Name</ModalTitle>
                      <CloseButton />
                  </ModalHeader>
                  <ModalBody>
-                     <Row VerticalGutter="16">
-                         <Column>
-                             <PaxSummaryTable 
+                     <div class="pax-details">
+                         <PaxSummaryTable
+                             RegionInfo="@RegionInfo"
+                             SelectedPaxPosts="@selectedPaxPosts"
+                             AllPosts="@allData.Posts"
+                             AllPossibleWorkoutDays="@allPossibleWorkoutDays"
+                             SelectedPaxHistoricalData="@selectedPaxHistoricalData"
+                         />
+
+                         <div class="pax-details-grid">
+                             <section class="pax-details-panel pax-details-calendar">
+                                 <h2 class="pax-details-panel-title">Activity calendar</h2>
+                                 <PaxCalendar
+                                     SelectedPaxPosts="@selectedPaxPosts"
+                                     SelectedPaxQSourcePosts="@selectedPaxQSourcePosts"
+                                     HasQSource="RegionInfo.HasQSourcePosts"
+                                 />
+                             </section>
+
+                             <section class="pax-details-panel pax-details-locations">
+                                 <h2 class="pax-details-panel-title">Posts by location</h2>
+                                 <PaxLocations
+                                     RegionInfo="@RegionInfo"
+                                     SelectedPaxPosts="@selectedPaxPosts"
+                                     AoList="@allData.Aos"
+                                     HasHistoricalData="selectedPaxHistoricalData != null"
+                                 />
+                             </section>
+                         </div>
+
+                         @if (!RegionInfo.HasHistoricalData)
+                         {
+                             <div class="pax-details-secondary">
+                                 <PaxMilestoneChart
+                                     SelectedPaxPosts="@selectedPaxPosts"
+                                     SelectedPaxHistoricalData="@selectedPaxHistoricalData"
+                                     AllPossibleWorkoutDays="@allPossibleWorkoutDays"
+                                 />
+                             </div>
+                         }
+
+                         <div class="pax-details-panel pax-details-secondary">
+                             <PaxPostedWith
+                                 AllPosts="@allData.Posts"
                                  RegionInfo="@RegionInfo"
                                  SelectedPaxPosts="@selectedPaxPosts"
-                                 AllPosts="@allData.Posts"
-                                 AllPossibleWorkoutDays="@allPossibleWorkoutDays"
                                  SelectedPaxHistoricalData="@selectedPaxHistoricalData"
-                             >
-                             </PaxSummaryTable>
+                             />
+                         </div>
 
-                             <PaxCalendar SelectedPaxPosts="@selectedPaxPosts" SelectedPaxQSourcePosts="@selectedPaxQSourcePosts" HasQSource="RegionInfo.HasQSourcePosts" ></PaxCalendar>
-        
-                                @if (!RegionInfo.HasHistoricalData)
-                                {
-                                    <PaxMilestoneChart
-                                        SelectedPaxPosts="@selectedPaxPosts"
-                                        SelectedPaxHistoricalData="@selectedPaxHistoricalData"
-                                        AllPossibleWorkoutDays="@allPossibleWorkoutDays"
-                                    >
-                                    </PaxMilestoneChart>
-                                }
-                          </Column>
+                         @if (selectedPaxHistoricalData != null)
+                         {
+                             <Row>
+                                 <Column id="historical-note">
+                                     * Since @firstNonHistoricalDate.Value.ToString("M/d/yy")
+                                 </Column>
+                             </Row>
+                         }
 
-                          <Column>
-                              <PaxLocations 
-                                  RegionInfo="@RegionInfo" 
-                                  SelectedPaxPosts="@selectedPaxPosts"
-                                  AoList="@allData.Aos"
-                                  HasHistoricalData="selectedPaxHistoricalData != null"
-                              >
-                              </PaxLocations>
-                         </Column>
-                     </Row>
-
-                     <PaxPostedWith
-                         AllPosts="@allData.Posts"
-                         RegionInfo="@RegionInfo"
-                         SelectedPaxPosts="@selectedPaxPosts"
-                         SelectedPaxHistoricalData="@selectedPaxHistoricalData"
-                     >
-                     </PaxPostedWith>
-
-                     @if (selectedPaxHistoricalData != null)
-                     {
                          <Row>
-                             <Column id="historical-note">
-                                 * Since @firstNonHistoricalDate.Value.ToString("M/d/yy")
+                             <Column id="privacy-note">
+                                 If you see any errors, or would like to hide your data, contact Peacock or a Band admin.
                              </Column>
                          </Row>
-                     }
-
-                     <Row>
-                         <Column id="privacy-note">
-                             If you see any errors, or would like to hide your data, contact Peacock or a Band admin.
-                         </Column>
-                     </Row>
+                     </div>
                  </ModalBody>
                  <ModalFooter>
                      <Button Color="Color.Secondary" Clicked="@HideModal">Close</Button>
