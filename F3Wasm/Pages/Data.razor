@@ -244,7 +244,7 @@ else
             <div class="period-controls" aria-label="Time period">
                 <button type="button" class="period-button @(currentView == OverallView.AllTime ? "active" : null)" @onclick="ShowAllTime">All time</button>
                 <Dropdown @ref="yearDropdown" Display="Display.InlineBlock" Class="period-dropdown">
-                    <DropdownToggle Color="Color.Light">@(currentView == OverallView.Year || currentView == OverallView.Month ? currentYear : "Year")</DropdownToggle>
+                    <DropdownToggle Color="Color.Light" Class="@(currentView == OverallView.Year || currentView == OverallView.Month ? "active" : null)">@(currentView == OverallView.Year || currentView == OverallView.Month ? currentYear : "Year")</DropdownToggle>
                     <DropdownMenu MaxMenuHeight="180px">
                         @foreach (var year in validYears)
                         {
@@ -253,7 +253,7 @@ else
                     </DropdownMenu>
                 </Dropdown>
                 <Dropdown @ref="monthDropdown" Display="Display.InlineBlock" Class="period-dropdown">
-                    <DropdownToggle Color="Color.Light">@(currentView == OverallView.Month ? currentMonth : "Month")</DropdownToggle>
+                    <DropdownToggle Color="Color.Light" Class="@(currentView == OverallView.Month ? "active" : null)">@(currentView == OverallView.Month ? currentMonth : "Month")</DropdownToggle>
                     <DropdownMenu MaxMenuHeight="240px">
                         @foreach (var month in validMonths)
                         {

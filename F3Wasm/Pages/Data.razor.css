@@ -131,7 +131,8 @@
     box-shadow: none;
 }
 
-.period-button.active {
+.period-button.active,
+.period-controls ::deep .btn.active {
     border-color: #ccd9f5;
     color: #245fc8;
     background: #edf4ff;
