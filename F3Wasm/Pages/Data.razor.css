@@ -368,8 +368,9 @@
 
 @media (max-width: 767.98px) {
     .data-heading {
-        display: block;
-        margin-bottom: 1.3rem;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: .55rem;
     }
 
     .data-eyebrow {
@@ -377,18 +378,18 @@
     }
 
     .data-heading h1 {
-        font-size: 2rem;
+        font-size: 1.35rem;
+        letter-spacing: -.025em;
     }
 
     .data-subtitle {
-        max-width: 22rem;
-        font-size: .9rem;
+        display: none;
     }
 
     .updated-status {
-        margin-top: .8rem;
+        margin: 0 0 0 auto;
         padding-bottom: 0;
-        font-size: .76rem;
+        font-size: .72rem;
     }
 
     .view-controls {
