@@ -581,6 +581,7 @@ namespace F3Wasm.Pages
                 "name" => rows.OrderBy(row => row.PaxName),
                 "posts" => rows.OrderByDescending(row => row.PostCount),
                 "qs" => rows.OrderByDescending(row => row.QCount),
+                "first-post" => rows.OrderByDescending(row => row.FirstPost ?? DateTime.MinValue),
                 "rate" => rows.OrderByDescending(row => row.PostPercent),
                 "streak" => rows.OrderByDescending(row => row.Streak),
                 "heat" => rows.OrderByDescending(row => row.RecentPostCount),

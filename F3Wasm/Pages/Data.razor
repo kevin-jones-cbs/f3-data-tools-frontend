@@ -318,6 +318,7 @@ else
                             <option value="qs">Most Qs</option>
                             @if (currentView == OverallView.AllTime || currentView == OverallView.Year || currentView == OverallView.Month)
                             {
+                                <option value="first-post">First post (newest)</option>
                                 <option value="heat">Hottest recently</option>
                                 <option value="rate">Highest post rate</option>
                                 <option value="streak">Longest streak</option>
@@ -471,8 +472,15 @@ else
                             }
                             else
                             {
-                                <span>@row.PostCount.ToString("N0") posts · @row.QCount Qs</span>
-                                <span class="mobile-metric"><b>@row.PostPercent.ToString("0")%</b> post rate · <b>@row.Streak</b> streak</span>
+                                <span><b>@row.PostCount.ToString("N0")</b> posts · <b>@row.QCount</b> Qs</span>
+                                @if (mobileSort == "first-post")
+                                {
+                                    <span class="mobile-metric">First post <b>@row.FirstPost?.ToString("M/d/yy")</b></span>
+                                }
+                                else
+                                {
+                                    <span class="mobile-metric">@row.PostPercent.ToString("0")% post rate · @row.Streak streak</span>
+                                }
                             }
                         </span>
                         <span class="mobile-chevron" aria-hidden="true">›</span>
