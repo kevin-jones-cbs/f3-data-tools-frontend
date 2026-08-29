@@ -11,15 +11,8 @@
 <PageTitle>F3 @Region.ToUpper() Data</PageTitle>
 
 <style>
-    /* Show the search text box (because of below) */
-    .form-control:first-of-type {
-        display: block;
-        margin: 12px 0px 12px 0px;
-        width: 50%;
-    }
-
     /* Hide the date picker box in the modal */
-    .form-control {
+    .pax-details-calendar .form-control {
         display: none;
     }
 
@@ -209,114 +202,143 @@
 
 @if (currentRows == null)
 {
-    <p>Loading...</p>
+    <div class="page-loading" role="status">
+        <SpinKit Type="SpinKitType.Bounce" />
+        <span>Loading activity…</span>
+    </div>
 }
 else
 {
-    <Row>
-    <Column>
-        <Button Color="currentView == OverallView.AllTime ? Color.Primary : Color.Light" Clicked="ShowAllTime">All Time</Button>
-        @if (validYears != null)
+    <section class="data-heading">
+        <div>
+            <p class="data-eyebrow">@RegionInfo.DisplayName</p>
+            <h1>Activity</h1>
+            <p class="data-subtitle">Regional leaderboard and participation trends.</p>
+        </div>
+        @if (lastUpdatedDate != DateTime.MinValue)
         {
-            <Dropdown @ref="yearDropdown" Display="Display.InlineBlock">
-                <DropdownToggle Color="currentView == OverallView.Year || currentView == OverallView.Month ? Color.Primary : Color.Light">Year @if (currentView == OverallView.Year || currentView == OverallView.Month) @currentYear</DropdownToggle>
-                <DropdownMenu MaxMenuHeight="120px">
-                    @foreach (var year in validYears)
-                    {
-                        <DropdownItem Clicked="@(() => ShowYear(year))">@year</DropdownItem>
-                    }
-                </DropdownMenu>
-            </Dropdown>
-
-            <Dropdown @ref="monthDropdown" Display="Display.InlineBlock">
-                <DropdownToggle Color="currentView == OverallView.Month ? Color.Primary : Color.Light">Month @if (currentView == OverallView.Month) @currentMonth</DropdownToggle>
-                <DropdownMenu MaxMenuHeight="240px">
-                    @foreach (var month in validMonths)
-                    {
-                        <DropdownItem Clicked="@(() => ShowMonth(month))">@month</DropdownItem>
-                    }
-                </DropdownMenu>
-            </Dropdown>
+            <div class="updated-status">
+                <span class="status-dot"></span>
+                Updated @lastUpdatedDate.ToString("MMM d, yyyy", CultureInfo.InvariantCulture)
+            </div>
         }
-    </Column>
-    </Row>
+    </section>
 
-    <Row Class="mt-1">
-        <Column>
+    <section class="view-controls" aria-label="Activity view controls">
+        <div class="report-tabs" role="tablist" aria-label="Reports">
+            <button type="button" role="tab" class="report-tab @(IsLeaderboardView ? "active" : null)" aria-selected="@IsLeaderboardView" @onclick="ShowAllTime">Leaderboard</button>
+            <button type="button" role="tab" class="report-tab @(currentView == OverallView.Kotter ? "active" : null)" aria-selected="@(currentView == OverallView.Kotter)" @onclick="ShowKotter">Kotter</button>
+            <button type="button" role="tab" class="report-tab @(currentView == OverallView.QKotter ? "active" : null)" aria-selected="@(currentView == OverallView.QKotter)" @onclick="ShowQKotter">Q Kotter</button>
             @if (RegionInfo.HasQSourcePosts)
             {
-                <Button Color="currentView == OverallView.QSource ? Color.Primary : Color.Light" Clicked="ShowQSource" style="margin-right:4px;">Q Source</Button>
+                <button type="button" role="tab" class="report-tab @(currentView == OverallView.QSource ? "active" : null)" aria-selected="@(currentView == OverallView.QSource)" @onclick="ShowQSource">Q Source</button>
             }
-
-            <Button Color="currentView == OverallView.Kotter ? Color.Primary : Color.Light" Clicked="ShowKotter">Kotter</Button>
-            <Button Color="currentView == OverallView.QKotter ? Color.Primary : Color.Light" Clicked="ShowQKotter">Q Kotter</Button>
-
             @if (RegionInfo.DisplayName != "Gold Rush")
             {
-                <Button Color="currentView == OverallView.AoList ? Color.Primary : Color.Light" Clicked="ShowAoList">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture) AOs</Button>
+                <button type="button" role="tab" class="report-tab @(currentView == OverallView.AoList ? "active" : null)" aria-selected="@(currentView == OverallView.AoList)" @onclick="ShowAoList">@DateTime.Now.ToString("MMM", CultureInfo.InvariantCulture) AOs</button>
             }
-        </Column>
-    </Row>
+        </div>
 
-    <Row Class="mt-1">
-        <Column>
-            @if (RegionInfo.DisplayName == "Gold Rush")
-            {
-                <Button Outline="currentView != OverallView.GoldStandard" Color="Color.Warning" Clicked="ShowGoldStandard">Gold Standard</Button>
-            }
+        @if (IsLeaderboardView && validYears != null)
+        {
+            <div class="period-controls" aria-label="Time period">
+                <button type="button" class="period-button @(currentView == OverallView.AllTime ? "active" : null)" @onclick="ShowAllTime">All time</button>
+                <Dropdown @ref="yearDropdown" Display="Display.InlineBlock" Class="period-dropdown">
+                    <DropdownToggle Color="Color.Light">@(currentView == OverallView.Year || currentView == OverallView.Month ? currentYear : "Year")</DropdownToggle>
+                    <DropdownMenu MaxMenuHeight="180px">
+                        @foreach (var year in validYears)
+                        {
+                            <DropdownItem Clicked="@(() => ShowYear(year))">@year</DropdownItem>
+                        }
+                    </DropdownMenu>
+                </Dropdown>
+                <Dropdown @ref="monthDropdown" Display="Display.InlineBlock" Class="period-dropdown">
+                    <DropdownToggle Color="Color.Light">@(currentView == OverallView.Month ? currentMonth : "Month")</DropdownToggle>
+                    <DropdownMenu MaxMenuHeight="240px">
+                        @foreach (var month in validMonths)
+                        {
+                            <DropdownItem Clicked="@(() => ShowMonth(month))">@month</DropdownItem>
+                        }
+                    </DropdownMenu>
+                </Dropdown>
+            </div>
+        }
+    </section>
 
-            @* TerracottaChallenge *@
-            @if (RegionInfo.DisplayName == "Terracotta")
-            {
-                <Button Outline="currentView != OverallView.TerracottaChallenge" Color="Color.Warning" Clicked="ShowTerracottaChallenge">Forged in Fire 2026</Button>
-            }
-
-            @if (RegionInfo.DisplayName == "South Fork")
-            {
-                <Button Outline="currentView != OverallView.SouthForkChallenge" Color="Color.Warning" Clicked="ShowSouthForkChallenge">High Water Mark</Button>
-            }
-
-            @* ForgeChallenge *@
-            @if (RegionInfo.DisplayName == "Mother Lode")
-            {
-                <Button Outline="currentView != OverallView.ForgeChallenge" Color="Color.Warning" Clicked="ShowForgeChallenge">The Forge Challenge</Button>
-            }
-
-            @* TowerChallenge *@
-            @if (RegionInfo.DisplayName == "SacTown")
-            {
-                <Button Outline="currentView != OverallView.TowerChallenge" Color="Color.Warning" Clicked="ShowTowerChallenge">The Tower Challenge</Button>
-            }
-        </Column>
-    </Row>
-
-    <Row>
-        <Column>
-            @if (fullDataLoaded && currentView == OverallView.QSource)
-            {
-                <Button>*Since @allData.QSourcePosts.Min(x => x.Date).ToShortDateString()</Button>
-            }
-            else if (lastUpdatedDate != DateTime.MinValue)
-            {
-                <Button>Last Updated: @lastUpdatedDate.ToShortDateString()</Button>
-            }
-        </Column>
-    </Row>
+    @if (RegionInfo.DisplayName == "Gold Rush")
+    {
+        <button type="button" class="challenge-card @(currentView == OverallView.GoldStandard ? "active" : null)" @onclick="ShowGoldStandard"><span><small>Featured challenge</small><strong>Gold Standard</strong></span><span class="challenge-arrow">View →</span></button>
+    }
+    else if (RegionInfo.DisplayName == "Terracotta")
+    {
+        <button type="button" class="challenge-card @(currentView == OverallView.TerracottaChallenge ? "active" : null)" @onclick="ShowTerracottaChallenge"><span><small>Featured challenge</small><strong>Forged in Fire 2026</strong></span><span class="challenge-arrow">View →</span></button>
+    }
+    else if (RegionInfo.DisplayName == "South Fork")
+    {
+        <button type="button" class="challenge-card @(currentView == OverallView.SouthForkChallenge ? "active" : null)" @onclick="ShowSouthForkChallenge"><span><small>Featured challenge</small><strong>High Water Mark</strong></span><span class="challenge-arrow">View →</span></button>
+    }
+    else if (RegionInfo.DisplayName == "Mother Lode")
+    {
+        <button type="button" class="challenge-card @(currentView == OverallView.ForgeChallenge ? "active" : null)" @onclick="ShowForgeChallenge"><span><small>Featured challenge</small><strong>The Forge Challenge</strong></span><span class="challenge-arrow">View →</span></button>
+    }
+    else if (RegionInfo.DisplayName == "SacTown")
+    {
+        <button type="button" class="challenge-card @(currentView == OverallView.TowerChallenge ? "active" : null)" @onclick="ShowTowerChallenge"><span><small>Featured challenge</small><strong>The Tower Challenge</strong></span><span class="challenge-arrow">View →</span></button>
+    }
 
     @if (loading)
     {
-        <div id="loader">
-            <SpinKit Type="SpinKitType.Bounce" />
-        </div>
+        <div id="loader"><SpinKit Type="SpinKitType.Bounce" /></div>
     }
     else
     {
-        <TextEdit Placeholder="Search PAX..." Text="@customFilterValue" TextChanged="@OnCustomFilterValueChanged"></TextEdit>
-
-        @if (currentView == OverallView.Kotter || currentView == OverallView.QKotter)
-        {
-            <Button Color="Color.Secondary" Clicked="@ExportToCsv">Export to CSV</Button>
-        }
+        var mobileRows = GetMobileRows().ToList();
+        <section class="results-toolbar" aria-label="Results tools">
+            <div class="results-heading">
+                <h2>@CurrentViewTitle</h2>
+                @if (!IsChallengeView)
+                {
+                    <span>@mobileRows.Count @(mobileRows.Count == 1 ? "PAX" : "PAX")</span>
+                }
+            </div>
+            <div class="results-actions">
+                <label class="search-box">
+                    <span class="sr-only">Search PAX</span>
+                    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m21 21-4.35-4.35m2.35-5.15a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z" /></svg>
+                    <input type="search" value="@customFilterValue" @oninput="OnSearchInput" placeholder="Search PAX…" />
+                </label>
+                @if (!IsChallengeView)
+                {
+                    <label class="mobile-sort">
+                        <span>Sort</span>
+                        <select value="@mobileSort" @onchange="OnMobileSortChanged">
+                            <option value="default">Recommended</option>
+                            <option value="name">Name A–Z</option>
+                            <option value="posts">Most posts</option>
+                            <option value="qs">Most Qs</option>
+                            @if (currentView == OverallView.AllTime || currentView == OverallView.Year || currentView == OverallView.Month)
+                            {
+                                <option value="heat">Hottest recently</option>
+                                <option value="rate">Highest post rate</option>
+                                <option value="streak">Longest streak</option>
+                            }
+                            @if (currentView == OverallView.Kotter || currentView == OverallView.QKotter)
+                            {
+                                <option value="days">Most days away</option>
+                            }
+                            @if (currentView == OverallView.AoList || currentView == OverallView.AoChallenge)
+                            {
+                                <option value="aos">Most AOs</option>
+                            }
+                        </select>
+                    </label>
+                }
+                @if (currentView == OverallView.Kotter || currentView == OverallView.QKotter)
+                {
+                    <button type="button" class="export-button" @onclick="ExportToCsv">Export CSV</button>
+                }
+            </div>
+        </section>
 
         @if (currentView == OverallView.GoldStandard && allData != null)
         {
@@ -340,28 +362,35 @@ else
         }
         else
         {
-            <DataGrid @ref="dataGrid" 
-            TItem="DisplayRow" 
-            Data="@currentRows" 
-            ShowPager 
-            CustomFilter="@OnCustomFilter"
-            SortMode="DataGridSortMode.Single" 
-            PageSize="50" 
-            Narrow 
-            ShowPageSizes
-            PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }" 
-            SelectedRowChanged="SelectedRowChanged"
-            Responsive
-        >
-         <DataGridColumns>
+            <div class="desktop-results">
+                <DataGrid @ref="dataGrid"
+                    TItem="DisplayRow"
+                    Data="@currentRows"
+                    ShowPager
+                    CustomFilter="@OnCustomFilter"
+                    SortMode="DataGridSortMode.Single"
+                    PageSize="50"
+                    Narrow
+                    ShowPageSizes
+                    PagerOptions="new(){ ButtonRowPosition=PagerElementPosition.Start }"
+                    SelectedRowChanged="SelectedRowChanged"
+                    Class="leaderboard-grid"
+                    Responsive>
+                <DataGridColumns>
                 <DataGridColumn Field="@nameof(DisplayRow.PaxName)" Caption="Name" SortField="@nameof(DisplayRow.PaxName)">
                      <DisplayTemplate > 
-                        @{
-                            var hyperlink = ">";
-                        }
                         <span class="hyperlink">@context.PaxName</span>
                     </DisplayTemplate> 
                 </DataGridColumn>
+
+                @if (IsLeaderboardView)
+                {
+                    <DataGridColumn Field="@nameof(DisplayRow.RecentPostCount)" Caption="30d Heat" SortField="@nameof(DisplayRow.RecentPostCount)" Filterable="false">
+                        <DisplayTemplate>
+                            <HeatIndicator Row="@context" RegionName="@RegionInfo.DisplayName" ShowCount />
+                        </DisplayTemplate>
+                    </DataGridColumn>
+                }
 
                 @if (currentView != OverallView.AoChallenge && currentView != OverallView.AoList)
                 {
@@ -402,13 +431,63 @@ else
                         <DataGridColumn Field="@nameof(DisplayRow.ExtraActivityCount)" Caption="Pre Workouts" Filterable="false" />
                     }
                 }
-            </DataGridColumns>
+                </DataGridColumns>
+                </DataGrid>
+            </div>
 
-        </DataGrid>
-        }   
+            <div class="mobile-results" aria-label="PAX results">
+                @for (var i = 0; i < Math.Min(mobileRowsVisible, mobileRows.Count); i++)
+                {
+                    var row = mobileRows[i];
+                    <button type="button" class="mobile-result-row" @onclick="(() => SelectedRowChanged(row))">
+                        <span class="mobile-rank">@(i + 1)</span>
+                        <span class="mobile-result-content">
+                            <strong>
+                                <span>@row.PaxName</span>
+                                @if (IsLeaderboardView)
+                                {
+                                    <HeatIndicator Row="@row" RegionName="@RegionInfo.DisplayName" ShowCount />
+                                }
+                            </strong>
+                            @if (currentView == OverallView.Kotter)
+                            {
+                                <span>@row.PostCount.ToString("N0") posts · Last posted @row.LastPost?.ToString("M/d/yy")</span>
+                                <span class="mobile-metric"><b>@row.KotterDays</b> days away</span>
+                            }
+                            else if (currentView == OverallView.QKotter)
+                            {
+                                <span>@row.QCount.ToString("N0") Qs · Last Q @row.LastQ?.ToString("M/d/yy")</span>
+                                <span class="mobile-metric"><b>@row.KotterDays</b> days since Q</span>
+                            }
+                            else if (currentView == OverallView.AoList || currentView == OverallView.AoChallenge)
+                            {
+                                <span>@row.PostCount.ToString("N0") posts · @row.AoPosts AOs visited</span>
+                                <span class="mobile-metric"><b>@row.AoPercent.ToString("0")%</b> AO coverage</span>
+                            }
+                            else if (currentView == OverallView.QSource)
+                            {
+                                <span>@row.PostCount.ToString("N0") posts</span>
+                                <span class="mobile-metric"><b>@row.QCount</b> Qs</span>
+                            }
+                            else
+                            {
+                                <span>@row.PostCount.ToString("N0") posts · @row.QCount Qs</span>
+                                <span class="mobile-metric"><b>@row.PostPercent.ToString("0")%</b> post rate · <b>@row.Streak</b> streak</span>
+                            }
+                        </span>
+                        <span class="mobile-chevron" aria-hidden="true">›</span>
+                    </button>
+                }
+                @if (mobileRows.Count > mobileRowsVisible)
+                {
+                    <button type="button" class="show-more" @onclick="ShowMoreMobileRows">Show 50 more</button>
+                }
+            </div>
+        }
+
         @if (RegionInfo.HasHistoricalData && firstNonHistoricalDate.HasValue)
         {
-            <p>* Since @firstNonHistoricalDate.Value.ToString("M/d/yy")</p>
+            <p class="historical-footnote">* Since @firstNonHistoricalDate.Value.ToString("M/d/yy")</p>
         }
     }
     <Modal @bind-Visible="@showPaxModal" id="SelectedPaxModal" Closing="@OnModalClosing">

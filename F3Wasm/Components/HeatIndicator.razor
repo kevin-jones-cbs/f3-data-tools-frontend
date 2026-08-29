@@ -1,0 +1,99 @@
+@using F3Core
+
+@if (Row.RecentPostCount > 0)
+{
+    <span class="heat-indicator">
+        <span class="heat-control"
+              role="button"
+              tabindex="0"
+              title="@Summary"
+              aria-label="@Summary. Tap for an explanation."
+              aria-expanded="@isExplanationOpen"
+              aria-controls="@explanationId"
+              @onclick="ToggleExplanation"
+              @onclick:stopPropagation="true"
+              @onblur="CloseExplanation"
+              @onkeydown="HandleKeyDown"
+              @onkeydown:stopPropagation="true">
+            <span class="heat-embers" aria-hidden="true">
+                @for (var level = 1; level <= 4; level++)
+                {
+                    <span class="heat-ember level-@level @(IsActive(level) ? "active" : null)"></span>
+                }
+            </span>
+            @if (ShowCount)
+            {
+                <span class="heat-count">@Row.RecentPostCount</span>
+            }
+            @if (Row.HeatRank == 1)
+            {
+                <svg class="heat-crown" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3.5 7.5 8 11l4-6 4 6 4.5-3.5-1.7 9.5H5.2L3.5 7.5Zm2 12h13" />
+                </svg>
+            }
+        </span>
+
+        @if (isExplanationOpen)
+        {
+            <span id="@explanationId" class="heat-explanation" role="tooltip">
+                <strong>Recent activity</strong>
+                <span>@ActivityExplanation</span>
+                <span class="heat-key"><span aria-hidden="true">● ● ● ●</span> More color means closer to the regional leader.</span>
+                <span class="heat-key"><span class="crown-symbol" aria-hidden="true">♛</span> The crown marks the hottest PAX right now.</span>
+            </span>
+        }
+    </span>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public DisplayRow Row { get; set; } = default!;
+
+    [Parameter]
+    public string RegionName { get; set; } = "the region";
+
+    [Parameter]
+    public bool ShowCount { get; set; }
+
+    private readonly string explanationId = $"heat-{Guid.NewGuid():N}";
+    private bool isExplanationOpen;
+
+    private string Summary => $"{Row.RecentPostCount} {(Row.RecentPostCount == 1 ? "post" : "posts")} in the last {DataHelper.RecentActivityDays} days"
+        + (Row.HeatRank.HasValue ? $" · #{Row.HeatRank} in {RegionName}" : string.Empty);
+
+    private string ActivityExplanation => Row.HeatRank == 1
+        ? $"{Row.RecentPostCount} {(Row.RecentPostCount == 1 ? "post" : "posts")} in the last {DataHelper.RecentActivityDays} days — most active in {RegionName}."
+        : $"{Row.RecentPostCount} {(Row.RecentPostCount == 1 ? "post" : "posts")} in the last {DataHelper.RecentActivityDays} days"
+            + (Row.HeatRank.HasValue ? $" — #{Row.HeatRank} in {RegionName}." : ".");
+
+    private void ToggleExplanation() => isExplanationOpen = !isExplanationOpen;
+
+    private void CloseExplanation() => isExplanationOpen = false;
+
+    private void HandleKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key is "Enter" or " ")
+        {
+            ToggleExplanation();
+        }
+        else if (args.Key == "Escape")
+        {
+            CloseExplanation();
+        }
+    }
+
+    private bool IsActive(int level)
+    {
+        var threshold = level switch
+        {
+            1 => 0,
+            2 => 25,
+            3 => 50,
+            _ => 75
+        };
+
+        return level == 1
+            ? Row.RecentPostCount > 0
+            : Row.HeatScore >= threshold;
+    }
+}

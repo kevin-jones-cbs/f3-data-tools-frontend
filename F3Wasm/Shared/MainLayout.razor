@@ -5,18 +5,11 @@
 <div class="page">
     @if (!IsEmbed)
     {
-        <div class="sidebar">
-            <NavMenu Region="@Region" />
-        </div>
+        <NavMenu Region="@Region" />
     }
 
     <main>
-        @if (!IsEmbed)
-        {
-            <div class="top-row px-4"></div>
-        }
-
-        <article class="content px-4">
+        <article class="content">
             @Body
         </article>
     </main>

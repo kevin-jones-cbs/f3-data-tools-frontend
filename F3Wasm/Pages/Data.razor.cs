@@ -44,6 +44,8 @@ namespace F3Wasm.Pages
 
         public List<WorkoutDay> allPossibleWorkoutDays { get; set; }
         private string customFilterValue;
+        private string mobileSort = "default";
+        private int mobileRowsVisible = 50;
 
         public bool loading { get; set; }
         public bool loadingFullData { get; set; }
@@ -75,6 +77,7 @@ namespace F3Wasm.Pages
             // Fast initial load - get cached InitialView with metadata
             loading = true;
             currentView = OverallView.AllTime;
+            ResetMobileResults();
             var initialViewData = await LambdaHelper.GetInitialViewAsync(Http, Region);
 
             // Extract data from InitialViewData
@@ -222,6 +225,8 @@ namespace F3Wasm.Pages
                 rows.Add(row);
             }
 
+            DataHelper.ApplyRecentActivity(rows, allData.Posts, DateTime.Today);
+
             if (currentView == OverallView.Kotter || currentView == OverallView.QKotter)
             {
                 rows = rows.OrderBy(r => r.KotterDays).ToList();
@@ -295,6 +300,7 @@ namespace F3Wasm.Pages
             await Task.Delay(1);
             loading = true;
             currentView = OverallView.AllTime;
+            ResetMobileResults();
             currentRows = SetCurrentRows(allData.Posts, null, DateTime.Now, true, allPossibleWorkoutDays, RegionInfo, allData, currentView, GetCalDaysTo100);
             loading = false;
 
@@ -309,6 +315,7 @@ namespace F3Wasm.Pages
             await Task.Delay(1);
             loading = true;
             currentView = OverallView.Year;
+            ResetMobileResults();
             currentYear = year;
             var posts = allData.Posts.Where(p => p.Date.Year == year).ToList();
 
@@ -329,6 +336,7 @@ namespace F3Wasm.Pages
 
             loading = true;
             currentView = OverallView.Month;
+            ResetMobileResults();
             currentMonth = month;
             if (currentYear == 0)
             {
@@ -354,6 +362,7 @@ namespace F3Wasm.Pages
             loading = true;
             await Task.Delay(1);
             currentView = OverallView.Kotter;
+            ResetMobileResults();
             var paxLastPostDates = allData.Posts.GroupBy(p => p.Pax).Select(g => new { Name = g.Key, MaxDate = g.Max(x => x.Date), Region = allData.Pax.FirstOrDefault(p => p.Name == g.Key)?.NamingRegion }).ToList();
 
             // Only show pax who haven't posted in the last 14 days, less than a year ago, where this is their home region.
@@ -382,6 +391,7 @@ namespace F3Wasm.Pages
             loading = true;
             await Task.Delay(1);
             currentView = OverallView.QKotter;
+            ResetMobileResults();
             var paxLastQPostDates = allData.Posts.Where(p => p.IsQ).GroupBy(p => p.Pax).Select(g => new { Name = g.Key, MaxDate = g.Max(x => x.Date), Region = allData.Pax.FirstOrDefault(p => p.Name == g.Key)?.NamingRegion }).ToList();
 
             // Only show pax who haven't posted in the last 30 days, less than a year ago, where this is their home region.
@@ -405,6 +415,7 @@ namespace F3Wasm.Pages
             loading = true;
             await Task.Delay(1);
             currentView = OverallView.AoChallenge;
+            ResetMobileResults();
 
             var posts = allData.Posts.Where(p => (p.Date.Month == 11 || (p.Date.Month == 12 && p.Date.Day <= 14) ) && p.Date.Year == DateTime.Now.Year).ToList();
 
@@ -424,6 +435,7 @@ namespace F3Wasm.Pages
             loading = true;
             await Task.Delay(1);
             currentView = OverallView.AoList;
+            ResetMobileResults();
 
             var posts = allData.Posts.Where(p => p.Date.Month == DateTime.Now.Month && p.Date.Year == DateTime.Now.Year).ToList();
 
@@ -443,6 +455,7 @@ namespace F3Wasm.Pages
             loading = true;
             await Task.Delay(1);
             currentView = OverallView.QSource;
+            ResetMobileResults();
 
             var posts = allData.QSourcePosts;
 
@@ -459,6 +472,7 @@ namespace F3Wasm.Pages
             // This view requires full data - ensure it's loaded
             await EnsureFullDataLoadedAsync();
             currentView = OverallView.GoldStandard;
+            ResetMobileResults();
         }
 
         private async Task ShowTerracottaChallenge()
@@ -466,6 +480,7 @@ namespace F3Wasm.Pages
             // This view requires full data - ensure it's loaded
             await EnsureFullDataLoadedAsync();
             currentView = OverallView.TerracottaChallenge;
+            ResetMobileResults();
         }
 
         private async Task ShowSouthForkChallenge()
@@ -473,6 +488,7 @@ namespace F3Wasm.Pages
             // This view requires full data - ensure it's loaded
             await EnsureFullDataLoadedAsync();
             currentView = OverallView.SouthForkChallenge;
+            ResetMobileResults();
         }
 
         private async Task ShowForgeChallenge()
@@ -480,6 +496,7 @@ namespace F3Wasm.Pages
             // This view requires full data - ensure it's loaded
             await EnsureFullDataLoadedAsync();
             currentView = OverallView.ForgeChallenge;
+            ResetMobileResults();
         }
 
         private async Task ShowTowerChallenge()
@@ -487,6 +504,7 @@ namespace F3Wasm.Pages
             // This view requires full data - ensure it's loaded
             await EnsureFullDataLoadedAsync();
             currentView = OverallView.TowerChallenge;
+            ResetMobileResults();
         }
 
         private async Task RefreshDropdowns()
@@ -507,7 +525,17 @@ namespace F3Wasm.Pages
         private Task OnCustomFilterValueChanged(string e)
         {
             customFilterValue = e;
-            return dataGrid.Reload();
+            mobileRowsVisible = 50;
+            return dataGrid?.Reload() ?? Task.CompletedTask;
+        }
+
+        private async Task OnSearchInput(ChangeEventArgs e)
+        {
+            customFilterValue = e.Value?.ToString() ?? string.Empty;
+            mobileRowsVisible = 50;
+
+            if (dataGrid != null)
+                await dataGrid.Reload();
         }
 
         private bool OnCustomFilter(DisplayRow model)
@@ -516,6 +544,67 @@ namespace F3Wasm.Pages
                 return true;
 
             return model.PaxName?.Contains(customFilterValue, StringComparison.OrdinalIgnoreCase) == true;
+        }
+
+        private bool IsLeaderboardView => currentView == OverallView.AllTime
+            || currentView == OverallView.Year
+            || currentView == OverallView.Month;
+
+        private bool IsChallengeView => currentView == OverallView.GoldStandard
+            || currentView == OverallView.TerracottaChallenge
+            || currentView == OverallView.SouthForkChallenge
+            || currentView == OverallView.ForgeChallenge
+            || currentView == OverallView.TowerChallenge;
+
+        private string CurrentViewTitle => currentView switch
+        {
+            OverallView.Year => $"{currentYear} leaderboard",
+            OverallView.Month => $"{currentMonth} {currentYear} leaderboard",
+            OverallView.Kotter => "Kotter report",
+            OverallView.QKotter => "Q Kotter report",
+            OverallView.QSource => "Q Source activity",
+            OverallView.AoList => $"{DateTime.Now:MMM} AO activity",
+            OverallView.GoldStandard => "Gold Standard",
+            OverallView.TerracottaChallenge => "Forged in Fire 2026",
+            OverallView.SouthForkChallenge => "High Water Mark",
+            OverallView.ForgeChallenge => "The Forge Challenge",
+            OverallView.TowerChallenge => "The Tower Challenge",
+            _ => "Leaderboard"
+        };
+
+        private IEnumerable<DisplayRow> GetMobileRows()
+        {
+            IEnumerable<DisplayRow> rows = currentRows?.Where(OnCustomFilter) ?? Enumerable.Empty<DisplayRow>();
+
+            return mobileSort switch
+            {
+                "name" => rows.OrderBy(row => row.PaxName),
+                "posts" => rows.OrderByDescending(row => row.PostCount),
+                "qs" => rows.OrderByDescending(row => row.QCount),
+                "rate" => rows.OrderByDescending(row => row.PostPercent),
+                "streak" => rows.OrderByDescending(row => row.Streak),
+                "heat" => rows.OrderByDescending(row => row.RecentPostCount),
+                "days" => rows.OrderByDescending(row => row.KotterDays),
+                "aos" => rows.OrderByDescending(row => row.AoPosts),
+                _ => rows
+            };
+        }
+
+        private void OnMobileSortChanged(ChangeEventArgs e)
+        {
+            mobileSort = e.Value?.ToString() ?? "default";
+            mobileRowsVisible = 50;
+        }
+
+        private void ShowMoreMobileRows()
+        {
+            mobileRowsVisible += 50;
+        }
+
+        private void ResetMobileResults()
+        {
+            mobileSort = "default";
+            mobileRowsVisible = 50;
         }
 
         // Modals

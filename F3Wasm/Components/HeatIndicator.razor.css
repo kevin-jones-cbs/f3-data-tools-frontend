@@ -1,0 +1,146 @@
+.heat-indicator {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.heat-control {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .2rem;
+    margin: -.2rem;
+    border-radius: .35rem;
+    cursor: help;
+}
+
+.heat-control:focus-visible {
+    outline: 2px solid #4f83dc;
+    outline-offset: 2px;
+}
+
+.heat-embers {
+    display: inline-flex;
+    align-items: center;
+    gap: .18rem;
+}
+
+.heat-ember {
+    width: .38rem;
+    height: .38rem;
+    border-radius: 50%;
+    background: #d9dee7;
+}
+
+.heat-ember.level-1.active {
+    background: #dfc982;
+}
+
+.heat-ember.level-2.active {
+    background: #e8b84e;
+}
+
+.heat-ember.level-3.active {
+    background: #ed993e;
+}
+
+.heat-ember.level-4.active {
+    background: #e9753d;
+    box-shadow: 0 0 0 2px rgba(233, 117, 61, .12);
+}
+
+.heat-count {
+    color: #747e8f;
+    font-size: .72rem;
+    font-weight: 750;
+    font-variant-numeric: tabular-nums;
+}
+
+.heat-crown {
+    width: .88rem;
+    height: .88rem;
+    margin-left: -.08rem;
+    fill: rgba(234, 177, 55, .14);
+    stroke: #c9921e;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.7;
+}
+
+.heat-explanation {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + .55rem);
+    right: 0;
+    width: 17rem;
+    padding: .8rem .9rem;
+    border: 1px solid #d9dee7;
+    border-radius: .65rem;
+    display: grid;
+    gap: .38rem;
+    color: #596376;
+    background: #fff;
+    box-shadow: 0 10px 28px rgba(27, 36, 55, .16);
+    font-size: .75rem;
+    font-weight: 500;
+    line-height: 1.35;
+    text-align: left;
+    white-space: normal;
+}
+
+.heat-explanation::before {
+    content: "";
+    position: absolute;
+    top: -.34rem;
+    right: 1.1rem;
+    width: .62rem;
+    height: .62rem;
+    border-top: 1px solid #d9dee7;
+    border-left: 1px solid #d9dee7;
+    background: #fff;
+    transform: rotate(45deg);
+}
+
+.heat-explanation strong {
+    color: #252b3a;
+    font-size: .82rem;
+    font-weight: 800;
+}
+
+.heat-key {
+    color: #747e8f;
+}
+
+.heat-key > span:first-child {
+    margin-right: .25rem;
+    color: #e8a746;
+    font-size: .62rem;
+    letter-spacing: .04rem;
+}
+
+.heat-key .crown-symbol {
+    color: #c9921e;
+    font-size: .85rem;
+}
+
+@media (max-width: 767.98px) {
+    .heat-indicator {
+        position: static;
+    }
+
+    .heat-control {
+        cursor: pointer;
+    }
+
+    .heat-explanation {
+        top: 2.7rem;
+        right: 1rem;
+        left: 2.8rem;
+        width: auto;
+    }
+
+    .heat-explanation::before {
+        display: none;
+    }
+}
