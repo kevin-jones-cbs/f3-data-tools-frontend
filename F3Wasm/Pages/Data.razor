@@ -265,25 +265,28 @@ else
         }
     </section>
 
-    @if (RegionInfo.DisplayName == "Gold Rush")
+    @if (!IsChallengeView)
     {
-        <button type="button" class="challenge-card @(currentView == OverallView.GoldStandard ? "active" : null)" @onclick="ShowGoldStandard"><span><small>Featured challenge</small><strong>Gold Standard</strong></span><span class="challenge-arrow">View →</span></button>
-    }
-    else if (RegionInfo.DisplayName == "Terracotta")
-    {
-        <button type="button" class="challenge-card @(currentView == OverallView.TerracottaChallenge ? "active" : null)" @onclick="ShowTerracottaChallenge"><span><small>Featured challenge</small><strong>Forged in Fire 2026</strong></span><span class="challenge-arrow">View →</span></button>
-    }
-    else if (RegionInfo.DisplayName == "South Fork")
-    {
-        <button type="button" class="challenge-card @(currentView == OverallView.SouthForkChallenge ? "active" : null)" @onclick="ShowSouthForkChallenge"><span><small>Featured challenge</small><strong>High Water Mark</strong></span><span class="challenge-arrow">View →</span></button>
-    }
-    else if (RegionInfo.DisplayName == "Mother Lode")
-    {
-        <button type="button" class="challenge-card @(currentView == OverallView.ForgeChallenge ? "active" : null)" @onclick="ShowForgeChallenge"><span><small>Featured challenge</small><strong>The Forge Challenge</strong></span><span class="challenge-arrow">View →</span></button>
-    }
-    else if (RegionInfo.DisplayName == "SacTown")
-    {
-        <button type="button" class="challenge-card @(currentView == OverallView.TowerChallenge ? "active" : null)" @onclick="ShowTowerChallenge"><span><small>Featured challenge</small><strong>The Tower Challenge</strong></span><span class="challenge-arrow">View →</span></button>
+        @if (RegionInfo.DisplayName == "Gold Rush")
+        {
+            <button type="button" class="challenge-card" @onclick="ShowGoldStandard"><span><small>Featured challenge</small><strong>Gold Standard</strong></span><span class="challenge-arrow">View →</span></button>
+        }
+        else if (RegionInfo.DisplayName == "Terracotta")
+        {
+            <button type="button" class="challenge-card" @onclick="ShowTerracottaChallenge"><span><small>Featured challenge</small><strong>Forged in Fire 2026</strong></span><span class="challenge-arrow">View →</span></button>
+        }
+        else if (RegionInfo.DisplayName == "South Fork")
+        {
+            <button type="button" class="challenge-card" @onclick="ShowSouthForkChallenge"><span><small>Featured challenge</small><strong>High Water Mark</strong></span><span class="challenge-arrow">View →</span></button>
+        }
+        else if (RegionInfo.DisplayName == "Mother Lode")
+        {
+            <button type="button" class="challenge-card" @onclick="ShowForgeChallenge"><span><small>Featured challenge</small><strong>The Forge Challenge</strong></span><span class="challenge-arrow">View →</span></button>
+        }
+        else if (RegionInfo.DisplayName == "SacTown")
+        {
+            <button type="button" class="challenge-card" @onclick="ShowTowerChallenge"><span><small>Featured challenge</small><strong>The Tower Challenge</strong></span><span class="challenge-arrow">View →</span></button>
+        }
     }
 
     @if (loading)
