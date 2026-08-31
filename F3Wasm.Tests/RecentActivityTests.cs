@@ -40,7 +40,7 @@ public class RecentActivityTests
     }
 
     [Fact]
-    public void ApplyRecentActivity_AssignsPercentageTiersAfterSeparatingLeader()
+    public void ApplyRecentActivity_AssignsPercentageTiersAcrossDistinctActivityLevels()
     {
         var asOfDate = new DateTime(2026, 8, 23);
         var rows = Enumerable.Range(1, 11)
@@ -57,10 +57,12 @@ public class RecentActivityTests
     }
 
     [Fact]
-    public void ApplyRecentActivity_PromotesTiesAcrossTierBoundary()
+    public void ApplyRecentActivity_LowActivityTiesDoNotInflateUpperTiers()
     {
         var asOfDate = new DateTime(2026, 8, 23);
-        var postCounts = new[] { 12, 10, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1 };
+        var postCounts = new[] { 12, 10, 10, 9, 8, 7, 6, 5, 4, 3, 2 }
+            .Concat(Enumerable.Repeat(1, 20))
+            .ToArray();
         var rows = postCounts
             .Select((_, index) => new DisplayRow { PaxName = $"Pax {index + 1}" })
             .ToList();
@@ -74,5 +76,7 @@ public class RecentActivityTests
         Assert.Equal(4, rows[1].HeatLevel);
         Assert.Equal(4, rows[2].HeatLevel);
         Assert.Equal(rows[1].HeatRank, rows[2].HeatRank);
+        Assert.Equal(3, rows[3].HeatLevel);
+        Assert.All(rows.Skip(11), row => Assert.Equal(1, row.HeatLevel));
     }
 }
