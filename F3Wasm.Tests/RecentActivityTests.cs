@@ -40,20 +40,21 @@ public class RecentActivityTests
     }
 
     [Fact]
-    public void ApplyRecentActivity_AssignsPercentageTiersAcrossDistinctActivityLevels()
+    public void ApplyRecentActivity_UsesSecondHighestCountWhenLeaderIsAnOutlier()
     {
         var asOfDate = new DateTime(2026, 8, 23);
-        var rows = Enumerable.Range(1, 11)
-            .Select(index => new DisplayRow { PaxName = $"Pax {index}" })
+        var postCounts = new[] { 100, 10, 8, 6, 4, 3 };
+        var rows = postCounts
+            .Select((_, index) => new DisplayRow { PaxName = $"Pax {index + 1}" })
             .ToList();
         var posts = rows
-            .SelectMany((row, index) => Enumerable.Range(0, 11 - index)
+            .SelectMany((row, index) => Enumerable.Range(0, postCounts[index])
                 .Select(_ => new Post { Pax = row.PaxName, Date = asOfDate }))
             .ToList();
 
         DataHelper.ApplyRecentActivity(rows, posts, asOfDate);
 
-        Assert.Equal(new[] { 4, 4, 3, 3, 2, 2, 2, 1, 1, 1, 1 }, rows.Select(row => row.HeatLevel));
+        Assert.Equal(new[] { 4, 4, 4, 3, 2, 1 }, rows.Select(row => row.HeatLevel));
     }
 
     [Fact]
@@ -76,7 +77,25 @@ public class RecentActivityTests
         Assert.Equal(4, rows[1].HeatLevel);
         Assert.Equal(4, rows[2].HeatLevel);
         Assert.Equal(rows[1].HeatRank, rows[2].HeatRank);
-        Assert.Equal(3, rows[3].HeatLevel);
+        Assert.Equal(4, rows[3].HeatLevel);
         Assert.All(rows.Skip(11), row => Assert.Equal(1, row.HeatLevel));
+    }
+
+    [Fact]
+    public void ApplyRecentActivity_KeepsTightlyClusteredTopCountsTogether()
+    {
+        var asOfDate = new DateTime(2026, 8, 23);
+        var postCounts = new[] { 22, 21, 20, 20, 19 };
+        var rows = postCounts
+            .Select((_, index) => new DisplayRow { PaxName = $"Pax {index + 1}" })
+            .ToList();
+        var posts = rows
+            .SelectMany((row, index) => Enumerable.Range(0, postCounts[index])
+                .Select(_ => new Post { Pax = row.PaxName, Date = asOfDate }))
+            .ToList();
+
+        DataHelper.ApplyRecentActivity(rows, posts, asOfDate);
+
+        Assert.All(rows, row => Assert.Equal(4, row.HeatLevel));
     }
 }
