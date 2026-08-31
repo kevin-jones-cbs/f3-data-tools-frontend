@@ -38,7 +38,7 @@
             <span id="@explanationId" class="heat-explanation" role="tooltip">
                 <strong>Recent activity</strong>
                 <span>@ActivityExplanation</span>
-                <span class="heat-key"><span aria-hidden="true">● ● ● ●</span> More color means closer to the regional leader.</span>
+                <span class="heat-key"><span aria-hidden="true">● ● ● ●</span> More color means a higher recent-activity group in the region.</span>
                 <span class="heat-key"><span class="crown-symbol" aria-hidden="true">♛</span> The crown marks the hottest PAX right now.</span>
             </span>
         }
@@ -82,18 +82,5 @@
         }
     }
 
-    private bool IsActive(int level)
-    {
-        var threshold = level switch
-        {
-            1 => 0,
-            2 => 25,
-            3 => 50,
-            _ => 75
-        };
-
-        return level == 1
-            ? Row.RecentPostCount > 0
-            : Row.HeatScore >= threshold;
-    }
+    private bool IsActive(int level) => Row.HeatLevel >= level;
 }
