@@ -260,6 +260,7 @@
     color: #9199a7;
 }
 
+.mobile-sort-controls,
 .mobile-sort {
     display: none;
 }
@@ -450,8 +451,15 @@
         grid-column: 1 / -1;
     }
 
+    .mobile-sort-controls {
+        min-width: 0;
+        display: flex;
+        gap: .4rem;
+    }
+
     .mobile-sort {
         min-width: 0;
+        flex: 1;
         height: 2.55rem;
         margin: 0;
         padding: 0 .2rem 0 .75rem;
@@ -463,6 +471,24 @@
         background: #fff;
         font-size: .75rem;
         font-weight: 700;
+    }
+
+    .sort-direction-button {
+        width: 2.55rem;
+        height: 2.55rem;
+        flex: 0 0 auto;
+        border: 1px solid #d6dce5;
+        border-radius: .65rem;
+        color: #364153;
+        background: #fff;
+        font-size: 1.15rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .sort-direction-button:focus-visible {
+        outline: 3px solid rgba(52, 120, 246, .28);
+        outline-offset: 2px;
     }
 
     .mobile-sort select {

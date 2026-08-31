@@ -312,30 +312,38 @@ else
                 </label>
                 @if (!IsChallengeView)
                 {
-                    <label class="mobile-sort">
-                        <span>Sort</span>
-                        <select value="@mobileSort" @onchange="OnMobileSortChanged">
-                            <option value="default">Recommended</option>
-                            <option value="name">Name A–Z</option>
-                            <option value="posts">Most posts</option>
-                            <option value="qs">Most Qs</option>
-                            @if (currentView == OverallView.AllTime || currentView == OverallView.Year || currentView == OverallView.Month)
-                            {
-                                <option value="first-post">First post (newest)</option>
-                                <option value="heat">Hottest recently</option>
-                                <option value="rate">Highest post rate</option>
-                                <option value="streak">Longest streak</option>
-                            }
-                            @if (currentView == OverallView.Kotter || currentView == OverallView.QKotter)
-                            {
-                                <option value="days">Most days away</option>
-                            }
-                            @if (currentView == OverallView.AoList || currentView == OverallView.AoChallenge)
-                            {
-                                <option value="aos">Most AOs</option>
-                            }
-                        </select>
-                    </label>
+                    <div class="mobile-sort-controls">
+                        <label class="mobile-sort">
+                            <span>Sort</span>
+                            <select value="@mobileSort" @onchange="OnMobileSortChanged">
+                                <option value="name">Name</option>
+                                <option value="posts">Posts</option>
+                                <option value="qs">Qs</option>
+                                @if (currentView == OverallView.AllTime || currentView == OverallView.Year || currentView == OverallView.Month)
+                                {
+                                    <option value="first-post">First post</option>
+                                    <option value="heat">Recent heat</option>
+                                    <option value="rate">Post rate</option>
+                                    <option value="streak">Streak</option>
+                                }
+                                @if (currentView == OverallView.Kotter || currentView == OverallView.QKotter)
+                                {
+                                    <option value="days">Days away</option>
+                                }
+                                @if (currentView == OverallView.AoList || currentView == OverallView.AoChallenge)
+                                {
+                                    <option value="aos">AOs</option>
+                                }
+                            </select>
+                        </label>
+                        <button type="button"
+                                class="sort-direction-button"
+                                title="@MobileSortDirectionButtonLabel"
+                                aria-label="@MobileSortDirectionButtonLabel"
+                                @onclick="ToggleMobileSortDirection">
+                            <span aria-hidden="true">@(mobileSortDescending ? "↓" : "↑")</span>
+                        </button>
+                    </div>
                 }
                 @if (currentView == OverallView.Kotter || currentView == OverallView.QKotter)
                 {

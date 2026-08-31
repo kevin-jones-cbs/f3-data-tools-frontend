@@ -44,7 +44,8 @@ namespace F3Wasm.Pages
 
         public List<WorkoutDay> allPossibleWorkoutDays { get; set; }
         private string customFilterValue;
-        private string mobileSort = "default";
+        private string mobileSort = "posts";
+        private bool mobileSortDescending = true;
         private int mobileRowsVisible = 50;
 
         public bool loading { get; set; }
@@ -576,26 +577,44 @@ namespace F3Wasm.Pages
         {
             IEnumerable<DisplayRow> rows = currentRows?.Where(OnCustomFilter) ?? Enumerable.Empty<DisplayRow>();
 
+            IEnumerable<DisplayRow> ApplySort<TKey>(Func<DisplayRow, TKey> selector) => mobileSortDescending
+                ? rows.OrderByDescending(selector)
+                : rows.OrderBy(selector);
+
             return mobileSort switch
             {
-                "name" => rows.OrderBy(row => row.PaxName),
-                "posts" => rows.OrderByDescending(row => row.PostCount),
-                "qs" => rows.OrderByDescending(row => row.QCount),
-                "first-post" => rows.OrderByDescending(row => row.FirstPost ?? DateTime.MinValue),
-                "rate" => rows.OrderByDescending(row => row.PostPercent),
-                "streak" => rows.OrderByDescending(row => row.Streak),
-                "heat" => rows.OrderByDescending(row => row.RecentPostCount),
-                "days" => rows.OrderByDescending(row => row.KotterDays),
-                "aos" => rows.OrderByDescending(row => row.AoPosts),
-                _ => rows
+                "name" => ApplySort(row => row.PaxName),
+                "posts" => ApplySort(row => row.PostCount),
+                "qs" => ApplySort(row => row.QCount),
+                "first-post" => ApplySort(row => row.FirstPost ?? DateTime.MinValue),
+                "rate" => ApplySort(row => row.PostPercent),
+                "streak" => ApplySort(row => row.Streak),
+                "heat" => ApplySort(row => row.RecentPostCount),
+                "days" => ApplySort(row => row.KotterDays),
+                "aos" => ApplySort(row => row.AoPosts),
+                _ => ApplySort(row => row.PostCount)
             };
         }
 
         private void OnMobileSortChanged(ChangeEventArgs e)
         {
-            mobileSort = e.Value?.ToString() ?? "default";
+            mobileSort = e.Value?.ToString() ?? "posts";
+            mobileSortDescending = mobileSort != "name";
             mobileRowsVisible = 50;
         }
+
+        private void ToggleMobileSortDirection()
+        {
+            mobileSortDescending = !mobileSortDescending;
+            mobileRowsVisible = 50;
+        }
+
+        private string MobileSortDirectionButtonLabel => mobileSort switch
+        {
+            "name" => mobileSortDescending ? "Currently Z to A; change to A to Z" : "Currently A to Z; change to Z to A",
+            "first-post" => mobileSortDescending ? "Currently newest first; change to oldest first" : "Currently oldest first; change to newest first",
+            _ => mobileSortDescending ? "Currently highest first; change to lowest first" : "Currently lowest first; change to highest first"
+        };
 
         private void ShowMoreMobileRows()
         {
@@ -604,7 +623,12 @@ namespace F3Wasm.Pages
 
         private void ResetMobileResults()
         {
-            mobileSort = "default";
+            (mobileSort, mobileSortDescending) = currentView switch
+            {
+                OverallView.Kotter or OverallView.QKotter => ("days", false),
+                OverallView.AoList or OverallView.AoChallenge => ("aos", true),
+                _ => ("posts", true)
+            };
             mobileRowsVisible = 50;
         }
 
