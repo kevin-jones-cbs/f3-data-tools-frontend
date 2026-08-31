@@ -1,0 +1,21 @@
+.milestone-chart {
+    position: relative;
+    height: 20rem;
+}
+
+.milestone-chart ::deep canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+@media (max-width: 991.98px) {
+    .milestone-chart {
+        height: 17rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .milestone-chart {
+        height: 15rem;
+    }
+}
