@@ -99,3 +99,77 @@ a, .btn-link {
     .loading-progress-text:after {
         content: var(--blazor-load-percentage-text, "Loading");
     }
+
+/* PAX detail calendar (flatpickr is rendered by Blazorise, so these can't be scoped) */
+.pax-calendar .form-control {
+    display: none;
+}
+
+.pax-calendar .flatpickr-calendar {
+    margin: 0 auto;
+    box-shadow: none;
+}
+
+.pax-calendar .flatpickr-calendar.inline {
+    max-width: 100%;
+}
+
+.pax-calendar .flatpickr-calendar::before,
+.pax-calendar .flatpickr-calendar::after {
+    display: none;
+}
+
+.pax-calendar .flatpickr-months .flatpickr-month,
+.pax-calendar .flatpickr-current-month .flatpickr-monthDropdown-months,
+.pax-calendar .flatpickr-current-month input.cur-year {
+    color: #171a2b;
+    font-weight: 700;
+}
+
+.pax-calendar .flatpickr-weekday {
+    color: #7a8495;
+    font-size: .72rem;
+    font-weight: 700;
+}
+
+.pax-calendar .flatpickr-day {
+    border-radius: .5rem;
+    color: #242938;
+    font-weight: 600;
+}
+
+.pax-calendar .flatpickr-day.prevMonthDay,
+.pax-calendar .flatpickr-day.nextMonthDay {
+    color: #c3c9d3;
+}
+
+.pax-calendar .flatpickr-day.today {
+    border-color: #3478f6;
+}
+
+.pax-calendar .flatpickr-day.today:hover {
+    color: #242938;
+    background: #edf4ff;
+    border-color: #3478f6;
+}
+
+.pax-calendar .flatpickr-day.selected,
+.pax-calendar .flatpickr-day.selected:hover,
+.pax-calendar .flatpickr-day.selected.today {
+    color: #fff;
+    background: #3478f6;
+    border-color: #3478f6;
+}
+
+.pax-calendar .flatpickr-day.flatpickr-disabled,
+.pax-calendar .flatpickr-day.flatpickr-disabled:hover {
+    color: #fff;
+    background: #25a667;
+    border-color: #25a667;
+    cursor: default;
+}
+
+.pax-calendar .flatpickr-day.flatpickr-disabled.prevMonthDay,
+.pax-calendar .flatpickr-day.flatpickr-disabled.nextMonthDay {
+    opacity: .55;
+}

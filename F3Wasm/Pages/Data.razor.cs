@@ -31,6 +31,8 @@ namespace F3Wasm.Pages
         public bool showPaxModal { get; set; }
         public bool showAoChallengeModal { get; set; }
         public Pax selectedPax { get; set; }
+        public DisplayRow selectedRow { get; set; }
+        public int? selectedRank { get; set; }
         public List<Post> selectedPaxPosts { get; set; }
         public List<Post> selectedPaxQSourcePosts { get; set; }
         public HistoricalData selectedPaxHistoricalData { get; set; }
@@ -650,6 +652,8 @@ namespace F3Wasm.Pages
         private Task OnModalClosing(ModalClosingEventArgs e)
         {
             selectedPax = null;
+            selectedRow = null;
+            selectedRank = null;
 
             return Task.CompletedTask;
         }
@@ -669,6 +673,10 @@ namespace F3Wasm.Pages
             selectedPaxQSourcePosts = allData.QSourcePosts?.Where(p => p.Pax == row.PaxName).OrderByDescending(x => x.Date).ToList();
             selectedPaxHistoricalData = allData.HistoricalData?.FirstOrDefault(p => p.PaxName == row.PaxName);
             selectedPax = allData.Pax.FirstOrDefault(p => p.Name.Equals(row.PaxName, StringComparison.InvariantCultureIgnoreCase ));
+            selectedRow = row;
+            selectedRank = IsLeaderboardView && currentRows != null
+                ? currentRows.Count(r => r.PostCount > row.PostCount) + 1
+                : null;
 
             if (currentView == OverallView.AoChallenge || currentView == OverallView.AoList)
             {

@@ -1,22 +1,20 @@
-﻿@using F3Wasm.Models
+@using F3Wasm.Models
 @using F3Core
 
-<DatePicker TValue="DateTime?" Inline SelectionMode="DateInputSelectionMode.Multiple"
-            Dates="@selectedPaxDates" DisabledDates="@disabledPaxQDates" />
-
-<div style="text-align:center; margin-top:6px;">
-    <Badge Color="Color.Primary">Post</Badge>
-    <Badge Color="Color.Success" style="width:36px;">Q</Badge>
-    <Badge style="background:linear-gradient(to right, #007bff 50%, #3013b7 50%)">2 Posts</Badge>
-    <Badge style="background:linear-gradient(to right, #007bff 33.33%, #3013b7 33.33%, #3013b7 66.66%, #7e80f9 66.66%)">3 Posts</Badge>
+<div class="pax-calendar">
+    <DatePicker TValue="DateTime?" Inline SelectionMode="DateInputSelectionMode.Multiple"
+                Dates="@selectedPaxDates" DisabledDates="@disabledPaxQDates" />
 </div>
 
-@if (HasQSource)
-{
-    <div style="text-align:center;">
-        <Badge Color="Color.Primary" style="color:#d9aaeb;font-weight:bold;text-decoration:underline">Q Source</Badge>
-    </div>
-}
+<ul class="pax-calendar-legend" aria-label="Calendar key">
+    <li><span class="pax-calendar-swatch swatch-post"></span>Post</li>
+    <li><span class="pax-calendar-swatch swatch-q"></span>Q</li>
+    <li><span class="pax-calendar-swatch swatch-multi"></span>2+ posts</li>
+    @if (HasQSource)
+    {
+        <li><span class="pax-calendar-swatch swatch-qsource">Q</span>Q Source</li>
+    }
+</ul>
 
 @code {
     [Inject]
@@ -53,7 +51,7 @@
         var dates3Q3 = SelectedPaxPosts.GroupBy(p => p.Date).Where(g => g.Count() == 3 && g.Count(p => p.IsQ) == 3).Select(g => g.Key.ToString("MMMM d, yyyy")).ToArray();
 
         var qSourceDates = new string[0];
-        
+
         if (HasQSource)
         {
             qSourceDates = SelectedPaxQSourcePosts.Select(p => p.Date).Distinct().Select(d => d.ToString("MMMM d, yyyy")).ToArray();

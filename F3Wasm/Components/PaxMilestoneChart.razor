@@ -4,16 +4,15 @@
 
 @if (TotalPosts > 200)
 {
-    <Card Margin="Margin.Is3.OnY">
-        <CardHeader>
-            <CardTitle>100 Progress (Possible Workout Days)</CardTitle>
-        </CardHeader>
-        <CardBody>
-            <div class="milestone-chart">
-                <LineChart @ref="lineChart" TItem="int" Options="@chartOptions" />
-            </div>
-        </CardBody>
-    </Card>
+    <section class="pax-details-panel">
+        <div class="pax-details-panel-heading">
+            <h2 class="pax-details-panel-title">Workout days per 100 posts</h2>
+            <p class="pax-details-panel-subtitle">Possible workout days it took to reach each hundred. Lower means a faster hundred.</p>
+        </div>
+        <div class="milestone-chart">
+            <LineChart @ref="lineChart" TItem="int" Options="@chartOptions" />
+        </div>
+    </section>
 }
 
 @code {
@@ -30,7 +29,33 @@
     private readonly LineChartOptions chartOptions = new()
     {
         Responsive = true,
-        MaintainAspectRatio = false
+        MaintainAspectRatio = false,
+        Plugins = new ChartPlugins
+        {
+            Legend = new ChartLegend { Display = false },
+            Tooltips = new ChartTooltips
+            {
+                BackgroundColor = "#171a2b",
+                TitleColor = "#c7cede",
+                BodyColor = "#ffffff",
+                DisplayColors = false,
+                Padding = 10,
+                CornerRadius = 8
+            }
+        },
+        Scales = new ChartScales
+        {
+            X = new ChartAxis
+            {
+                Grid = new ChartAxisGridLine { Display = false, DrawBorder = false },
+                Ticks = new ChartAxisTicks { Color = "#7a8495" }
+            },
+            Y = new ChartAxis
+            {
+                Grid = new ChartAxisGridLine { Color = "#edf0f4", DrawBorder = false },
+                Ticks = new ChartAxisTicks { Color = "#7a8495" }
+            }
+        }
     };
     private int TotalPosts => SelectedPaxPosts.Count + (SelectedPaxHistoricalData?.PostCount ?? 0);
 
@@ -58,14 +83,18 @@
     {
         return new LineChartDataset<int>
         {
-            Label = "Workout Days to Reach 100s",
+            Label = "Workout days",
             Data = data,
-            BackgroundColor = new List<string> { "rgba(75, 192, 192, 0.2)" },
-            BorderColor = new List<string> { "rgb(75, 192, 192)" },
+            BackgroundColor = new List<string> { "rgba(52, 120, 246, 0.10)" },
+            BorderColor = new List<string> { "#3478f6" },
             BorderWidth = 2,
             Fill = true,
-            PointRadius = 5,
-            PointHoverRadius = 7
+            Tension = 0.3f,
+            PointRadius = 3,
+            PointHoverRadius = 5,
+            PointBackgroundColor = new List<string> { "#ffffff" },
+            PointBorderColor = new List<string> { "#3478f6" },
+            PointBorderWidth = 2
         };
     }
 

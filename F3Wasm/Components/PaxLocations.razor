@@ -1,53 +1,61 @@
-﻿@using F3Core
+@using F3Core
 @using F3Core.Regions
 @using F3Wasm.Data
 @using F3Wasm.Models
-<div class="pax-locations-scroll">
-<Table Narrow Bordered>
-    <TableHeader>
-        <TableRow>
-            <TableHeaderCell>Location</TableHeaderCell>
-            <TableHeaderCell>Post Count @(HasHistoricalData ? "*" : "")</TableHeaderCell>
-        </TableRow>
-    </TableHeader>
-    <TableBody>
-        @foreach (var location in AoList)
-        {
-            <TableRow>
-                <TableRowCell>
-                    <span class="dot" style="@GetPaxLocationColor(location)"></span>@location.Name
-                </TableRowCell>
-                <TableRowCell>
-                    @SelectedPaxPosts.Count(x => x.Site == location.Name)
-                </TableRowCell>
-            </TableRow>
-        }
-        <TableRow>
-            <TableRowCell Clicked="@OnShowOtherLocationsClicked" class="link">
-                <span class="dot" style="background-color:white">
-                </span>
-                Other
-            </TableRowCell>
-            <TableRowCell>
-                @SelectedPaxPosts.Count(x => !AoList.Select(x => x.Name).Contains(x.Site))
-            </TableRowCell>
-        </TableRow>
 
-        @if (showOtherLocations)
-        {
-            @foreach (var group in SelectedPaxPosts.Where(x => !AoList.Select(x =>
-           x.Name).Contains(x.Site)).GroupBy(x => x.Site).OrderByDescending(x => x.Count()))
+<div class="pax-locations-scroll">
+    <table class="pax-locations-table">
+        <thead>
+            <tr>
+                <th scope="col">Location</th>
+                <th scope="col" class="pax-locations-count">Posts@(HasHistoricalData ? " *" : "")</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var location in rankedLocations)
             {
-                <TableRow style="background-color:#eae9e9">
-                    <TableRowCell>
-                        <span class="dot" style="background-color:white"></span> @group.Key
-                    </TableRowCell>
-                    <TableRowCell>@group.Count()</TableRowCell>
-                </TableRow>
+                <tr>
+                    <td>
+                        <span class="pax-location-dot" style="background-color: @ColorHelpers.GetAoHex(location.Ao)"></span>
+                        <span class="pax-location-name">@location.Ao.Name</span>
+                    </td>
+                    <td class="pax-locations-count">
+                        <span class="pax-location-meter">
+                            <span class="pax-location-track"><span class="pax-location-bar" style="width: @BarWidth(location.Count)"></span></span>
+                            <span class="pax-location-value">@location.Count</span>
+                        </span>
+                    </td>
+                </tr>
             }
-        }
-    </TableBody>
-</Table>
+
+            @if (otherCount > 0)
+            {
+                <tr class="pax-location-other @(showOtherLocations ? "open" : null)" @onclick="OnShowOtherLocationsClicked">
+                    <td>
+                        <span class="pax-location-chevron" aria-hidden="true">›</span>
+                        <span class="pax-location-name">Other locations</span>
+                    </td>
+                    <td class="pax-locations-count">
+                        <span class="pax-location-meter">
+                            <span class="pax-location-track"><span class="pax-location-bar" style="width: @BarWidth(otherCount)"></span></span>
+                            <span class="pax-location-value">@otherCount</span>
+                        </span>
+                    </td>
+                </tr>
+
+                @if (showOtherLocations)
+                {
+                    @foreach (var group in otherGroups)
+                    {
+                        <tr class="pax-location-other-row">
+                            <td><span class="pax-location-name">@group.Key</span></td>
+                            <td class="pax-locations-count"><span class="pax-location-meter"><span class="pax-location-track"></span><span class="pax-location-value">@group.Count()</span></span></td>
+                        </tr>
+                    }
+                }
+            }
+        </tbody>
+    </table>
 </div>
 
 @code {
@@ -60,17 +68,39 @@
     [Parameter]
     public bool HasHistoricalData { get; set; }
 
-    public bool showOtherLocations { get; set; } = false;
+    private bool showOtherLocations;
+    private List<(Ao Ao, int Count)> rankedLocations = new();
+    private List<IGrouping<string, Post>> otherGroups = new();
+    private int otherCount;
+    private int maxCount;
 
-    private async Task OnShowOtherLocationsClicked()
+    protected override void OnParametersSet()
     {
-        showOtherLocations = !showOtherLocations;
+        var countsBySite = SelectedPaxPosts
+            .GroupBy(p => p.Site)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        rankedLocations = AoList
+            .Select(ao => (Ao: ao, Count: countsBySite.TryGetValue(ao.Name, out var c) ? c : 0))
+            .OrderByDescending(x => x.Count)
+            .ThenBy(x => x.Ao.Name)
+            .ToList();
+
+        var knownSites = AoList.Select(x => x.Name).ToHashSet();
+        otherGroups = SelectedPaxPosts
+            .Where(p => !knownSites.Contains(p.Site))
+            .GroupBy(p => p.Site)
+            .OrderByDescending(g => g.Count())
+            .ToList();
+        otherCount = otherGroups.Sum(g => g.Count());
+
+        maxCount = Math.Max(1, Math.Max(rankedLocations.FirstOrDefault().Count, otherCount));
     }
 
-    private string GetPaxLocationColor(Ao location)
-    {
-        string hex = ColorHelpers.GetAoHex(location);
+    private string BarWidth(int count) => $"{Math.Round((double)count / maxCount * 100, 1)}%";
 
-        return $"background-color: {hex};";
+    private void OnShowOtherLocationsClicked()
+    {
+        showOtherLocations = !showOtherLocations;
     }
 }

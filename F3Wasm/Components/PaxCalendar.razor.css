@@ -1,0 +1,52 @@
+.pax-calendar {
+    display: flex;
+    justify-content: center;
+}
+
+.pax-calendar-legend {
+    margin: .6rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .35rem 1rem;
+    list-style: none;
+    color: #697386;
+    font-size: .74rem;
+    font-weight: 600;
+}
+
+.pax-calendar-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.pax-calendar-swatch {
+    width: .8rem;
+    height: .8rem;
+    border-radius: .22rem;
+    display: inline-grid;
+    place-items: center;
+    font-size: .55rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.swatch-post {
+    background: #3478f6;
+}
+
+.swatch-q {
+    background: #25a667;
+}
+
+.swatch-multi {
+    background: linear-gradient(to right, #3478f6 50%, #1f4fb8 50%);
+}
+
+.swatch-qsource {
+    color: #ffd6f2;
+    background: #3478f6;
+    text-decoration: underline;
+}

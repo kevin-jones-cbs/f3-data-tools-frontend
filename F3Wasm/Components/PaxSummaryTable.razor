@@ -1,114 +1,54 @@
 @using F3Core.Regions
 @using F3Core
 @using F3Wasm.Models
-@using Blazorise
 
-<div class="row g-3 pax-summary-grid">
-    <!-- Posts Section -->
-    <div class="col-xl-3 col-md-6 col-12 d-flex">
-        <Card Class="shadow-sm flex-fill pax-summary-card">
-            <CardBody>
-                <div class="d-flex align-items-start justify-content-between">
-                    <div class="d-flex align-items-center">
-                        <div class="bg-success p-2 rounded-lg text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
-                            <Icon Name="IconName.CheckCircle" />
-                        </div>
-                        <div class="ms-2">
-                            <div class="fw-bold" style="font-size: 0.875rem;">POSTS</div>
-                        </div>
-                    </div>
-                    <div class="text-end">
-                        <div class="fw-bold fs-3">@(SelectedPaxPosts.Count + (SelectedPaxHistoricalData?.PostCount ?? 0))</div>
-                        <div class="text-muted small">Post %@(SelectedPaxHistoricalData != null ? " *" : ""): <span class="fw-semibold">@(((double)SelectedPaxPosts.Count / GetSelectedPaxPossibleCount() * 100).ToString("0.00"))%</span></div>
-                        <div class="text-muted small">Last Post: <span class="fw-semibold">@SelectedPaxPosts.Max(x => x.Date).ToShortDateString()</span></div>
-                        @if (SelectedPaxHistoricalData == null)
-                        {
-                            <div class="text-muted small">Calendar Days to 100: <span class="fw-semibold">@GetCalDaysTo100()</span></div>
-                        }
-                    </div>
-                </div>
-            </CardBody>
-        </Card>
+<div class="pax-stats" aria-label="Summary">
+    <div class="pax-stat">
+        <span class="pax-stat-label">Posts</span>
+        <span class="pax-stat-value">@TotalPosts.ToString("N0")</span>
+        <span class="pax-stat-note">@PostPercent.ToString("0")% post rate@(SelectedPaxHistoricalData != null ? " *" : "")</span>
     </div>
-
-    <!-- Qs Section -->
-    <div class="col-xl-3 col-md-6 col-12 d-flex">
-        <Card Class="shadow-sm flex-fill pax-summary-card">
-            <CardBody>
-                <div class="d-flex align-items-start justify-content-between">
-                    <div class="d-flex align-items-center">
-                        <div class="bg-primary p-2 rounded-lg text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
-                            <Icon Name="IconName.Flag" />
-                        </div>
-                        <div class="ms-2">
-                            <div class="fw-bold" style="font-size: 0.875rem;">Qs</div>
-                        </div>
-                    </div>
-                    <div class="text-end">
-                        <div class="fw-bold fs-3">@(SelectedPaxPosts.Count(x => x.IsQ == true) + (@SelectedPaxHistoricalData?.QCount ?? 0))</div>
-                        <div class="text-muted small">Q %: <span class="fw-semibold">@(((double)SelectedPaxPosts.Count(x => x.IsQ == true) / (double)SelectedPaxPosts.Count * 100).ToString("0.00"))%</span></div>
-                        @if (SelectedPaxHistoricalData == null)
-                        {
-                            <div class="text-muted small">VQ: <span class="fw-semibold">@(SelectedPaxPosts.LastOrDefault(x => x.IsQ)?.Date.ToShortDateString() ?? "N/A")</span></div>
-                        }
-                    </div>
-                </div>
-            </CardBody>
-        </Card>
+    <div class="pax-stat">
+        <span class="pax-stat-label">Qs</span>
+        <span class="pax-stat-value">@TotalQs.ToString("N0")</span>
+        <span class="pax-stat-note">@QPercent.ToString("0")% of posts</span>
     </div>
-
-    <!-- First Post Section -->
-    <div class="col-xl-3 col-md-6 col-12 d-flex">
-        <Card Class="shadow-sm flex-fill pax-summary-card">
-            <CardBody>
-                <div class="d-flex align-items-start justify-content-between">
-                    <div class="d-flex align-items-center">
-                        <div class="p-2 rounded-lg text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px; background-color: #6f42c1;">
-                            <Icon Name="IconName.CalendarDay" />
-                        </div>
-                        <div class="ms-2">
-                            <div class="fw-bold" style="font-size: 0.875rem;">FIRST POST</div>
-                        </div>
-                    </div>
-                    <div class="text-end">
-                        <div class="fw-bold fs-5">
-                            @(
-                                SelectedPaxHistoricalData?.FirstPost?.ToShortDateString()
-                                ?? SelectedPaxPosts.Min(x => x.Date).ToShortDateString()
-                            )
-                        </div>
-                        @if (SelectedPaxHistoricalData == null)
-                        {
-                            <div class="text-muted small">Named By: <span class="fw-semibold">@GetNamedBy()</span></div>
-                        }
-                    </div>
-                </div>
-            </CardBody>
-        </Card>
+    <div class="pax-stat">
+        <span class="pax-stat-label">First post</span>
+        <span class="pax-stat-value pax-stat-value-date">@FirstPostDate.ToString("M/d/yy")</span>
+        <span class="pax-stat-note">@TenureText</span>
     </div>
-
-    <!-- Streak Section -->
-    <div class="col-xl-3 col-md-6 col-12 d-flex">
-        <Card Class="shadow-sm flex-fill pax-summary-card">
-            <CardBody>
-                <div class="d-flex align-items-start justify-content-between">
-                    <div class="d-flex align-items-center">
-                        <div class="bg-danger p-2 rounded-lg text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
-                            <Icon Name="IconName.Fire" />
-                        </div>
-                        <div class="ms-2">
-                            <div class="fw-bold" style="font-size: 0.875rem;">BEST STREAK@(SelectedPaxHistoricalData != null ? " *" : "")</div>
-                        </div>
-                    </div>
-                    <div class="text-end">
-                        <div class="fw-bold fs-3">@(selectedPaxStreak)</div>
-                        <div class="text-muted small">Started: <span class="fw-semibold">@(selectedPaxStreakStart.ToShortDateString())</span></div>
-                    </div>
-                </div>
-            </CardBody>
-        </Card>
+    <div class="pax-stat">
+        <span class="pax-stat-label">Best streak@(SelectedPaxHistoricalData != null ? " *" : "")</span>
+        <span class="pax-stat-value">@selectedPaxStreak</span>
+        <span class="pax-stat-note">@(selectedPaxStreak > 0 ? $"Started {selectedPaxStreakStart:M/d/yy}" : "No streak yet")</span>
     </div>
 </div>
+
+<dl class="pax-facts">
+    <div>
+        <dt>Last post</dt>
+        <dd>@LastPostDate.ToString("M/d/yy") <span class="pax-facts-muted">· @DaysSinceText</span></dd>
+    </div>
+    @if (SelectedPaxHistoricalData == null)
+    {
+        <div>
+            <dt>VQ</dt>
+            <dd>@(FirstQDate?.ToString("M/d/yy") ?? "Not yet")</dd>
+        </div>
+        @if (!string.IsNullOrEmpty(NamedBy))
+        {
+            <div>
+                <dt>Named by</dt>
+                <dd>@NamedBy</dd>
+            </div>
+        }
+        <div>
+            <dt>Days to 100</dt>
+            <dd>@GetCalDaysTo100()</dd>
+        </div>
+    }
+</dl>
 
 @code {
     [Parameter]
@@ -124,51 +64,76 @@
 
     private int selectedPaxStreak;
     private DateTime selectedPaxStreakStart;
+    private string NamedBy;
+
+    private int TotalPosts => SelectedPaxPosts.Count + (SelectedPaxHistoricalData?.PostCount ?? 0);
+    private int TotalQs => SelectedPaxPosts.Count(x => x.IsQ) + (SelectedPaxHistoricalData?.QCount ?? 0);
+    private double PostPercent => SelectedPaxPosts.Count == 0 ? 0 : (double)SelectedPaxPosts.Count / Math.Max(1, GetSelectedPaxPossibleCount()) * 100;
+    private double QPercent => TotalPosts == 0 ? 0 : (double)TotalQs / TotalPosts * 100;
+    private DateTime FirstPostDate => SelectedPaxHistoricalData?.FirstPost ?? SelectedPaxPosts.Min(x => x.Date);
+    private DateTime LastPostDate => SelectedPaxPosts.Max(x => x.Date);
+    private DateTime? FirstQDate => SelectedPaxPosts.Where(x => x.IsQ).OrderBy(x => x.Date).FirstOrDefault()?.Date;
+
+    private string TenureText
+    {
+        get
+        {
+            var days = (DateTime.Today - FirstPostDate.Date).Days;
+            if (days < 60) return $"{days} days in";
+            if (days < 730) return $"{Math.Round(days / 30.4)} months in";
+            return $"{days / 365.0:0.#} years in";
+        }
+    }
+
+    private string DaysSinceText
+    {
+        get
+        {
+            var days = (DateTime.Today - LastPostDate.Date).Days;
+            return days switch
+            {
+                0 => "today",
+                1 => "yesterday",
+                _ => $"{days} days ago"
+            };
+        }
+    }
 
     protected override void OnInitialized()
     {
         var paxPostsAsc = SelectedPaxPosts.OrderBy(p => p.Date).ToList();
         (selectedPaxStreak, selectedPaxStreakStart) = StreakHelpers.CalculateStreak(paxPostsAsc, RegionInfo, AllPossibleWorkoutDays);
+        NamedBy = GetNamedBy();
     }
 
     private double GetSelectedPaxPossibleCount()
     {
-        return AllPossibleWorkoutDays.Where(x => x.Date >= SelectedPaxPosts.LastOrDefault().Date).Count();
+        var firstPost = SelectedPaxPosts.OrderBy(x => x.Date).FirstOrDefault();
+        if (firstPost == null) return 0;
+        return AllPossibleWorkoutDays.Count(x => x.Date >= firstPost.Date);
     }
-
 
     public string GetNamedBy()
     {
-        var paxFirstPost = SelectedPaxPosts.LastOrDefault();
+        var paxFirstPost = SelectedPaxPosts.OrderBy(x => x.Date).FirstOrDefault();
         if (paxFirstPost == null)
             return "";
 
-        var namedBy = AllPosts.Where(p => p.Site == paxFirstPost.Site && p.IsQ && p.Date == paxFirstPost.Date).FirstOrDefault();
+        var namedBy = AllPosts.FirstOrDefault(p => p.Site == paxFirstPost.Site && p.IsQ && p.Date == paxFirstPost.Date);
 
-        if (namedBy == null)
-            return "";
-
-        return namedBy.Pax;
+        return namedBy?.Pax ?? "";
     }
 
     public string GetCalDaysTo100()
     {
-        // Get the 100th post for the selected pax
-        var pax100thPost = SelectedPaxPosts.OrderBy(x => x.Date).Skip(99).FirstOrDefault();
-        var notYet = false;
-        if (pax100thPost == null)
-        {
-            // No 100 yet, so just count today
-            pax100thPost = new Post() { Date = DateTime.Now };
-            notYet = true;
-        }
+        var sorted = SelectedPaxPosts.OrderBy(x => x.Date).ToList();
+        var pax100thPost = sorted.Skip(99).FirstOrDefault();
+        var notYet = pax100thPost == null;
+        var endDate = pax100thPost?.Date ?? DateTime.Now;
+        var pax1stPost = sorted.FirstOrDefault();
+        if (pax1stPost == null) return "";
 
-        var pax1stPost = SelectedPaxPosts.LastOrDefault();
-
-        // Get the number of days between their first post and 100th post
-        var days = (pax100thPost.Date - pax1stPost.Date).Days;
-
-        // Get the number of days since their first post
-        return days.ToString() + (notYet ? " (so far)" : "");
+        var days = (endDate - pax1stPost.Date).Days;
+        return days.ToString() + (notYet ? " so far" : "");
     }
 }

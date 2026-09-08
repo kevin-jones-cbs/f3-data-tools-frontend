@@ -1,0 +1,137 @@
+.pax-locations-scroll {
+    max-height: 28rem;
+    overflow: auto;
+}
+
+.pax-locations-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.pax-locations-table th:first-child {
+    width: 60%;
+}
+
+.pax-locations-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: .35rem .5rem .55rem;
+    border-bottom: 1px solid #dfe4eb;
+    color: #586174;
+    background: #fff;
+    font-size: .7rem;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-align: left;
+    text-transform: uppercase;
+}
+
+.pax-locations-table td {
+    padding: .5rem .5rem;
+    border-bottom: 1px solid #edf0f4;
+    color: #242938;
+    font-size: .86rem;
+    vertical-align: middle;
+}
+
+.pax-locations-table tr:last-child td {
+    border-bottom: 0;
+}
+
+.pax-locations-count {
+    width: 40%;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.pax-location-meter {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .6rem;
+}
+
+.pax-location-track {
+    flex: 1 1 auto;
+    height: .95rem;
+    min-width: 0;
+    display: block;
+}
+
+.pax-location-dot {
+    width: .55rem;
+    height: .55rem;
+    margin-right: .6rem;
+    border-radius: 50%;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.pax-location-name {
+    vertical-align: middle;
+}
+
+.pax-location-bar {
+    display: block;
+    height: 100%;
+    margin-left: auto;
+    border-radius: .25rem;
+    background: #dbe7fb;
+}
+
+.pax-location-value {
+    flex: 0 0 2.4rem;
+    font-weight: 700;
+}
+
+.pax-location-other {
+    cursor: pointer;
+    user-select: none;
+}
+
+.pax-location-other td {
+    color: #326dcc;
+    font-weight: 700;
+}
+
+.pax-location-other .pax-location-bar {
+    background: #eef1f6;
+}
+
+.pax-location-chevron {
+    display: inline-block;
+    width: .55rem;
+    margin-right: .6rem;
+    color: #a4acb9;
+    font-size: 1.1rem;
+    line-height: 0;
+    transition: transform .15s ease;
+    vertical-align: middle;
+}
+
+.pax-location-other.open .pax-location-chevron {
+    transform: rotate(90deg);
+}
+
+.pax-location-other-row td {
+    padding-left: 1.65rem;
+    color: #596376;
+    background: #fafbfd;
+    font-size: .82rem;
+}
+
+@media (max-width: 767.98px) {
+    .pax-locations-scroll {
+        max-height: 22rem;
+    }
+
+    .pax-locations-table td {
+        padding: .55rem .35rem;
+    }
+
+    .pax-locations-table th:first-child {
+        width: 55%;
+    }
+}

@@ -1,127 +1,63 @@
-﻿@using F3Core
+@using F3Core
 @using F3Core.Regions
 @using F3Wasm.Data
 @using F3Wasm.Models
 
-<Row>
-    <Column ColumnSize="ColumnSize.Is6">
-        <span>Most PAX Posted With</span>
-        <ListGroup Mode="ListGroupMode.Selectable" SelectedItem="@selectedPaxPostWithView">
-            <ListGroupItem Name="AllTime" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange("AllTime"))">@allTimeWording</ListGroupItem>
-            @{
-                int currentStart = historicalPostCount;
-                int lastEnd = historicalPostCount;
-                var ranges = new List<(int index, int start, int end)>();
+<div class="posted-with-heading">
+    <div>
+        <h2 class="pax-details-panel-title">@ModeTitle</h2>
+        <p class="pax-details-panel-subtitle">@ModeDescription</p>
+    </div>
+</div>
 
-                // Build list of all ranges
-                for (int i = 0; currentStart < totalPostCount; i++)
-                {
-                    var start = currentStart;
-                    var end = ((start / 100) + 1) * 100;
-                    end = Math.Min(end, totalPostCount);
-                    ranges.Add((i, start, end));
-                    lastEnd = end;
-                    currentStart = end;
-                }
+<div class="posted-with-controls">
+    <div class="posted-with-modes" role="tablist" aria-label="Relationship">
+        <button type="button" role="tab" class="posted-with-mode @(mode == Mode.PostedWith ? "active" : null)" aria-selected="@(mode == Mode.PostedWith)" @onclick="() => SetMode(Mode.PostedWith)">Posted with</button>
+        <button type="button" role="tab" class="posted-with-mode @(mode == Mode.QdBy ? "active" : null)" aria-selected="@(mode == Mode.QdBy)" @onclick="() => SetMode(Mode.QdBy)">Q'd by</button>
+        <button type="button" role="tab" class="posted-with-mode @(mode == Mode.QdFor ? "active" : null)" aria-selected="@(mode == Mode.QdFor)" @onclick="() => SetMode(Mode.QdFor)">Q'd for</button>
+    </div>
 
-                var recentStart = Math.Max(totalPostCount - 100, historicalPostCount);
-
-                // Only add "Recent100" if it doesn't overlap with the last range
-                if (recentStart > lastEnd)
-                {
-                    ranges.Add((-1, recentStart, totalPostCount));
-                }
-
-                // Show collapsible section if there are more than 5 ranges
-                if (ranges.Count > 5)
-                {
-                    var regularRanges = ranges.Where(r => r.index >= 0).ToList();
-                    var recent100 = ranges.FirstOrDefault(r => r.index == -1);
-
-                    <Accordion>
-                        <Collapse Visible="@showBy100s">
-                            <CollapseHeader>
-                                <Heading Size="HeadingSize.Is6">
-                                    <Button Clicked="@(() => showBy100s = !showBy100s)" Color="Color.Link" Size="Size.Small">
-                                        <Icon Name="@(showBy100s ? IconName.AngleDown : IconName.AngleRight)" />
-                                        By 100s
-                                    </Button>
-                                </Heading>
-                            </CollapseHeader>
-                            <CollapseBody>
-                                @foreach (var range in regularRanges)
-                                {
-                                    var local = range.index;
-                                    var start = range.start;
-                                    var end = range.end;
-                                    <ListGroupItem Name="@local.ToString()" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange(local.ToString()))">@start-@end</ListGroupItem>
-                                }
-                            </CollapseBody>
-                        </Collapse>
-                    </Accordion>
-
-                    // Add Recent100 if it exists
-                    if (recent100.index == -1)
-                    {
-                        <ListGroupItem Name="Recent100" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange("Recent100"))">
-                            @recent100.start-@recent100.end
-                        </ListGroupItem>
-                    }
-                }
-                else
-                {
-                    // If 5 or fewer ranges, just show them all
-                    foreach (var range in ranges)
-                    {
-                        var local = range.index;
-                        var start = range.start;
-                        var end = range.end;
-                        var name = local == -1 ? "Recent100" : local.ToString();
-                        <ListGroupItem Name="@name" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange(name))">@start-@end</ListGroupItem>
-                    }
-                }
-            }
-
-            <span style="margin-top:12px">Most Q'd By</span>
-            <ListGroupItem Name="QAllTime" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange("QAllTime"))">@allTimeWording</ListGroupItem>
-
-            <span style="margin-top:12px">Most Q'd</span>
-            <ListGroupItem Name="QOthersAllTime" Clicked="@(async (r) => await OnSelectedPaxPostWithViewChange("QOthersAllTime"))">@allTimeWording</ListGroupItem>
-        </ListGroup>
-    </Column>
-    @if (selectedPaxPostedWith != null && selectedPaxPostedWith.Count > 0 && !selectedPaxPostWithLoading)
+    @if (mode == Mode.PostedWith && rangeOptions.Count > 1)
     {
-        <Column ColumnSize="ColumnSize.Is6">
-
-            <Table Narrow Bordered FixedHeader FixedHeaderTableHeight="440px" FixedHeaderTableMaxHeight="440px">
-                <TableHeader>
-                    <TableRow>
-                        <TableHeaderCell>Pax (@selectedPaxPostWithTotalCount)</TableHeaderCell>
-                        <TableHeaderCell>Count </TableHeaderCell>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    @foreach (var paxPoster in selectedPaxPostedWith)
-                    {
-                        <TableRow>
-                            <TableRowCell>@paxPoster.Key</TableRowCell>
-                            <TableRowCell>@paxPoster.Value</TableRowCell>
-                        </TableRow>
-                    }
-                </TableBody>
-            </Table>
-        </Column>
+        <label class="posted-with-range">
+            <span class="sr-only">Post range</span>
+            <select value="@selectedRange" @onchange="OnRangeChanged">
+                @foreach (var option in rangeOptions)
+                {
+                    <option value="@option.Key">@option.Label</option>
+                }
+            </select>
+        </label>
     }
+</div>
 
-    @if (selectedPaxPostWithLoading)
-    {
-        <Column ColumnSize="ColumnSize.Is6">
-            <div class="center-content">
-                <SpinKit Type="SpinKitType.Bounce" />
-            </div>
-        </Column>
-    }
-</Row>
+@if (loading)
+{
+    <div class="posted-with-loading"><SpinKit Type="SpinKitType.Bounce" /></div>
+}
+else if (results.Count == 0)
+{
+    <p class="posted-with-empty">No one to show for this selection.</p>
+}
+else
+{
+    <p class="posted-with-summary">Top @results.Count of @totalMatched.ToString("N0") PAX</p>
+    <ol class="posted-with-list">
+        @{ var rank = 0; }
+        @foreach (var item in results)
+        {
+            rank++;
+            <li>
+                <span class="posted-with-rank">@rank</span>
+                <span class="posted-with-name">@item.Key</span>
+                <span class="posted-with-count">
+                    <span class="posted-with-track"><span class="posted-with-bar" style="width: @BarWidth(item.Value)"></span></span>
+                    <span class="posted-with-value">@item.Value</span>
+                </span>
+            </li>
+        }
+    </ol>
+}
 
 @code {
     [Parameter]
@@ -133,89 +69,139 @@
     [Parameter]
     public HistoricalData SelectedPaxHistoricalData { get; set; }
 
-    public Dictionary<string, int> selectedPaxPostedWith { get; set; }
-    public string selectedPaxPostWithView { get; set; } = null;
-    public bool selectedPaxPostWithLoading { get; set; } = false;
-    public int selectedPaxPostWithLimit { get; set; } = 15;
-    public int selectedPaxPostWithTotalCount { get; set; }
-    public int selectedPax100Count { get; set; }
-    public DateTime? firstNonHistoricalDate { get; set; }
-    public string allTimeWording;
-    public int totalPostCount; // New property for total post count
-    public int historicalPostCount;
-    private bool showBy100s = false;
+    private enum Mode { PostedWith, QdBy, QdFor }
 
-    protected override void OnInitialized()
+    private const int ResultLimit = 15;
+
+    private Mode mode = Mode.PostedWith;
+    private string selectedRange = "all";
+    private bool loading;
+    private List<KeyValuePair<string, int>> results = new();
+    private int totalMatched;
+    private int maxCount;
+    private List<(string Key, string Label)> rangeOptions = new();
+    private Dictionary<(DateTime Date, string Site), List<Post>> postsByWorkout;
+    private List<Post> paxPostsAsc = new();
+
+    private string ModeTitle => mode switch
     {
-        selectedPaxPostedWith = new Dictionary<string, int>();
-        historicalPostCount = SelectedPaxHistoricalData == null ? 0 : SelectedPaxHistoricalData.PostCount;
-        totalPostCount = historicalPostCount + SelectedPaxPosts.Count;
-        selectedPax100Count = (totalPostCount - historicalPostCount + 99) / 100;
-        selectedPaxPostWithView = null;
-        firstNonHistoricalDate = AllPosts.Min(x => x.Date);
-        allTimeWording = SelectedPaxHistoricalData == null ? "All Time" : $"Since {firstNonHistoricalDate.Value.ToString("M/d/yy")}";
+        Mode.QdBy => "Q'd by",
+        Mode.QdFor => "Q'd for",
+        _ => "Posted with"
+    };
+
+    private string ModeDescription => mode switch
+    {
+        Mode.QdBy => "Qs who led workouts this PAX attended.",
+        Mode.QdFor => "PAX who posted at workouts this PAX led.",
+        _ => "PAX who were at the same workouts."
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        paxPostsAsc = SelectedPaxPosts.OrderBy(p => p.Date).ToList();
+        BuildRangeOptions();
+        await LoadAsync();
     }
 
-    private async Task OnSelectedPaxPostWithViewChange(string index)
+    private void BuildRangeOptions()
     {
-        selectedPaxPostedWith = await GetAllTimePaxPostWith(index, SelectedPaxPosts, AllPosts, selectedPax100Count);
-        selectedPaxPostWithView = index;
+        rangeOptions = new List<(string, string)>();
+
+        var historicalCount = SelectedPaxHistoricalData?.PostCount ?? 0;
+        var allTimeLabel = SelectedPaxHistoricalData == null
+            ? "All time"
+            : $"Since {AllPosts.Min(x => x.Date):M/d/yy}";
+        rangeOptions.Add(("all", allTimeLabel));
+
+        var count = paxPostsAsc.Count;
+        if (count > 100)
+        {
+            rangeOptions.Add(("recent", "Last 100 posts"));
+        }
+
+        for (var i = 0; i * 100 < count; i++)
+        {
+            var start = historicalCount + i * 100 + 1;
+            var end = historicalCount + Math.Min((i + 1) * 100, count);
+            if (end - start < 1) break;
+            rangeOptions.Add((i.ToString(), $"Posts {start}–{end}"));
+        }
     }
 
-    public async Task<Dictionary<string, int>> GetAllTimePaxPostWith(string index, List<Post> selectedPaxPosts, List<Post> allPosts, int selectedPax100Count)
+    private async Task SetMode(Mode newMode)
     {
-        List<Post> paxPosts = new List<Post>();
-        var newPaxPostedWith = new Dictionary<string, int>();
+        if (mode == newMode) return;
+        mode = newMode;
+        await LoadAsync();
+    }
 
-        selectedPaxPostWithLoading = true;
+    private async Task OnRangeChanged(ChangeEventArgs e)
+    {
+        selectedRange = e.Value?.ToString() ?? "all";
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
         await Task.Delay(1);
 
-        // All Time
-        if (index == "AllTime" || index == "QAllTime")
-        {
-            paxPosts = selectedPaxPosts.OrderBy(p => p.Date).ToList();
-        }
-        else if (index == "Recent100")
-        {
-            paxPosts = selectedPaxPosts.OrderBy(p => p.Date).Skip(selectedPax100Count * 100).ToList();
-        }
-        else if (index == "QOthersAllTime")
-        {
-            paxPosts = selectedPaxPosts.Where(x => x.IsQ).OrderBy(p => p.Date).ToList();
-        }
-        else
-        {
-            var intIndex = int.Parse(index);
-            paxPosts = selectedPaxPosts.OrderBy(p => p.Date).Skip(intIndex * 100).Take(100).ToList();
-        }
+        EnsureLookup();
 
-        foreach (var paxPost in paxPosts)
+        IEnumerable<Post> source = mode switch
         {
-            var matched = allPosts.Where(p => p.Date == paxPost.Date && p.Site == paxPost.Site && p.Pax != paxPost.Pax).ToList();
-            if (index == "QAllTime")
-            {
-                matched = matched.Where(p => p.IsQ).ToList();
-            }
+            Mode.QdFor => paxPostsAsc.Where(p => p.IsQ),
+            Mode.QdBy => paxPostsAsc,
+            _ => ApplyRange(paxPostsAsc)
+        };
 
-            foreach (var pax in matched)
+        var counts = new Dictionary<string, int>();
+        foreach (var paxPost in source)
+        {
+            if (!postsByWorkout.TryGetValue((paxPost.Date, paxPost.Site), out var others))
+                continue;
+
+            foreach (var other in others)
             {
-                if (newPaxPostedWith.ContainsKey(pax.Pax))
-                {
-                    newPaxPostedWith[pax.Pax]++;
-                }
-                else
-                {
-                    newPaxPostedWith.Add(pax.Pax, 1);
-                }
+                if (other.Pax == paxPost.Pax) continue;
+                if (mode == Mode.QdBy && !other.IsQ) continue;
+
+                counts[other.Pax] = counts.TryGetValue(other.Pax, out var c) ? c + 1 : 1;
             }
         }
 
-        selectedPaxPostWithTotalCount = newPaxPostedWith.Count;
-        var rtn = newPaxPostedWith.OrderByDescending(p => p.Value).Take(selectedPaxPostWithLimit).ToDictionary(p => p.Key, p => p.Value);
+        totalMatched = counts.Count;
+        results = counts.OrderByDescending(p => p.Value).ThenBy(p => p.Key).Take(ResultLimit).ToList();
+        maxCount = results.Count == 0 ? 1 : results[0].Value;
 
-        selectedPaxPostWithLoading = false;
-        await Task.Delay(1);
-
-        return rtn;
+        loading = false;
     }
+
+    private IEnumerable<Post> ApplyRange(List<Post> posts)
+    {
+        if (selectedRange == "all") return posts;
+        if (selectedRange == "recent") return posts.Skip(Math.Max(0, posts.Count - 100));
+        if (int.TryParse(selectedRange, out var index)) return posts.Skip(index * 100).Take(100);
+        return posts;
+    }
+
+    private void EnsureLookup()
+    {
+        if (postsByWorkout != null) return;
+
+        postsByWorkout = new Dictionary<(DateTime, string), List<Post>>();
+        foreach (var post in AllPosts)
+        {
+            var key = (post.Date, post.Site);
+            if (!postsByWorkout.TryGetValue(key, out var list))
+            {
+                list = new List<Post>();
+                postsByWorkout[key] = list;
+            }
+            list.Add(post);
+        }
+    }
+
+    private string BarWidth(int count) => $"{Math.Round((double)count / maxCount * 100, 1)}%";
 }

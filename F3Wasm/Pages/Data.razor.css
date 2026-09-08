@@ -6,15 +6,6 @@
     margin-bottom: 1.75rem;
 }
 
-.data-eyebrow {
-    margin: 0 0 .25rem;
-    color: #697386;
-    font-size: .75rem;
-    font-weight: 800;
-    letter-spacing: .11em;
-    text-transform: uppercase;
-}
-
 .data-heading h1 {
     margin: 0;
     color: #121426;
@@ -203,7 +194,7 @@
     letter-spacing: -.02em;
 }
 
-.results-heading span {
+.results-count {
     display: block;
     margin-top: .15rem;
     color: #7a8495;
@@ -367,15 +358,172 @@
     border: 0;
 }
 
+#loader {
+    display: flex;
+    justify-content: center;
+    padding: 3rem 0;
+}
+
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(18, 20, 38, .45);
+}
+
+.loading-overlay-content {
+    padding: 1.75rem 2rem;
+    border-radius: .85rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #fff;
+    box-shadow: 0 16px 40px rgba(20, 27, 45, .2);
+    text-align: center;
+}
+
+.loading-overlay-text {
+    margin-top: .9rem;
+    color: #364153;
+    font-size: .95rem;
+    font-weight: 600;
+}
+
+/* PAX details modal */
+.pax-modal-host ::deep .modal-content {
+    border: 0;
+    background: #f5f7fa;
+}
+
+.pax-modal-host ::deep .modal-header {
+    align-items: flex-start;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #dfe4eb;
+    background: #fff;
+}
+
+.pax-modal-host ::deep .modal-title {
+    color: #121426;
+    font-size: 1.35rem;
+    font-weight: 750;
+    letter-spacing: -.03em;
+    line-height: 1.15;
+}
+
+.pax-modal-host ::deep .modal-body {
+    padding: 1.25rem;
+}
+
+.pax-modal-heading {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.pax-modal-subtitle {
+    margin-top: .3rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .25rem 1rem;
+    color: #697386;
+    font-size: .8rem;
+    font-weight: 600;
+}
+
+.pax-modal-heat {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+}
+
+.pax-details {
+    max-width: 1480px;
+    margin: 0 auto;
+}
+
+.pax-details-grid {
+    display: grid;
+    grid-template-columns: minmax(320px, 2fr) minmax(480px, 3fr);
+    gap: 1rem;
+    align-items: start;
+}
+
+.pax-details-grid,
+.pax-details ::deep .pax-details-panel,
+.pax-details > .pax-details-panel {
+    margin-top: 1rem;
+}
+
+.pax-details-panel {
+    min-width: 0;
+    padding: 1rem 1.15rem 1.15rem;
+    border: 1px solid #dfe4eb;
+    border-radius: .8rem;
+    background: #fff;
+}
+
+.pax-details-grid .pax-details-panel {
+    margin-top: 0;
+}
+
+.pax-details-panel-title {
+    margin: 0 0 .75rem;
+    color: #171a2b;
+    font-size: 1rem;
+    font-weight: 750;
+    letter-spacing: -.01em;
+}
+
+.pax-details-footnotes {
+    margin-top: 1rem;
+    color: #7a8495;
+    font-size: .76rem;
+    text-align: center;
+}
+
+.pax-details-footnotes p {
+    margin: 0 0 .25rem;
+}
+
+@media (min-width: 992px) {
+    .pax-modal-host ::deep .pax-details-modal {
+        width: calc(100vw - 3rem);
+        max-width: 1560px;
+        height: calc(100vh - 3rem);
+        margin: 1.5rem auto;
+    }
+
+    .pax-modal-host ::deep .pax-details-modal .modal-content {
+        height: 100%;
+        border-radius: .85rem;
+        overflow: hidden;
+    }
+
+    .pax-modal-host ::deep .modal-header {
+        flex: 0 0 auto;
+    }
+
+    .pax-modal-host ::deep .modal-body {
+        overflow-y: auto;
+        padding: 1.25rem 1.5rem;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .pax-details-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 767.98px) {
     .data-heading {
         align-items: center;
         gap: 1rem;
         margin-bottom: .55rem;
-    }
-
-    .data-eyebrow {
-        display: none;
     }
 
     .data-heading h1 {
@@ -432,34 +580,56 @@
     }
 
     .results-toolbar {
-        display: block;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: .6rem .5rem;
         margin-top: 1.35rem;
     }
 
     .results-heading {
-        margin-bottom: .65rem;
+        min-width: 0;
+        align-self: center;
+    }
+
+    .results-heading h2 {
+        display: none;
+    }
+
+    .results-heading.challenge h2 {
+        display: block;
+        font-size: 1.05rem;
+    }
+
+    .results-count {
+        margin: 0;
+        color: #171a2b;
+        font-size: 1.05rem;
+        font-weight: 750;
+        letter-spacing: -.02em;
+        font-variant-numeric: tabular-nums;
     }
 
     .results-actions {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: .5rem;
+        display: contents;
     }
 
     .search-box {
         width: 100%;
         grid-column: 1 / -1;
+        grid-row: 2;
     }
 
     .mobile-sort-controls {
         min-width: 0;
         display: flex;
+        justify-content: flex-end;
         gap: .4rem;
     }
 
     .mobile-sort {
+        width: 11rem;
         min-width: 0;
-        flex: 1;
         height: 2.55rem;
         margin: 0;
         padding: 0 .2rem 0 .75rem;
@@ -505,6 +675,7 @@
     }
 
     .export-button {
+        grid-column: 1 / -1;
         min-height: 2.55rem;
     }
 
@@ -609,5 +780,32 @@
         background: #f8faff;
         font-size: .82rem;
         font-weight: 750;
+    }
+
+    .pax-modal-host ::deep .modal-header {
+        padding: .85rem 1rem;
+    }
+
+    .pax-modal-host ::deep .modal-title {
+        font-size: 1.2rem;
+    }
+
+    .pax-modal-host ::deep .modal-body {
+        padding: .9rem .85rem 1.5rem;
+    }
+
+    .pax-details-grid {
+        gap: .75rem;
+    }
+
+    .pax-details-grid,
+    .pax-details ::deep .pax-details-panel,
+    .pax-details > .pax-details-panel {
+        margin-top: .75rem;
+    }
+
+    .pax-details-panel {
+        padding: .85rem .9rem 1rem;
+        border-radius: .7rem;
     }
 }

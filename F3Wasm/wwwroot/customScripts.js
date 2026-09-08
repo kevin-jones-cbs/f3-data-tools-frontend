@@ -22,42 +22,42 @@ function applyStylesBasedOnAriaLabel() {
     elements.forEach(function (element) {
         var ariaLabel = element.getAttribute('aria-label');
         if (allDates2.indexOf(ariaLabel) > -1) {
-            element.style.background = 'linear-gradient(to right, #007bff 50%, #3013b7 50%)'; 
+            element.style.background = 'linear-gradient(to right, #3478f6 50%, #1f4fb8 50%)'; 
         }
 
         if (allDates3.indexOf(ariaLabel) > -1) {
-            element.style.background = 'linear-gradient(to right, #007bff 33.33%, #3013b7 33.33%, #3013b7 66.66%, #7e80f9 66.66%)';
+            element.style.background = 'linear-gradient(to right, #3478f6 33.33%, #1f4fb8 33.33%, #1f4fb8 66.66%, #8db1fb 66.66%)';
         }
 
         //dates2Q1 should be blue and green
         if (allDates2Q1.indexOf(ariaLabel) > -1) {
-            element.style.background = 'linear-gradient(to right, #28a745 50%, #007bff 50%)';
+            element.style.background = 'linear-gradient(to right, #25a667 50%, #3478f6 50%)';
         }
 
         //dates2Q2 should be 2 shades of green
         if (allDates2Q2.indexOf(ariaLabel) > -1) {
-            element.style.background = 'linear-gradient(to right, #28a745 50%, #116F26 50%)';
+            element.style.background = 'linear-gradient(to right, #25a667 50%, #17804d 50%)';
         }
 
         //dates3Q1 should be green and the colors from allDates2
         if (allDates3Q1.indexOf(ariaLabel) > -1) {
-            element.style.background = 'linear-gradient(to right, #28a745 33.33%, #007bff 33.33%, #007bff 66.66%, #3013b7 66.66%)';
+            element.style.background = 'linear-gradient(to right, #25a667 33.33%, #3478f6 33.33%, #3478f6 66.66%, #1f4fb8 66.66%)';
         }
 
         //dates3Q2 should be 2 shades of green and blue
         if (allDates3Q2.indexOf(ariaLabel) > -1) {
-            element.style.background = 'linear-gradient(to right, #28a745 33.33%, #116F26 33.33%, #116F26 66.66%, #007bff 66.66%)';
+            element.style.background = 'linear-gradient(to right, #25a667 33.33%, #17804d 33.33%, #17804d 66.66%, #3478f6 66.66%)';
         }
 
         //dates3Q3 should be 3 shades of green
         if (allDates3Q3.indexOf(ariaLabel) > -1) {
-            element.style.background = 'linear-gradient(to right, #28a745 33.33%, #116F26 33.33%, #116F26 66.66%, #0d4f1d 66.66%)';
+            element.style.background = 'linear-gradient(to right, #25a667 33.33%, #17804d 33.33%, #17804d 66.66%, #0f5c36 66.66%)';
         }
 
         //datesQSource should just change the font color
         if (allDatesQSource.indexOf(ariaLabel) > -1) {
             element.style.fontWeight = 'bold';
-            element.style.color = '#d9aaeb';
+            element.style.color = '#ffd6f2';
             element.style.textDecoration = 'underline';
         }
     });

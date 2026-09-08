@@ -1,6 +1,32 @@
+.pax-details-panel {
+    min-width: 0;
+    padding: 1rem 1.15rem 1.15rem;
+    border: 1px solid #dfe4eb;
+    border-radius: .8rem;
+    background: #fff;
+}
+
+.pax-details-panel-heading {
+    margin-bottom: .75rem;
+}
+
+.pax-details-panel-title {
+    margin: 0;
+    color: #171a2b;
+    font-size: 1rem;
+    font-weight: 750;
+    letter-spacing: -.01em;
+}
+
+.pax-details-panel-subtitle {
+    margin: .2rem 0 0;
+    color: #7a8495;
+    font-size: .78rem;
+}
+
 .milestone-chart {
     position: relative;
-    height: 20rem;
+    height: 16rem;
 }
 
 .milestone-chart ::deep canvas {
@@ -8,14 +34,13 @@
     height: 100% !important;
 }
 
-@media (max-width: 991.98px) {
-    .milestone-chart {
-        height: 17rem;
+@media (max-width: 767.98px) {
+    .pax-details-panel {
+        padding: .85rem .9rem 1rem;
+        border-radius: .7rem;
     }
-}
 
-@media (max-width: 575.98px) {
     .milestone-chart {
-        height: 15rem;
+        height: 13rem;
     }
 }
