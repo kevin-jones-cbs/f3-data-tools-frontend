@@ -1,0 +1,12 @@
+.column-selector { min-width: 0; }
+
+.column-selector small {
+    overflow: hidden;
+    margin-top: .32rem;
+    display: block;
+    color: #7a8495 !important;
+    font-size: .68rem;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

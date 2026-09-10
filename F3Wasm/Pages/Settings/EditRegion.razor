@@ -14,61 +14,76 @@
 
 <div class="region-editor">
     <header class="editor-header">
-        <div>
-            <a href="/settings/regions" class="back-link">← Region Settings</a>
+        <div class="editor-heading">
+            <a href="/settings/regions" class="back-link"><span aria-hidden="true">←</span> Region settings</a>
+            <span class="eyebrow">Region configuration</span>
             <h1>@(draft?.DisplayName ?? begin?.Region?.DisplayName ?? Region)</h1>
             @if (authorization != null)
             {
                 <div class="status-line">
-                    <span class="status-connected">Connected</span>
-                    <span>@authorization.GoogleEmail</span>
-                    <span>Loaded @authorization.CatalogVersion</span>
-                    <span>@authorization.Source</span>
-                    @if (!string.IsNullOrWhiteSpace(authorization.S3VersionId)) { <span>S3 @authorization.S3VersionId</span> }
-                    @if (authorization.LastModifiedUtc.HasValue) { <span>Modified @authorization.LastModifiedUtc.Value.ToLocalTime()</span> }
-                    @if (IsDirty) { <strong>Unsaved changes</strong> }
+                    <span class="status-pill connected"><span class="status-dot" aria-hidden="true"></span>Connected</span>
+                    <span class="status-detail" title="Verified Google account">@authorization.GoogleEmail</span>
+                    <span class="status-detail">@authorization.CatalogVersion · @authorization.Source</span>
+                    @if (IsDirty) { <span class="status-pill unsaved"><span class="status-dot" aria-hidden="true"></span>Unsaved changes</span> }
                 </div>
             }
         </div>
         @if (authorization != null)
         {
             <div class="header-actions">
-                <button class="btn btn-outline-secondary btn-sm" disabled="@isBusy" @onclick="ReverifyAsync">Verify again</button>
-                <button class="btn btn-primary" disabled="@(!CanSave || isSaving)" @onclick="SaveAsync">@(isSaving ? "Saving…" : "Save changes")</button>
+                <button class="btn btn-outline-secondary" disabled="@isBusy" @onclick="ReverifyAsync">@(isBusy ? "Verifying…" : "Verify again")</button>
+                <button class="btn btn-primary" disabled="@(!CanSave || isSaving)" @onclick="SaveAsync" title="@SaveButtonTitle">@(isSaving ? "Saving…" : "Save changes")</button>
             </div>
         }
     </header>
 
+    @if (authorization != null)
+    {
+        <div class="editor-progress" aria-label="Configuration progress">
+            <div class="progress-step complete"><span aria-hidden="true">✓</span><strong>Access verified</strong></div>
+            <div class="progress-line"></div>
+            <div class="progress-step @(IsDirty ? "active" : "complete")"><span aria-hidden="true">@(IsDirty ? "2" : "✓")</span><strong>Configure</strong></div>
+            <div class="progress-line"></div>
+            <div class="progress-step @(validation?.IsValid == true ? "complete" : "")"><span aria-hidden="true">@(validation?.IsValid == true ? "✓" : "3")</span><strong>Validate &amp; save</strong></div>
+        </div>
+    }
+
     @if (!string.IsNullOrWhiteSpace(error))
     {
-        <div class="alert alert-danger" role="alert">@error</div>
+        <div class="admin-alert error" role="alert"><span class="alert-icon" aria-hidden="true">!</span><div><strong>Something went wrong</strong><p>@error</p></div></div>
     }
     @if (!string.IsNullOrWhiteSpace(saveMessage))
     {
-        <div class="alert alert-success" role="status">@saveMessage</div>
+        <div class="admin-alert success" role="status"><span class="alert-icon" aria-hidden="true">✓</span><div><strong>Changes saved</strong><p>@saveMessage</p></div></div>
     }
 
     @if (begin == null)
     {
-        <p>Loading region…</p>
+        @if (string.IsNullOrWhiteSpace(error))
+        {
+            <div class="loading-state" role="status" aria-live="polite"><span class="admin-spinner" aria-hidden="true"></span><div><strong>Loading region</strong><span>Fetching configuration and access requirements…</span></div></div>
+        }
     }
     else if (authorization == null)
     {
         <section class="editor-card verification-card">
+            <div class="verification-icon" aria-hidden="true">G</div>
+            <span class="section-kicker">Secure access</span>
             <h2>Verify with Google</h2>
-            <p>Select the current spreadsheet for <strong>@begin.Region?.DisplayName</strong>. Google will ask for per-file access; the backend also requires effective edit and modify-content permission.</p>
+            <p>Select the current spreadsheet for <strong>@begin.Region?.DisplayName</strong>. Google grants access only to the file you choose, and the editor verifies that you can modify its content.</p>
             @if (string.IsNullOrWhiteSpace(begin.GoogleClientId) || string.IsNullOrWhiteSpace(begin.GooglePickerApiKey))
             {
-                <div class="alert alert-warning">Google Region Editor credentials are not configured on the backend.</div>
+                <div class="admin-alert warning" role="alert"><span class="alert-icon" aria-hidden="true">!</span><div><strong>Setup required</strong><p>Google Region Editor credentials are not configured on the backend.</p></div></div>
             }
-            <button class="btn btn-primary" disabled="@isBusy" @onclick="VerifyAsync">@(isBusy ? "Verifying…" : "Verify with Google")</button>
+            <button class="btn btn-primary verification-button" disabled="@isBusy" @onclick="VerifyAsync">@(isBusy ? "Verifying…" : "Choose spreadsheet with Google")</button>
+            <small class="verification-note">Viewer and commenter access won’t expose configuration details.</small>
         </section>
     }
     else if (draft != null && inspection != null)
     {
         <CascadingValue Value="validation">
         <section class="editor-card">
-            <h2>Basics</h2>
+            <div class="section-heading"><span class="section-number">01</span><div><h2>Basics</h2><p>Name this region and control where it appears.</p></div></div>
             <div class="form-grid three">
                 <RegionEditorField Label="Display name" Path="displayName">
                     <input class="form-control" value="@draft.DisplayName" @oninput="e => Change(() => draft.DisplayName = e.Value?.ToString() ?? string.Empty)" />
@@ -84,9 +99,15 @@
         </section>
 
         <section class="editor-card">
-            <div class="card-title-row"><h2>Google Sheet Connection</h2><span class="status-connected">Verified as @authorization.GoogleEmail</span></div>
-            <div class="sheet-identity"><strong>@inspection.SpreadsheetTitle</strong><code>@draft.SpreadsheetId</code></div>
-            <p>Service account access: <strong>@(inspection.ServiceAccountCanAccess ? "Connected" : "Unavailable")</strong></p>
+            <div class="card-title-row"><div class="section-heading"><span class="section-number">02</span><div><h2>Google Sheet connection</h2><p>Confirm the source used for this region’s data.</p></div></div><span class="status-pill connected"><span class="status-dot" aria-hidden="true"></span>Verified</span></div>
+            <div class="sheet-identity"><div><small>Spreadsheet</small><strong>@inspection.SpreadsheetTitle</strong></div><code title="Spreadsheet ID">@draft.SpreadsheetId</code></div>
+            <p class="connection-status">Service account access <strong class="@(inspection.ServiceAccountCanAccess ? "available" : "unavailable")">@(inspection.ServiceAccountCanAccess ? "Connected" : "Unavailable")</strong></p>
+            <div class="connection-meta">
+                <span>Catalog <strong>@authorization.CatalogVersion</strong></span>
+                <span>Source <strong>@authorization.Source</strong></span>
+                @if (!string.IsNullOrWhiteSpace(authorization.S3VersionId)) { <span>S3 <strong>@authorization.S3VersionId</strong></span> }
+                @if (authorization.LastModifiedUtc.HasValue) { <span>Modified <strong>@authorization.LastModifiedUtc.Value.ToLocalTime().ToString("g")</strong></span> }
+            </div>
             <button class="btn btn-outline-secondary btn-sm" @onclick="SelectReplacementAsync">Select replacement spreadsheet</button>
             @if (spreadsheetMappingsNeedReview)
             {
@@ -95,7 +116,7 @@
         </section>
 
         <section class="editor-card">
-            <h2>Master Data</h2>
+            <div class="section-heading"><span class="section-number">03</span><div><h2>Master data</h2><p>Map the workout records used by analytics and uploads.</p></div></div>
             <p class="help">Select and order every historical/current Master Data tab. The last tab is the current write tab.</p>
             <div class="tab-list">
                 @for (var index = 0; index < draft.MasterDataSheetIds.Count; index++)
@@ -105,8 +126,8 @@
                     <div class="tab-row">
                         <span>@(itemIndex + 1). @(tab?.Title ?? draft.MasterDataSheetNames[itemIndex]) <small>ID @draft.MasterDataSheetIds[itemIndex]</small></span>
                         <div>
-                            <button class="btn btn-sm btn-light" disabled="@(itemIndex == 0)" @onclick="@(() => MoveMasterTab(itemIndex, -1))">↑</button>
-                            <button class="btn btn-sm btn-light" disabled="@(itemIndex == draft.MasterDataSheetIds.Count - 1)" @onclick="@(() => MoveMasterTab(itemIndex, 1))">↓</button>
+                            <button class="btn btn-sm btn-light icon-button" title="Move up" aria-label="Move @(tab?.Title ?? draft.MasterDataSheetNames[itemIndex]) up" disabled="@(itemIndex == 0)" @onclick="@(() => MoveMasterTab(itemIndex, -1))">↑</button>
+                            <button class="btn btn-sm btn-light icon-button" title="Move down" aria-label="Move @(tab?.Title ?? draft.MasterDataSheetNames[itemIndex]) down" disabled="@(itemIndex == draft.MasterDataSheetIds.Count - 1)" @onclick="@(() => MoveMasterTab(itemIndex, 1))">↓</button>
                             <button class="btn btn-sm btn-outline-danger" @onclick="@(() => RemoveMasterTab(itemIndex))">Remove</button>
                         </div>
                     </div>
@@ -120,7 +141,7 @@
                         <option value="@tab.SheetId">@tab.Title — ID @tab.SheetId</option>
                     }
                 </select>
-                <div class="input-group-append"><button class="btn btn-outline-primary" @onclick="AddMasterTab">Add</button></div>
+                <div class="input-group-append"><button class="btn btn-outline-primary" disabled="@string.IsNullOrWhiteSpace(masterTabToAdd)" @onclick="AddMasterTab">Add tab</button></div>
             </div>
             <RegionEditorField Label="Missing-data row offset" Path="missingDataRowOffset">
                 <input class="form-control short-input" type="number" min="0" value="@draft.MissingDataRowOffset" @onchange="SetMissingOffset" />
@@ -142,7 +163,7 @@
         </section>
 
         <section class="editor-card">
-            <h2>Roster</h2>
+            <div class="section-heading"><span class="section-number">04</span><div><h2>Roster</h2><p>Connect PAX names and supporting roster fields.</p></div></div>
             <div class="form-grid two">
                 <RegionEditorField Label="Roster tab" Path="rosterSheetId">
                     <select class="form-control" value="@draft.RosterSheetId" @onchange="ChangeRosterTab">
@@ -168,7 +189,7 @@
         </section>
 
         <section class="editor-card">
-            <h2>AO / Sites</h2>
+            <div class="section-heading"><span class="section-number">05</span><div><h2>AO / Sites</h2><p>Map workout locations and their scheduling fields.</p></div></div>
             <RegionEditorField Label="AO tab" Path="aosSheetName">
                 <select class="form-control" value="@draft.AosSheetName" @onchange="ChangeAoTab">
                     @foreach (var tab in inspection.Tabs) { <option value="@tab.Title">@tab.Title</option> }
@@ -192,35 +213,35 @@
         </section>
 
         <section class="editor-card">
-            <h2>Features and Advanced Settings</h2>
+            <div class="section-heading"><span class="section-number">06</span><div><h2>Features &amp; advanced settings</h2><p>Enable region-specific behavior and inspect raw configuration.</p></div></div>
             <div class="toggle-grid">
                 <label><input type="checkbox" checked="@draft.SupportsDownrange" @onchange="e => Change(() => draft.SupportsDownrange = (bool)e.Value!)" /> Supports downrange</label>
                 <label><input type="checkbox" checked="@draft.HasHistoricalData" @onchange="e => Change(() => draft.HasHistoricalData = (bool)e.Value!)" /> Has historical data</label>
                 <label><input type="checkbox" checked="@draft.HasQSourcePosts" @onchange="e => Change(() => draft.HasQSourcePosts = (bool)e.Value!)" /> Has Q Source posts</label>
                 <label><input type="checkbox" checked="@draft.HasExtraActivity" @onchange="e => Change(() => draft.HasExtraActivity = (bool)e.Value!)" /> Has extra activity</label>
             </div>
-            <details class="mt-3"><summary>Catalog-level downrange naming regions (read only)</summary><ul>@foreach (var option in downrangeNamingRegions) { <li>@option.Index — @option.DisplayName</li> }</ul></details>
-            <details class="mt-3"><summary>View JSON</summary><pre>@DraftJson</pre></details>
-            <div class="mt-3"><button class="btn btn-sm btn-outline-secondary" @onclick="CheckLiveVersionAsync">Check live version</button>@if (!string.IsNullOrWhiteSpace(liveVersionMessage)) { <span class="ml-2 text-muted">@liveVersionMessage</span> }</div>
+            <details><summary>Catalog-level downrange naming regions <span>Read only</span></summary><ul>@foreach (var option in downrangeNamingRegions) { <li>@option.Index — @option.DisplayName</li> }</ul></details>
+            <details><summary>View configuration JSON <span>Read only</span></summary><pre>@DraftJson</pre></details>
+            <div class="version-check"><button class="btn btn-sm btn-outline-secondary" @onclick="CheckLiveVersionAsync">Check live version</button>@if (!string.IsNullOrWhiteSpace(liveVersionMessage)) { <span>@liveVersionMessage</span> }</div>
         </section>
 
-        <section class="editor-card">
-            <div class="card-title-row"><h2>Validation</h2><button class="btn btn-outline-primary" disabled="@isValidating" @onclick="ValidateAsync">@(isValidating ? "Validating…" : "Run validation")</button></div>
-            @if (validation == null) { <p>Run authoritative validation before saving.</p> }
+        <section class="editor-card validation-card @(validation?.IsValid == true ? "valid" : validation != null ? "invalid" : "")">
+            <div class="card-title-row"><div class="section-heading"><span class="section-number">07</span><div><h2>Validation</h2><p>Check the entire configuration against the live spreadsheet.</p></div></div><button class="btn btn-outline-primary" disabled="@isValidating" @onclick="ValidateAsync">@(isValidating ? "Validating…" : validation == null ? "Run validation" : "Run again")</button></div>
+            @if (validation == null) { <p class="validation-empty">Validation is required after every change before saving.</p> }
             else
             {
-                <p><strong>@(validation.IsValid ? "All blocking checks passed" : $"{validation.Errors.Count} blocking checks failed")</strong> • @validation.Warnings.Count warnings • @validation.ValidatedUtc.ToLocalTime()</p>
-                @foreach (var item in validation.Errors) { <div class="validation-error"><code>@item.Field</code> @item.Message</div> }
-                @foreach (var item in validation.Warnings) { <div class="validation-warning"><code>@item.Field</code> @item.Message</div> }
-                @if (validation.Counts.Count > 0) { <p>@string.Join(" • ", validation.Counts.Select(x => $"{x.Key}: {x.Value:N0}"))</p> }
+                <div class="validation-summary"><span class="validation-mark" aria-hidden="true">@(validation.IsValid ? "✓" : "!")</span><div><strong>@(validation.IsValid ? "All blocking checks passed" : $"{validation.Errors.Count} blocking checks failed")</strong><span>@validation.Warnings.Count warnings · Checked @validation.ValidatedUtc.ToLocalTime().ToString("g")</span></div></div>
+                @foreach (var item in validation.Errors) { <div class="validation-message error"><code>@item.Field</code><span>@item.Message</span></div> }
+                @foreach (var item in validation.Warnings) { <div class="validation-message warning"><code>@item.Field</code><span>@item.Message</span></div> }
+                @if (validation.Counts.Count > 0) { <div class="validation-counts">@foreach (var count in validation.Counts) { <span><strong>@count.Value.ToString("N0")</strong>@count.Key</span> }</div> }
             }
         </section>
 
         @if (IsDirty)
         {
             <section class="editor-card">
-                <h2>Change Review</h2>
-                <ul>@foreach (var change in Changes) { <li><code>@change</code></li> }</ul>
+                <div class="section-heading"><span class="section-number">08</span><div><h2>Change review</h2><p>Review what will be included in the next save.</p></div></div>
+                <div class="change-list">@foreach (var change in Changes) { <code>@change</code> }</div>
             </section>
         }
         </CascadingValue>
@@ -249,6 +270,7 @@
 
     private bool IsDirty => original != null && draft != null && Serialize(original) != Serialize(draft);
     private bool CanSave => validation?.IsValid == true && IsDirty && !spreadsheetMappingsNeedReview;
+    private string SaveButtonTitle => !IsDirty ? "Make a change before saving" : spreadsheetMappingsNeedReview ? "Review mappings and run validation before saving" : validation?.IsValid != true ? "Run validation before saving" : "Save region configuration";
     private string DraftJson => draft == null ? string.Empty : JsonSerializer.Serialize(draft, JsonOptions);
     private IEnumerable<string> RetiredSamples => draft?.AoColumnIndicies.Retired is short index && aoPreview != null ? aoPreview.Columns.FirstOrDefault(x => x.Index == index)?.Samples ?? Enumerable.Empty<string>() : Enumerable.Empty<string>();
     private List<string> Changes => GetChanges();

@@ -6,266 +6,201 @@
 
 <PageTitle>F3 @Region.ToUpper() Importer</PageTitle>
 
-<style>
-    .custom-link {
-        cursor: pointer;
+<div class="upload-page">
+<header class="upload-heading">
+    <div>
+        <span class="eyebrow">Data administration</span>
+        <h1>Workout upload</h1>
+        <p>@(string.IsNullOrWhiteSpace(RegionInfo?.DisplayName) ? "Post attendance and keep the regional data set current." : $"Post attendance for {RegionInfo.DisplayName} and keep the regional data set current.")</p>
+    </div>
+    @if (aoList != null)
+    {
+        <div class="heading-actions" aria-label="Data maintenance actions">
+            <Button Color="Color.Secondary" Outline Clicked="OnMissingAoButtonClicked" Loading="isMissingDataLoading">
+                Check missing
+            </Button>
+            <Button Color="Color.Secondary" Outline Clicked="ClearCache" Loading="isCacheClearing">
+                Clear cache
+            </Button>
+        </div>
     }
+</header>
 
-    .one-row {
-        display: flex;
-        flex-direction: row;
-    }
-
-    .radio-group-item {
-        margin-bottom: -8px;
-        display: inline-grid;
-        width: 100%;
-    }
-
-    /* Card header styling (similar to bg-slate-900 and rounded-t-lg) */
-    .card-header {
-        background-color: #1e293b; /* slate-900 */
-        color: #fff;
-        padding: 1rem;
-        border-top-left-radius: 0.375rem;
-        border-top-right-radius: 0.375rem;
-    }
-
-        .card-header .card-title {
-            margin: 0;
-        }
-
-    /* Location selection card styling */
-    .location-card {
-        cursor: pointer;
-        border: 1px solid #ced4da;
-        border-radius: 0.375rem;
-        padding: 0.5rem 1rem;
-        transition: border-color 0.2s, background-color 0.2s;
-    }
-
-        .location-card:hover {
-            border-color: #86b7fe;
-        }
-
-        .location-card.selected {
-            border-color: #0d6efd;
-            background-color: #e7f1ff;
-        }
-
-    .location-card.missing {
-        border-color: #dc3545; /* red */
-        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4" viewBox="0 0 4 4"><path fill="rgba(250, 190, 190, 0.4)" d="M0 0h2v2H0zm2 2h2v2H2z"/></svg>');
-        background-color: #fdf3f3;
-    }
-
-    .location-card.missing-qsource {
-        border-color: #fd7e14; /* orange */
-        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4" viewBox="0 0 4 4"><path fill="rgba(255, 220, 180, 0.4)" d="M0 0h2v2H0zm2 2h2v2H2z"/></svg>');
-        background-color: #fff8f0;
-    }
-
-    .indicator {
-        width: 1rem;
-        height: 1rem;
-        border: 2px solid #0d6efd;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-        .indicator .dot {
-            width: 0.5rem;
-            height: 0.5rem;
-            background-color: #0d6efd;
-            border-radius: 50%;
-        }
-
-    .indicator.missing {
-        border-color: #dc3545; /* red */
-    }
-
-    .indicator.missing .dot {
-        background-color: #dc3545; /* red */
-    }
-
-    .indicator.missing-qsource {
-        border-color: #fd7e14; /* orange */
-    }
-
-    .indicator.missing-qsource .dot {
-        background-color: #fd7e14; /* orange */
-    }
-
-    .missing-dates-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 0.5rem;
-        cursor: pointer;
-    }
-</style>
-
-<div class="mx-auto" Style="max-width: 600px;">
 @if (aoList == null)
 {
-    <p>Loading...</p>
+    @if (!string.IsNullOrWhiteSpace(loadError))
+    {
+        <div class="load-error" role="alert">
+            <span class="error-icon" aria-hidden="true">!</span>
+            <div><strong>Upload tools couldn’t be loaded</strong><p>@loadError</p><Button Color="Color.Danger" Outline Clicked="LoadUploadDataAsync">Try again</Button></div>
+        </div>
+    }
+    else
+    {
+        <div class="upload-loading" role="status" aria-live="polite">
+            <span class="upload-spinner" aria-hidden="true"></span>
+            <div><strong>Loading upload tools</strong><span>Fetching locations and recent workout data…</span></div>
+        </div>
+    }
 }
 else
 {
-    <div>
-        <!-- Top row: Check Missing Data and Clear Cache -->
-        <div class="d-flex mb-3">
-            <Button Color="Color.Primary" Clicked="OnMissingAoButtonClicked" Class="flex-fill me-2" Loading="isMissingDataLoading">
-                Check for Missing Data
-            </Button>
-            <Button Color="Color.Primary" Clicked="ClearCache" Class="flex-fill">
-                Clear Cache
-            </Button>
-        </div>
+    @if (!string.IsNullOrWhiteSpace(maintenanceMessage))
+    {
+        <div class="maintenance-message @(maintenanceMessageIsError ? "error" : "success")" role="status"><span aria-hidden="true">@(maintenanceMessageIsError ? "!" : "✓")</span>@maintenanceMessage</div>
+    }
+    <div class="upload-layout">
+        <main class="upload-workflow">
+        <section class="upload-card">
+            <div class="step-heading">
+                <span class="step-number">1</span>
+                <div><h2>Workout details</h2><p>Choose the date and AO for this entry.</p></div>
+            </div>
 
-        @if (missingDates.Count > 0)
-        {
-            <div class="mb-3">
-                <Alert Color="Color.Danger" class="d-flex align-items-center">
-                    <Icon Name="IconName.ExclamationCircle" class="me-2" />
-                    <span>Missing entries:</span>
-                </Alert>
+            <label class="field-label">Workout date</label>
+            <div class="date-control">
+                <Addons>
+                    <Addon AddonType="AddonType.Body">
+                        <DatePicker @ref="@datePicker" TValue="DateTime?" Placeholder="Q Date" Date="@qDate" DateChanged="@OnDateChanged" DisplayFormat="MMM d, yyyy" />
+                    </Addon>
+                    <Addon AddonType="AddonType.End">
+                        <Button Color="Color.Secondary" Clicked="@(()=>datePicker.ToggleAsync())" aria-label="Open date picker">
+                            <Icon Name="IconName.CalendarDay" />
+                        </Button>
+                    </Addon>
+                </Addons>
+            </div>
 
-                @foreach (var date in missingDates.OrderBy(d => d))
+            <div class="field-heading">
+                <label class="field-label">Location</label>
+                <span>@qDate?.DayOfWeek</span>
+            </div>
+            <div class="location-grid">
+                @foreach (var item in aoList)
                 {
-                    <div class="mb-3">
-                        <h6 class="mb-2" style="font-weight:600;">@date.DayOfWeek.ToString() - @date.ToShortDateString()</h6>
-                        <div class="missing-dates-grid">
-                            @* Show regular missing AOs *@
-                            @foreach (var missingAo in missingAos.Where(x => x.Date.Date == date.Date))
-                            {
-                                <Card onclick="@(() => OnMissingAoSelected(missingAo, false))" style="border-color: #dc3545; cursor: pointer;">
-                                    <CardBody style="padding: 0.5em; margin:4px; font-weight:500; background-color: #fdf3f3;" class="d-flex justify-content-between text-start align-items-center">
-                                        <CardText style="margin-bottom:0;">
-                                            <span>@missingAo.Name</span>
-                                        </CardText>
-                                        <Icon Name="IconName.ChevronRight" class="ms-auto" />
-                                    </CardBody>
-                                </Card>
-                            }
-
-                            @* Show Q Source missing AOs with orange styling *@
-                            @foreach (var qSourceAo in missingQSourceAos.Where(x => x.Date.Date == date.Date))
-                            {
-                                <Card onclick="@(() => OnMissingAoSelected(qSourceAo, true))" style="border-color: #fd7e14; cursor: pointer;">
-                                    <CardBody style="padding: 0.5em; margin:4px; font-weight:500; background-color: #fff8f0;" class="d-flex justify-content-between text-start align-items-center">
-                                        <CardText style="margin-bottom:0;">
-                                            <span>@qSourceAo.Name</span>
-                                            <span class="badge bg-warning text-dark ms-2" style="font-size:9px; padding:2px 6px; vertical-align:middle;">QS</span>
-                                        </CardText>
-                                        <Icon Name="IconName.ChevronRight" class="ms-auto" />
-                                    </CardBody>
-                                </Card>
-                            }
-                        </div>
+                    <div style="@ShowOrHideAo(item)">
+                        <button type="button" class="@GetLocationCardClass(item)" @onclick="@(() => OnAoChanged(item.Name))" aria-pressed="@(ao == item.Name)">
+                            <span class="location-copy"><strong>@item.Name</strong><small>@item.City</small></span>
+                            <span class="@GetIndicatorClass(item)" aria-hidden="true">
+                                @if (ao == item.Name) { <span class="dot"></span> }
+                            </span>
+                        </button>
                     </div>
                 }
             </div>
 
-            <hr />
-        }
-
-        @if (showNoMissingAoMessage)
-        {
-            <Alert Color="Color.Success" ShowIcon Visible>
-                All up to date!
-                <CloseButton />
-            </Alert>
-        }
-
-        <Addons>
-            <Addon AddonType="AddonType.Body">
-                <DatePicker @ref="@datePicker" TValue="DateTime?" Placeholder="Q Date" Date="@qDate" DateChanged="@OnDateChanged" DisplayFormat="M/d/yyy" />
-            </Addon>
-            <Addon AddonType="AddonType.End">
-                <Button Color="Color.Secondary" Clicked="@(()=>datePicker.ToggleAsync())">
-                    <Icon Name="IconName.CalendarDay" />
-                </Button>
-            </Addon>
-        </Addons>
-
-        <!-- Locations Grid-->
-        <div class="row g-3 mb-3 mt-1">
-            @foreach (var item in aoList)
+            @if (ao == AoOtherValue)
             {
-                <div style="@ShowOrHideAo(item)" class="col-6  gx-0">
-                    <div class="@GetLocationCardClass(item)" @onclick="@(() => OnAoChanged(item.Name))">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-0">@item.Name</h6>
-                                <p class="mb-0 text-muted" style="font-size:14px;">@item.City</p>
-                            </div>
-                            <div class="@GetIndicatorClass(item)" style="margin-top:auto;margin-bottom:auto;">
-                                @if (ao == item.Name)
-                                {
-                                    <div class="dot"></div>
-                                }
-                            </div>
-                        </div>
-                    </div>
+                <div class="other-location">
+                    <label class="field-label">Location name</label>
+                    <TextEdit @bind-Text="@otherAoName" Placeholder="Full Moon Ruck, etc."></TextEdit>
                 </div>
             }
-        </div>
 
-        @if (ao == AoOtherValue)
-        {
-            <TextEdit @bind-Text="@otherAoName" style="margin-bottom:12px" Placeholder="Other Location Name (Full Moon Ruck, etc.)"></TextEdit>
-        }
+            <div class="workout-options">
+                @if (RegionInfo.HasQSourcePosts)
+                {
+                    <label><Check TValue="bool" @bind-Checked="@isQSource" /><span><strong>Q Source</strong><small>Record this as a Q Source post</small></span></label>
+                }
+                <label><Check TValue="bool" @bind-Checked="@isSiteClosed" /><span><strong>Site closed</strong><small>Record a closure without attendance</small></span></label>
+            </div>
+        </section>
 
-        <!-- Checkboxes Row (Site Closed and Q Source if applicable) -->
-        <div class="d-flex align-items-center p-3 bg-light rounded mb-3">
-            @if (RegionInfo.HasQSourcePosts)
-            {
-                <Check TValue="bool" @bind-Checked="@isQSource" class="me-3" />
-                <span class="me-auto">Q Source</span>
-            }
-            <Check TValue="bool" @bind-Checked="@isSiteClosed" class="me-2" />
-            <span class="me-auto">Site Closed</span>
-        </div>
+        <section class="upload-card">
+            <div class="step-heading">
+                <span class="step-number">2</span>
+                <div><h2>@(isSiteClosed ? "Confirm closure" : "Add attendance")</h2><p>@(isSiteClosed ? "This prevents the workout from appearing as missing." : "Paste the backblast attendance comment, then review its matches.")</p></div>
+            </div>
 
-        <!-- PAX Comment Section -->
-        <div class="mb-3">
             @if (!isSiteClosed)
             {
-                <MemoEdit Rows="5" @bind-Text="@comment" Placeholder="Paste the PAX Comment here..." Style="min-height: 100px;" />
+                <div class="comment-field">
+                    <label class="field-label">PAX comment</label>
+                    <MemoEdit Rows="6" @bind-Text="@comment" Placeholder="Paste the PAX comment here…" />
+                    <small>Names will be matched against the current regional roster.</small>
+                </div>
+                <Button Color="Color.Primary" Clicked="OnCommentButtonClicked" Class="primary-action" Loading="commentIsLoading" Disabled="@string.IsNullOrWhiteSpace(comment)">
+                    Match PAX <span aria-hidden="true">→</span>
+                </Button>
             }
             else
             {
-                <div class="text-muted fst-italic mb-2" style="font-size:14px;">
-                    This adds a new Site Closed row to the data sheet so the site no longer shows as "Missing Data"
-                </div>
-                <Button Color="Color.Primary" Clicked="OnSiteClosedClicked">Upload</Button>
+                <div class="closure-note"><Icon Name="IconName.InfoCircle" /><span>This adds a “Site Closed” row to the data sheet for the selected date and location.</span></div>
+                <Button Color="Color.Primary" Clicked="OnSiteClosedClicked" Class="primary-action" Disabled="@string.IsNullOrWhiteSpace(ao)">Record site closure</Button>
             }
-        </div>
+        </section>
+        </main>
 
-        @if (!isSiteClosed)
+        <aside class="missing-panel">
+            <div class="aside-heading">
+                <div><span class="eyebrow">Data health</span><h2>Missing workouts</h2></div>
+                @if (missingDates.Count > 0) { <span class="count-badge">@missingDates.Count</span> }
+            </div>
+        @if (missingDates.Count > 0)
         {
-            <Button Color="Color.Primary" Clicked="OnCommentButtonClicked" class="w-100" Style="margin-bottom:24px;" Loading="commentIsLoading">
-                Match PAX
-            </Button>
+            <p class="aside-intro">Select an entry to prefill its date and location.</p>
+            <div class="missing-list">
+                @foreach (var date in missingDates.OrderBy(d => d))
+                {
+                    <section class="missing-date">
+                        <h3><span>@date.ToString("ddd")</span>@date.ToString("MMM d, yyyy")</h3>
+                        <div class="missing-dates-grid">
+                            @foreach (var missingAo in missingAos.Where(x => x.Date.Date == date.Date))
+                            {
+                                <button type="button" class="missing-entry" @onclick="@(() => OnMissingAoSelected(missingAo, false))"><span>@missingAo.Name</span><span aria-hidden="true">→</span></button>
+                            }
+                            @foreach (var qSourceAo in missingQSourceAos.Where(x => x.Date.Date == date.Date))
+                            {
+                                <button type="button" class="missing-entry qsource" @onclick="@(() => OnMissingAoSelected(qSourceAo, true))"><span>@qSourceAo.Name <small>QS</small></span><span aria-hidden="true">→</span></button>
+                            }
+                        </div>
+                    </section>
+                }
+            </div>
         }
+        else if (showNoMissingAoMessage)
+        {
+            <div class="all-current"><span aria-hidden="true">✓</span><div><strong>All up to date</strong><p>No expected workouts are missing.</p></div></div>
+        }
+        else
+        {
+            <div class="aside-loading"><span class="upload-spinner" aria-hidden="true"></span><span>Checking recent workouts…</span></div>
+        }
+        </aside>
     </div>
-
+    @if (!string.IsNullOrEmpty(errorMessage) && (pax.Count == 0 || isSiteClosed))
+    {
+        <div class="upload-alert error standalone" role="alert"><span aria-hidden="true">!</span><div><strong>Action needed</strong><p>@errorMessage</p></div></div>
+    }
 }
 @if (pax.Count > 0 && !isSiteClosed)
 {
-    <Table Narrow>
+    <section class="upload-card review-card">
+        <div class="review-heading">
+            <div class="step-heading">
+                <span class="step-number">3</span>
+                <div><h2>Review matches</h2><p>Confirm names and identify the Q or any FNGs before uploading.</p></div>
+            </div>
+            <span class="pax-count">@pax.Count PAX</span>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="upload-alert error" role="alert"><span aria-hidden="true">!</span><div><strong>Fix the highlighted details</strong><p>@errorMessage</p></div></div>
+        }
+
+        <div class="review-table">
+        <Table Narrow>
         <TableHeader>
             <TableRow>
                 <TableHeaderCell>Name</TableHeaderCell>
-                <TableHeaderCell>Q?</TableHeaderCell>
+                <TableHeaderCell>Q</TableHeaderCell>
                 <TableHeaderCell>FNG</TableHeaderCell>
                 @if (RegionInfo.HasExtraActivity)
                 {
-                    <TableHeaderCell>Pre Workout</TableHeaderCell>
+                    <TableHeaderCell><span class="desktop-label">Pre-workout</span><span class="mobile-label">Pre</span></TableHeaderCell>
                 }
-                <TableHeaderCell></TableHeaderCell>
+                <TableHeaderCell><span class="sr-only">Actions</span></TableHeaderCell>
             </TableRow>
         </TableHeader>
         <TableBody>
@@ -289,7 +224,7 @@ else
                         </TableRowCell>
                     }
                     <TableRowCell>
-                        <Icon Name="IconName.Times" Clicked="@(e => OnRemovePax(p))" class="custom-link" />
+                        <button type="button" class="remove-pax" @onclick="@(() => OnRemovePax(p))" aria-label="Remove @p.Name" title="Remove PAX"><Icon Name="IconName.Times" /></button>
                     </TableRowCell>
                 </TableRow>
             }
@@ -298,15 +233,13 @@ else
             {
                 <TableRow @key="@p" Color="@(string.IsNullOrEmpty(p.Name) ? Color.Danger : p.IsFng ? Color.Success : Color.Default)">
                     <TableRowCell>
-                        @p.Name
-
                         @if (p.IsFng)
                         {
                             <TextEdit @bind-Text="@p.Name"></TextEdit>
-                            <Check TValue="bool" @bind-Checked="@p.IsDr" style="margin-top:8px">Downrange?</Check>
+                            <div class="downrange-toggle"><Check TValue="bool" @bind-Checked="@p.IsDr">Downrange?</Check></div>
                             @if (p.IsDr)
                             {
-                                <div style="font-size:10px; margin: 4px;color: #4b4646">Marking Downrange adds the PAX to the roster with the selected naming region, but doesn't mark as FNG</div>
+                                <div class="downrange-help">Downrange adds this PAX to the roster with the selected naming region without marking them as an FNG.</div>
                                 <Select TValue="int" @bind-SelectedValue="@p.NamingRegionIndex">
                                     <SelectItem Value="0">Select a Naming Region</SelectItem>
                                     @foreach (var region in downrangeNamingRegions)
@@ -320,9 +253,9 @@ else
                         {
                             <Autocomplete TItem="String" TValue="string" Data="@allNames" TextField="@(( item ) => item)"
                                           ValueField="@(( item ) => item)" @bind-SelectedValue="@p.Name" @bind-SelectedText="@p.UnknownName"
-                                          Placeholder="Search..." Filter="AutocompleteFilter.StartsWith" FreeTyping
+                                          Placeholder="Search roster…" Filter="AutocompleteFilter.StartsWith" FreeTyping
                                           CustomFilter="@(( item, searchValue ) => item.IndexOf( searchValue, 0, StringComparison.CurrentCultureIgnoreCase ) >= 0 )">
-                                <NotFoundContent> Sorry... @context was not found! :( </NotFoundContent>
+                                <NotFoundContent>No roster match for “@context”. Mark this PAX as an FNG or choose another name.</NotFoundContent>
                             </Autocomplete>
                         }
                     </TableRowCell>
@@ -339,49 +272,39 @@ else
                             <Check TValue="bool" @bind-Checked="@p.ExtraActivity"></Check>
                         </TableRowCell>
                     }
-                    <TableRowCell Clicked="@(e => OnRemovePax(p))">
-                        <Icon Name="IconName.Times" class="custom-link" />
+                    <TableRowCell>
+                        <button type="button" class="remove-pax" @onclick="@(() => OnRemovePax(p))" aria-label="Remove @(string.IsNullOrWhiteSpace(p.Name) ? p.UnknownName : p.Name)" title="Remove PAX"><Icon Name="IconName.Times" /></button>
                     </TableRowCell>
                 </TableRow>
             }
-
-            <TableRow>
-                <div class="one-row">
-                    <Button Color="Color.Secondary" Clicked="@OnAddRowClicked" @bind-Disabled="@isLoading">Add Row</Button>
-                </div>
-            </TableRow>
         </TableBody>
-    </Table>
+        </Table>
+        </div>
 
-    <div style="padding-bottom:12px;">
-        <Button Color="Color.Primary" Clicked="@OnUploadButtonClicked" @bind-Disabled="@isLoading" Loading="isLoading">Upload</Button>
-        <span style="margin: auto 0px auto 12px;">
+        <div class="review-footer">
+            <Button Color="Color.Secondary" Outline Clicked="@OnAddRowClicked" Disabled="@isLoading">Add PAX</Button>
+            <div class="upload-summary">
             @{
                 var qList = pax.Where(x => x.IsQ).Select(x => x.Name).ToList();
                 var qNames = qList.Any() ? string.Join(", ", qList) : "";
             }
-            @pax.Count PAX @(qNames.Length > 0 ? $"Q'd by {qNames} at" : "for") @ao
+            <span>@pax.Count PAX @(qNames.Length > 0 ? $"· Q’d by {qNames}" : "· Select a Q") @(string.IsNullOrWhiteSpace(ao) ? "" : $"· {ao}")</span>
             @if (isQSource)
             {
-                <span class="badge bg-warning text-dark ms-2" style="font-size:9px; padding:2px 6px; vertical-align:middle;">QS</span>
+                <span class="qs-badge">QS</span>
             }
-        </span>
-    </div>
-
-    @if (!string.IsNullOrEmpty(errorMessage))
-    {
-        <Alert Color="Color.Danger" Visible>
-            <AlertDescription>@errorMessage</AlertDescription>
-        </Alert>
-    }
+            </div>
+            <Button Color="Color.Primary" Clicked="@OnUploadButtonClicked" Disabled="@isLoading" Loading="isLoading">Upload to Sheets <span aria-hidden="true">→</span></Button>
+        </div>
+    </section>
 }
 
-<Alert Color="Color.Success" @bind-Visible="@showCompleteAlert">
+<Alert Color="Color.Success" @bind-Visible="@showCompleteAlert" Class="upload-success">
     <AlertMessage>
-        Done!
+        Upload complete
     </AlertMessage>
     <AlertDescription>
-        Data uploaded to Sheets
+        Attendance was added to Google Sheets.
     </AlertDescription>
     <CloseButton />
 </Alert>

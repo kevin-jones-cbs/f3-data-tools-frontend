@@ -30,30 +30,49 @@ namespace F3Wasm.Pages
         public bool isLoading { get; set; }
         public bool commentIsLoading { get; set; }
         public bool isMissingDataLoading { get; set; }
+        public bool isCacheClearing { get; set; }
         public bool isQSource { get; set; }
         public bool isSiteClosed { get; set; }
+
+        private string loadError = string.Empty;
+        private string maintenanceMessage = string.Empty;
+        private bool maintenanceMessageIsError;
 
         private List<DateTime> missingDates = new List<DateTime>();
         private List<RegionNamingOption> downrangeNamingRegions = new();
 
         protected override async Task OnInitializedAsync()
         {
-            RegionInfo = await LambdaHelper.GetRegionAsync(Http, Region);
-            if (RegionInfo == null)
+            await LoadUploadDataAsync();
+        }
+
+        private async Task LoadUploadDataAsync()
+        {
+            loadError = string.Empty;
+            try
             {
-                throw new Exception("Invalid Region");
+                RegionInfo = await LambdaHelper.GetRegionAsync(Http, Region);
+                if (RegionInfo == null)
+                {
+                    throw new Exception("The requested region could not be found.");
+                }
+
+                aoList = await LambdaHelper.GetAllLocationsAsync(Http, Region);
+                downrangeNamingRegions = await LambdaHelper.GetDownrangeNamingRegionsAsync(Http);
+
+                // Add Other to each day of week
+                foreach (var day in Enum.GetValues(typeof(DayOfWeek)).Cast<DayOfWeek>())
+                {
+                    aoList.Add(new Ao { Name = AoOtherValue, DayOfWeek = day, City = "Enter details" });
+                }
+
+                await OnMissingAoButtonClicked();
             }
-
-            aoList = await LambdaHelper.GetAllLocationsAsync(Http, Region);
-            downrangeNamingRegions = await LambdaHelper.GetDownrangeNamingRegionsAsync(Http);
-
-            // Add Other to each day of week
-            foreach (var day in Enum.GetValues(typeof(DayOfWeek)).Cast<DayOfWeek>())
+            catch (Exception ex)
             {
-                aoList.Add(new Ao { Name = AoOtherValue, DayOfWeek = day, City = "Enter Details..." });
+                aoList = null;
+                loadError = ex.Message;
             }
-
-            await OnMissingAoButtonClicked();
         }
 
         private string ShowOrHideAo(Ao ao)
@@ -69,33 +88,53 @@ namespace F3Wasm.Pages
         private async Task OnMissingAoButtonClicked()
         {
             isMissingDataLoading = true;
-            var allMissingAos = await LambdaHelper.GetMissingAosAsync(Http, Region);
-
-            // Separate regular missing AOs from Q Source missing AOs based on HasQSource property
-            missingAos = allMissingAos.Where(x => !x.HasQSource).ToList();
-            missingQSourceAos = allMissingAos.Where(x => x.HasQSource).ToList();
-
-            // Combine both lists to get all unique missing dates
-            var allMissingDates = missingAos.Select(x => x.Date.Date)
-                .Union(missingQSourceAos.Select(x => x.Date.Date))
-                .Distinct()
-                .ToList();
-            missingDates = allMissingDates;
-
-            if (!missingDates.Any())
+            maintenanceMessage = string.Empty;
+            try
             {
-                showNoMissingAoMessage = true;
-                await InvokeAsync(StateHasChanged);
+                var allMissingAos = await LambdaHelper.GetMissingAosAsync(Http, Region);
+
+                // Separate regular missing AOs from Q Source missing AOs based on HasQSource property
+                missingAos = allMissingAos.Where(x => !x.HasQSource).ToList();
+                missingQSourceAos = allMissingAos.Where(x => x.HasQSource).ToList();
+
+                // Combine both lists to get all unique missing dates
+                missingDates = missingAos.Select(x => x.Date.Date)
+                    .Union(missingQSourceAos.Select(x => x.Date.Date))
+                    .Distinct()
+                    .ToList();
+
+                showNoMissingAoMessage = !missingDates.Any();
             }
-            isMissingDataLoading = false;
+            catch (Exception ex)
+            {
+                maintenanceMessageIsError = true;
+                maintenanceMessage = $"Missing workouts couldn’t be checked: {ex.Message}";
+            }
+            finally
+            {
+                isMissingDataLoading = false;
+            }
         }
 
         private async Task ClearCache()
         {
-            isMissingDataLoading = true;
-            await LambdaHelper.ClearCacheAsync(Http, Region);
-
-            isMissingDataLoading = false;
+            isCacheClearing = true;
+            maintenanceMessage = string.Empty;
+            try
+            {
+                await LambdaHelper.ClearCacheAsync(Http, Region);
+                maintenanceMessageIsError = false;
+                maintenanceMessage = "Cache cleared. The next read will fetch fresh regional data.";
+            }
+            catch (Exception ex)
+            {
+                maintenanceMessageIsError = true;
+                maintenanceMessage = $"Cache couldn’t be cleared: {ex.Message}";
+            }
+            finally
+            {
+                isCacheClearing = false;
+            }
         }
 
         private async Task OnMissingAoSelected(Ao missingAo, bool isQSourceMissing = false)
@@ -139,13 +178,24 @@ namespace F3Wasm.Pages
         private async Task OnCommentButtonClicked()
         {
             commentIsLoading = true;
-            allNames = await LambdaHelper.GetPaxNamesAsync(Http, Region);
-            allNames = allNames.OrderBy(x => x).ToList();
-            pax = await LambdaHelper.GetPaxFromCommentAsync(Http, Region, comment);
+            errorMessage = string.Empty;
+            try
+            {
+                allNames = await LambdaHelper.GetPaxNamesAsync(Http, Region);
+                allNames = allNames.OrderBy(x => x).ToList();
+                pax = await LambdaHelper.GetPaxFromCommentAsync(Http, Region, comment);
 
-            // No need to show that we finished again, we're doing another ao
-            showCompleteAlert = false;
-            commentIsLoading = false;
+                // No need to show that we finished again, we're doing another ao
+                showCompleteAlert = false;
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"PAX could not be matched. Please try again. {ex.Message}";
+            }
+            finally
+            {
+                commentIsLoading = false;
+            }
         }
 
         private async Task OnAddRowClicked()
@@ -205,19 +255,47 @@ namespace F3Wasm.Pages
                 isLoading = true;
                 await LambdaHelper.UploadPaxAsync(Http, Region, pax, ao == AoOtherValue ? otherAoName : ao, qDate.Value, isQSource);
                 await ResetAfterUploadAsync();
-                isLoading = false;
             }
             catch (Exception ex)
             {
-                errorMessage = "There was an error uploading the data. Please try again." + ex.Message;
+                errorMessage = $"There was an error uploading the data. Please try again. {ex.Message}";
+            }
+            finally
+            {
+                isLoading = false;
             }
         }
 
         private async Task OnSiteClosedClicked()
         {
-            pax = new List<Pax> { new Pax { Name = "Site Closed (Archived)" } };
-            await LambdaHelper.UploadPaxAsync(Http, Region, pax, ao == AoOtherValue ? otherAoName : ao, qDate.Value, isQSource);
-            await ResetAfterUploadAsync();
+            errorMessage = string.Empty;
+            if (string.IsNullOrWhiteSpace(ao) || qDate == null)
+            {
+                errorMessage = "Select a date and location before recording a closure.";
+                return;
+            }
+            if (ao == AoOtherValue && string.IsNullOrWhiteSpace(otherAoName))
+            {
+                errorMessage = "Enter a location name before recording a closure.";
+                return;
+            }
+
+            try
+            {
+                isLoading = true;
+                pax = new List<Pax> { new Pax { Name = "Site Closed (Archived)" } };
+                await LambdaHelper.UploadPaxAsync(Http, Region, pax, ao == AoOtherValue ? otherAoName : ao, qDate.Value, isQSource);
+                await ResetAfterUploadAsync();
+            }
+            catch (Exception ex)
+            {
+                pax = new List<Pax>();
+                errorMessage = $"The site closure could not be recorded. Please try again. {ex.Message}";
+            }
+            finally
+            {
+                isLoading = false;
+            }
         }
 
         private async Task ResetAfterUploadAsync()

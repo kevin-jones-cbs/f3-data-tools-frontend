@@ -7,35 +7,59 @@
 <PageTitle>Region Settings</PageTitle>
 
 <div class="region-settings-entry">
-    <h1>Region Settings</h1>
-    <p class="lead">Choose an existing region, then verify through Google that you can edit its configured spreadsheet.</p>
+    <header class="settings-heading">
+        <span class="eyebrow">Administration</span>
+        <h1>Region settings</h1>
+        <p>Manage the spreadsheet connection, data mappings, and feature availability for an existing region.</p>
+    </header>
 
     @if (!string.IsNullOrWhiteSpace(error))
     {
-        <div class="alert alert-danger" role="alert">@error</div>
+        <div class="status-message error" role="alert">
+            <span class="status-icon" aria-hidden="true">!</span>
+            <div><strong>Regions couldn’t be loaded</strong><span>@error</span></div>
+        </div>
     }
     else if (regions == null)
     {
-        <p>Loading regions…</p>
+        <div class="settings-card loading-card" role="status" aria-live="polite">
+            <span class="admin-spinner" aria-hidden="true"></span>
+            <div><strong>Loading regions</strong><span>Fetching the current region catalog…</span></div>
+        </div>
     }
     else
     {
-        <div class="card settings-card">
-            <div class="card-body">
-                <label for="region-picker">Region</label>
-                <select id="region-picker" class="form-control" @bind="selectedRegion">
-                    <option value="">Select a region</option>
-                    @foreach (var region in regions)
-                    {
-                        <option value="@region.QueryStringValue">@region.DisplayName@(region.IsActive ? string.Empty : " (inactive)")</option>
-                    }
-                </select>
-                <button class="btn btn-primary mt-3" disabled="@string.IsNullOrWhiteSpace(selectedRegion)" @onclick="Continue">
-                    Continue with Google
+        <section class="settings-card" aria-labelledby="choose-region-heading">
+            <div class="step-heading">
+                <span class="step-number" aria-hidden="true">1</span>
+                <div>
+                    <h2 id="choose-region-heading">Choose a region</h2>
+                    <p>You’ll verify spreadsheet access with Google on the next screen.</p>
+                </div>
+            </div>
+
+            <div class="region-form">
+                <div class="select-field">
+                    <label for="region-picker">Region</label>
+                    <select id="region-picker" class="form-control" @bind="selectedRegion">
+                        <option value="">Select a region…</option>
+                        @foreach (var region in regions)
+                        {
+                            <option value="@region.QueryStringValue">@region.DisplayName@(region.IsActive ? string.Empty : " — Inactive")</option>
+                        }
+                    </select>
+                    <small>@regions.Count active and inactive regions available</small>
+                </div>
+                <button class="btn btn-primary continue-button" disabled="@string.IsNullOrWhiteSpace(selectedRegion)" @onclick="Continue">
+                    Continue <span aria-hidden="true">→</span>
                 </button>
             </div>
-        </div>
-        <p class="text-muted mt-3">Viewer and commenter access is not sufficient. Configuration details remain hidden until verification succeeds.</p>
+
+            <div class="permission-note">
+                <span class="lock-icon" aria-hidden="true">●</span>
+                <p><strong>Edit access required.</strong> Configuration details stay hidden until Google confirms you can edit the selected spreadsheet. Viewer and commenter access won’t be sufficient.</p>
+            </div>
+        </section>
     }
 </div>
 
