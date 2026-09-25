@@ -20,5 +20,8 @@ builder.Services
 
 var lambdaUrl = builder.Configuration["LambdaUrl"] ?? "https://s6oww3m3a5svbuxq5pf35pjigu0xxaqk.lambda-url.us-west-1.on.aws/";
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(lambdaUrl) });
+var chatUrl = builder.Configuration["ChatApiUrl"] ?? "http://localhost:5055/";
+builder.Services.AddScoped(sp => new F3Wasm.Helpers.AnalyticsChatClient(
+    new HttpClient { BaseAddress = new Uri(chatUrl), Timeout = TimeSpan.FromSeconds(135) }));
 
 await builder.Build().RunAsync();

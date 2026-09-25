@@ -1,0 +1,167 @@
+@page "/chat/{Region}"
+@using F3Wasm.Helpers
+@using F3Wasm.Models
+@using F3Wasm.Components.Analytics
+@inject AnalyticsChatClient ChatClient
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<PageTitle>Ask @RegionName</PageTitle>
+<div class="chat-page" @ref="chatRoot">
+    <header class="chat-header">
+        <div><a class="back-link" href="@($"/data/{Region}")">← @RegionName data</a>
+<h1>Ask @RegionName</h1><p>Explore the stories behind the workouts.</p></div>
+        @if (turns.Count > 0) { <button class="new-chat" @onclick="Reset" disabled="@busy">New chat</button> }
+    </header>
+    @if (snapshot != null)
+    {
+        <div class="freshness" title="Snapshot refreshed @DisplayDate(snapshot.RefreshedAt)"><span class="status-dot"></span>Attendance through @DisplayDate(snapshot.LastDate)</div>
+    }
+    @if (loading) { <p class="setup-message" role="status">Getting @RegionName ready…</p> }
+    else if (!ready) { <p class="setup-message" role="status">@setupMessage</p> }
+
+    @if (turns.Count == 0)
+    {
+        <section class="welcome">
+            <h2>What are you curious about?</h2>
+            <p>Ask about attendance, milestones, FNGs, or the people you post with.</p>
+            <div class="suggestions">
+                @foreach (var suggestion in suggestions)
+                { <button disabled="@(!ready)" @onclick="() => AskSuggestion(suggestion)">@suggestion<span aria-hidden="true">↗</span></button> }
+            </div>
+        </section>
+    }
+    <div class="conversation" aria-live="polite" aria-relevant="additions">
+        @foreach (var turn in turns)
+        {
+            <article class="turn">
+                <div class="question"><span class="speaker">You</span><p>@turn.Question</p></div>
+                @if (turn.Reply == null && turn.StreamText.Length > 0)
+                {
+                    <div class="answer"><span class="speaker">@RegionName</span><div class="answer-text">@turn.StreamText</div></div>
+                }
+                @if (turn.Reply != null)
+                {
+                    <div class="answer"><span class="speaker">@RegionName</span><div class="answer-text">@turn.Reply.Answer</div>
+                        @foreach (var visual in turn.Reply.Visualizations) { <AnalyticsResult Value="visual" /> }
+                    </div>
+                }
+            </article>
+        }
+        @if (busy) { <div class="thinking" role="status"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span>@progressLabel <button @onclick="Cancel">Cancel</button></div> }
+    </div>
+    @if (error != null) { <div class="chat-error" role="alert">@error</div> }
+    <form class="composer" @onsubmit="Send" @onsubmit:preventDefault>
+        <label class="visually-hidden" for="chat-question">Ask a question about @RegionName</label>
+        <input id="chat-question" @bind="question" @bind:event="oninput" placeholder="Ask a question or follow up…" maxlength="4000" disabled="@(!ready || busy)" autocomplete="off" />
+        <button type="submit" disabled="@(!ready || busy || string.IsNullOrWhiteSpace(question))">Ask <span aria-hidden="true">↑</span></button>
+    </form>
+    <p class="chat-footnote">Answers use recorded @RegionName attendance.</p>
+</div>
+
+@code {
+    [Parameter] public string Region { get; set; } = "";
+    private string? loadedRegion;
+    private string RegionName => F3Core.Regions.RegionList.All.FirstOrDefault(r => r.QueryStringValue.Equals(Region, StringComparison.OrdinalIgnoreCase))?.DisplayName ?? Region;
+
+    private ElementReference chatRoot;
+    private IJSObjectReference? scrollModule;
+    private bool forceScroll;
+    private string progressLabel = "Looking through the attendance records…";
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            scrollModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/chat-scroll.js");
+            await scrollModule.InvokeVoidAsync("attach", chatRoot);
+        }
+        if (forceScroll && scrollModule != null)
+        {
+            forceScroll = false;
+            await scrollModule.InvokeVoidAsync("follow", chatRoot, true);
+        }
+    }
+    private readonly List<Turn> turns = [];
+    private readonly List<AnalyticsChatMessage> history = [];
+    private readonly CancellationTokenSource lifetime = new();
+    private CancellationTokenSource? pending;
+    private AnalyticsSnapshot? snapshot;
+    private string conversationId = Guid.NewGuid().ToString();
+    private string visitorId = Guid.NewGuid().ToString();
+    private string question = "";
+    private string? error;
+    private bool busy, ready, loading = true;
+    private string setupMessage = "The assistant isn't set up yet. Please contact the app administrator.";
+    private string[] suggestions => ["Which AOs welcomed the most FNGs in 2025?", "Who posted together the most in 2025?", "How did attendance change month to month in 2024?", Region == "southfork" ? "What trends do you see for Peacock in 2023–2025?" : "Which AOs had the most attendance in 2025?"];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Region = Region.ToLowerInvariant();
+        if (loadedRegion == Region) return;
+        loadedRegion = Region;
+        var loadingRegion = Region;
+        pending?.Cancel(); Reset(); busy = false; ready = false; loading = true; snapshot = null;
+        setupMessage = $"Chat data for {RegionName} is not configured yet.";
+        try
+        {
+            var stored = await JS.InvokeAsync<string?>("localStorage.getItem", "f3.chat.visitorId");
+            if (Guid.TryParse(stored, out var id)) visitorId = id.ToString();
+            else await JS.InvokeVoidAsync("localStorage.setItem", "f3.chat.visitorId", visitorId);
+        }
+        catch (JSException) { } // Storage-disabled browsers use an ephemeral ID.
+        try { var status = await ChatClient.GetStatusAsync(lifetime.Token, Region); if (Region == loadingRegion) { ready = status.Configured; snapshot = status.Snapshot; } }
+        catch (HttpRequestException) { if (Region == loadingRegion) setupMessage = $"Chat data for {RegionName} is unavailable. Its snapshot may not be configured yet."; }
+        catch (OperationCanceledException) { }
+        finally { if (Region == loadingRegion) loading = false; }
+    }
+    private async Task AskSuggestion(string text) { question = text; await Send(); }
+    private async Task Send()
+    {
+        if (!ready || busy || string.IsNullOrWhiteSpace(question)) return;
+        if (history.Count >= 18) { error = "Start a new chat to explore more questions."; return; }
+        var text = question.Trim(); question = ""; error = null; busy = true;
+        var turn = new Turn(text); turns.Add(turn); forceScroll = true;
+        progressLabel = "Looking through the attendance records…";
+        var sendingRegion = Region;
+        var requestCancellation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
+        pending = requestCancellation;
+        try
+        {
+            var messages = history.Append(new AnalyticsChatMessage("user", text)).ToList();
+            while (messages.Count > 3 && messages.Sum(m => m.Content.Length) > 28000)
+                messages.RemoveRange(0, 2);
+            turn.Reply = await ChatClient.StreamAsync(messages, async (type, value) =>
+            {
+                if (sendingRegion != Region) return;
+                if (type == "answer" && !string.IsNullOrWhiteSpace(value)) { turn.StreamText = value; progressLabel = "Writing the answer…"; }
+                else if (type == "status") { turn.StreamText = ""; progressLabel = value; }
+                await InvokeAsync(StateHasChanged);
+            }, requestCancellation.Token, conversationId, visitorId, sendingRegion);
+            if (sendingRegion != Region) return;
+            var resultContext = System.Text.Json.JsonSerializer.Serialize(turn.Reply.Visualizations.Select(v => new
+                { v.Columns, Rows = v.Rows.Take(10) }));
+            var assistantContext = turn.Reply.Answer;
+            if (assistantContext.Length + resultContext.Length < 7800)
+                assistantContext += "\nDisplayed results: " + resultContext;
+            history.Add(new("user", text)); history.Add(new("assistant", assistantContext));
+            snapshot = turn.Reply.Snapshot;
+        }
+        catch (OperationCanceledException) { if (sendingRegion != Region) return; error = "Question canceled. You can try again whenever you're ready."; turns.Remove(turn); question = text; }
+        catch (HttpRequestException ex) { if (sendingRegion != Region) return; error = ex.Message; turns.Remove(turn); question = text; }
+        finally { requestCancellation.Dispose(); if (pending == requestCancellation) { busy = false; pending = null; } }
+    }
+    private void Cancel() => pending?.Cancel();
+    private void Reset() { conversationId = Guid.NewGuid().ToString(); turns.Clear(); history.Clear(); error = null; question = ""; }
+    private static string DisplayDate(string value) => DateTimeOffset.TryParse(value, out var date) ? date.ToString("MMM d, yyyy") : value.Split(' ')[0];
+    public async ValueTask DisposeAsync()
+    {
+        lifetime.Cancel(); lifetime.Dispose();
+        if (scrollModule != null)
+        {
+            try { await scrollModule.InvokeVoidAsync("detach", chatRoot); await scrollModule.DisposeAsync(); }
+            catch (JSDisconnectedException) { }
+        }
+    }
+    private sealed class Turn(string question) { public string Question { get; } = question; public string StreamText { get; set; } = ""; public AnalyticsChatReply? Reply { get; set; } }
+}

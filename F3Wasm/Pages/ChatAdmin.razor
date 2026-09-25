@@ -1,0 +1,150 @@
+@page "/admin/chats"
+@using System.Text.Json
+@using F3Wasm.Helpers
+@using F3Wasm.Models
+@using F3Wasm.Components.Analytics
+@inject AnalyticsChatClient Client
+@implements IDisposable
+
+<PageTitle>Saved chats · South Fork</PageTitle>
+<div class="chat-admin">
+    <header><div><a href="/chat/southfork">← Ask South Fork</a><h1>Saved chats</h1><p>Review questions, answers, usage, and errors.</p></div><span class="local">Local admin</span></header>
+    @if (!unlocked)
+    {
+        <form class="unlock" @onsubmit="Load" @onsubmit:preventDefault>
+            <label for="admin-password">Admin password</label>
+            <input id="admin-password" type="password" @bind="password" autocomplete="current-password" required />
+            <button disabled="@loading">@(loading ? "Checking…" : "Unlock")</button>
+        </form>
+        @if (error != null) { <p class="error" role="alert">@error</p> }
+    }
+    else
+    {
+    <button @onclick="Lock">Lock admin</button>
+    <form class="filters" @onsubmit="Search" @onsubmit:preventDefault>
+        <label>Search questions and answers<input @bind="search" placeholder="Search saved chats…" maxlength="200" /></label>
+        <label>Status<select @bind="status"><option value="">All statuses</option><option value="success">Success</option><option value="error">Error</option><option value="canceled_or_timeout">Canceled / timed out</option></select></label>
+        <button disabled="@loading">@(loading ? "Loading…" : "Refresh")</button>
+    </form>
+    @if (error != null) { <p class="error" role="alert">@error</p> }
+    <div class="workspace">
+        <section class="chat-list" aria-label="Saved chat turns">
+            @if (!loading && items.Count == 0) { <p class="empty">No saved chats match. New questions appear here after they finish.</p> }
+            @foreach (var item in items)
+            {
+                var id = Text(item, "request_id");
+                <button class="chat-item @(id == selectedId ? "selected" : "")" @onclick="() => Select(id)">
+                    <span class="item-meta"><time>@Date(Text(item, "started_at"))</time><span class="badge">@Text(item, "status")</span></span>
+                    <strong>@Text(item, "question")</strong>
+                    <span class="model">@RegionLabel(item) · @Text(item, "model") · @Text(item, "source")</span>
+                    <span class="usage">@Seconds(item, "duration_ms")s · @Text(item, "input_tokens") in / @Text(item, "output_tokens") out</span>
+                    @if (Text(item, "usage_calls") != Text(item, "model_calls")) { <small>Token usage incomplete</small> }
+                </button>
+            }
+            <nav class="paging" aria-label="Chat pages"><button @onclick="Previous" disabled="@(loading || offset == 0)">Previous</button><span>Page @(offset / 25 + 1)</span><button @onclick="Next" disabled="@(loading || !hasMore)">Next</button></nav>
+        </section>
+        <section class="detail" aria-label="Chat details" aria-busy="@detailLoading">
+            @if (detailLoading) { <p role="status">Loading chat…</p> }
+            else if (selected is { } record)
+            {
+                var trace = Get(record, "event");
+                <h2>Chat details</h2>
+                <div class="detail-meta"><strong>@RegionLabel(record)</strong><span>@Text(trace, "model")</span><span>@Text(trace, "status")</span><span>@Seconds(trace, "durationMs")s</span></div>
+                <dl><dt>Started</dt><dd>@Date(Text(trace, "startedAt"))</dd><dt>Request</dt><dd>@Text(trace, "id")</dd><dt>Conversation</dt><dd>@Text(Get(trace, "request"), "conversationId")</dd><dt>Anonymous browser</dt><dd>@Text(Get(trace, "request"), "visitorId")</dd></dl>
+                @if (Get(trace, "error").ValueKind == JsonValueKind.String) { <p class="error">@Text(trace, "error")</p> }
+                <h3>Conversation sent</h3>
+                @foreach (var message in Array(Get(Get(trace, "request"), "messages")))
+                {
+                    <article class="message"><span class="role">@Text(message, "role")</span><div>@Text(message, "content")</div></article>
+                }
+                @if (Get(trace, "response").ValueKind == JsonValueKind.Object)
+                {
+                    var reply = Get(trace, "response");
+                    <h3>Answer shown</h3><div class="answer">@Text(reply, "answer")</div>
+                    @foreach (var visual in Array(Get(reply, "visualizations")))
+                    {
+                        <AnalyticsResult Value="@(visual.Deserialize<AnalyticsVisualization>(jsonOptions)!)" />
+                    }
+                }
+                <details><summary>SQL attempts (@Array(Get(trace, "queryAttempts")).Count())</summary>
+                    @foreach (var attempt in Array(Get(trace, "queryAttempts")))
+                    { <pre>@Text(attempt, "sql")</pre>@if (Get(attempt, "error").ValueKind == JsonValueKind.String) { <p class="error">@Text(attempt, "error")</p> } }
+                </details>
+                <h3>Model calls</h3>
+                @foreach (var pair in Array(Get(trace, "calls")).Select((call, i) => (call, i)))
+                {
+                    var usage = Get(Get(pair.call, "output"), "usage");
+                    <details><summary>Call @(pair.i + 1) · HTTP @Text(pair.call, "httpStatus") · @Seconds(pair.call, "durationMs")s</summary>
+                        <p>@Text(usage, "prompt_tokens") input / @Text(usage, "completion_tokens") output tokens · Reported cost: @Cost(usage)</p>
+                        <details><summary>Input</summary><pre>@Pretty(Get(pair.call, "input"))</pre></details>
+                        <details><summary>Output and usage</summary><pre>@Pretty(Get(pair.call, "output"))</pre></details>
+                    </details>
+                }
+                <p class="note">“—” means unavailable, not zero. Browser IDs are anonymous and may reset when storage is cleared.</p>
+            }
+            else { <p class="empty">Select a chat to view its conversation and model calls.</p> }
+        </section>
+    </div>
+    }
+</div>
+
+@code {
+    private readonly CancellationTokenSource lifetime = new();
+    private CancellationTokenSource? detailRequest;
+    private static readonly JsonSerializerOptions jsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
+    private List<JsonElement> items = [];
+    private JsonElement? selected;
+    private string? selectedId, error;
+    private string search = "", status = "";
+    private int offset;
+    private bool loading, detailLoading, hasMore;
+    private string password = "";
+    private bool unlocked;
+    private int accessVersion;
+    private void Lock()
+    {
+        accessVersion++; detailRequest?.Cancel(); password = ""; unlocked = false; selected = null; selectedId = null;
+        items.Clear(); error = null; offset = 0;
+    }
+    private async Task Search() { offset = 0; await Load(); }
+    private async Task Previous() { offset = Math.Max(0, offset - 25); await Load(); }
+    private async Task Next() { offset += 25; await Load(); }
+    private async Task Load()
+    {
+        var version = accessVersion;
+        loading = true; error = null;
+        try
+        {
+            var page = await Client.GetAdminAsync($"?offset={offset}&search={Uri.EscapeDataString(search)}&status={Uri.EscapeDataString(status)}", lifetime.Token, password);
+            if (version != accessVersion) return;
+            unlocked = true;
+            items = Array(Get(page, "items")).ToList(); hasMore = Get(page, "hasMore").GetBoolean();
+        }
+        catch (OperationCanceledException) { }
+        catch (HttpRequestException ex) { if (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized) Lock(); error = ex.Message; }
+        finally { loading = false; }
+    }
+    private async Task Select(string id)
+    {
+        detailRequest?.Cancel();
+        var current = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
+        detailRequest = current; selectedId = id; selected = null; detailLoading = true; error = null;
+        try { var row = await Client.GetAdminAsync("/" + Uri.EscapeDataString(id), current.Token, password); if (!current.IsCancellationRequested) selected = row; }
+        catch (OperationCanceledException) { }
+        catch (HttpRequestException ex) { if (!current.IsCancellationRequested) error = ex.Message; }
+        finally { if (detailRequest == current) { detailLoading = false; detailRequest = null; } current.Dispose(); }
+    }
+    private static JsonElement Get(JsonElement value, string key) => value.ValueKind == JsonValueKind.Object && value.TryGetProperty(key, out var result) ? result : default;
+    private static string Text(JsonElement value, string key) => Get(value, key).ValueKind is JsonValueKind.Undefined or JsonValueKind.Null ? "—" : Get(value, key).ToString();
+    private static IEnumerable<JsonElement> Array(JsonElement value) => value.ValueKind == JsonValueKind.Array ? value.EnumerateArray() : Enumerable.Empty<JsonElement>();
+    private static string Seconds(JsonElement value, string key) => double.TryParse(Text(value, key), out var ms) ? (ms / 1000).ToString("0.0") : "—";
+    private static string Date(string text) => DateTimeOffset.TryParse(text, out var date) ? date.ToLocalTime().ToString("MMM d, yyyy · h:mm tt") : text;
+    private static string RegionLabel(JsonElement record)
+    {
+        var region = Text(record, "region");
+        return region == "—" ? "Unknown region" : F3Core.Regions.RegionList.All.FirstOrDefault(r => r.QueryStringValue.Equals(region, StringComparison.OrdinalIgnoreCase))?.DisplayName ?? region;
+    }
+    private static string Cost(JsonElement usage) => Get(usage, "cost").ValueKind == JsonValueKind.Number && Get(usage, "cost").TryGetDecimal(out var cost) ? "$" + cost.ToString("0.######") : "—";
+    private static string Pretty(JsonElement value) => value.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null ? "—" : JsonSerializer.Serialize(value, jsonOptions);
+    public void Dispose() { password = ""; lifetime.Cancel(); lifetime.Dispose(); detailRequest?.Cancel(); }
+}

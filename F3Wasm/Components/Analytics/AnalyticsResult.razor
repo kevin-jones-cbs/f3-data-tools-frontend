@@ -1,0 +1,49 @@
+@using F3Wasm.Models
+@using System.Text.Json
+
+<section class="result-card" aria-label="@Value.Title">
+    <div class="result-heading"><span>@Value.Title</span><span class="result-count">@Value.Rows.Count @(Value.Rows.Count == 1 ? "result" : "results")</span></div>
+    @if (Value.Rows.Count == 0)
+    {
+        <p class="empty-results">No matching records for this question.</p>
+    }
+    else
+    {
+        @* A table remains a usable fallback for future chart types. *@
+        <div class="result-scroll" tabindex="0" role="region" aria-label="Scrollable results">
+            <table>
+                <thead><tr>@for (var i = 0; i < Value.Columns.Count; i++) { <th scope="col" class="@(IsNumericColumn(i) ? "numeric" : "")"><span class="column-heading">@Value.Columns[i].Label</span></th> }</tr></thead>
+                <tbody>
+                    @foreach (var row in Value.Rows)
+                    {
+                        <tr>@for (var i = 0; i < row.Length; i++) { <td class="@(IsNumericColumn(i) ? "numeric" : "")">@FormatCell(row[i], i)</td> }</tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    @if (Value.Truncated) { <p class="result-note">Showing the first 100 results. Ask a more specific question to narrow them down.</p> }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public AnalyticsVisualization Value { get; set; } = new();
+    private bool IsDayColumn(int index) => index < Value.Columns.Count &&
+        Value.Columns[index].Key.Replace("_", "").Equals("dayofweek", StringComparison.OrdinalIgnoreCase);
+    private string FormatCell(JsonElement cell, int index)
+    {
+        if (IsDayColumn(index) && int.TryParse(cell.ToString(), out var day) && day >= 0 && day <= 6)
+            return ((DayOfWeek)day).ToString();
+        return Format(cell);
+    }
+    private bool IsNumericColumn(int index) => !IsDayColumn(index) && Value.Rows.Any(row => row.Length > index && row[index].ValueKind == JsonValueKind.Number);
+    private static string Format(JsonElement cell) => cell.ValueKind switch
+    {
+        JsonValueKind.Null => "—",
+        JsonValueKind.True => "Yes",
+        JsonValueKind.False => "No",
+        JsonValueKind.Number when cell.TryGetInt64(out var number) => number.ToString("N0"),
+        JsonValueKind.Number when cell.TryGetDecimal(out var number) => number.ToString("0.##"),
+        JsonValueKind.String => cell.GetString() ?? "—",
+        _ => cell.ToString()
+    };
+}
