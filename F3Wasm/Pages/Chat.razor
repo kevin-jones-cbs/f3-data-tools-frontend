@@ -93,7 +93,15 @@
     private string? error;
     private bool busy, ready, loading = true;
     private string setupMessage = "The assistant isn't set up yet. Please contact the app administrator.";
-    private string[] suggestions => ["Which AOs welcomed the most FNGs in 2025?", "Who posted together the most in 2025?", "How did attendance change month to month in 2024?", Region == "southfork" ? "What trends do you see for Peacock in 2023–2025?" : "Which AOs had the most attendance in 2025?"];
+    private string[] suggestions =>
+    [
+        $"Which AOs have welcomed the most FNGs so far in {DateTime.Today.Year}?",
+        $"Who has posted together the most so far in {DateTime.Today.Year}?",
+        $"How has attendance changed month to month in {DateTime.Today.Year}?",
+        Region == "southfork"
+            ? $"What attendance trends do you see for Peacock so far in {DateTime.Today.Year}?"
+            : $"Which AOs have had the most attendance so far in {DateTime.Today.Year}?"
+    ];
 
     protected override async Task OnParametersSetAsync()
     {
