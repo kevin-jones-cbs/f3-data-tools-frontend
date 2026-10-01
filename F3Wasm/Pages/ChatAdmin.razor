@@ -12,6 +12,7 @@
     @if (!unlocked)
     {
         <form class="unlock" @onsubmit="Load" @onsubmit:preventDefault>
+            <label>Source<select aria-label="Source" @bind="source" disabled="@loading"><option value="sandbox">Sandbox (S3)</option><option value="local">Local chats</option></select></label>
             <label for="admin-password">Admin password</label>
             <input id="admin-password" type="password" @bind="password" autocomplete="current-password" required />
             <button disabled="@loading">@(loading ? "Checking…" : "Unlock")</button>
@@ -22,11 +23,30 @@
     {
     <button @onclick="Lock">Lock admin</button>
     <form class="filters" @onsubmit="Search" @onsubmit:preventDefault>
+        <label>Source<select aria-label="Source" @bind="source" disabled="@loading"><option value="sandbox">Sandbox (S3)</option><option value="local">Local chats</option></select></label>
+        @if (source == "sandbox")
+        {
+            <label>From (UTC)<input type="date" @bind="from" /></label>
+            <label>Through (UTC)<input type="date" @bind="to" /></label>
+        }
         <label>Search questions and answers<input @bind="search" placeholder="Search saved chats…" maxlength="200" /></label>
         <label>Status<select @bind="status"><option value="">All statuses</option><option value="success">Success</option><option value="error">Error</option><option value="canceled_or_timeout">Canceled / timed out</option></select></label>
         <button disabled="@loading">@(loading ? "Loading…" : "Refresh")</button>
     </form>
     @if (error != null) { <p class="error" role="alert">@error</p> }
+    @if (source == "sandbox" && summary is { } stats)
+    {
+        <div class="stats" aria-label="Chat statistics">
+            <div><strong>@Text(stats, "turns")</strong><span>Questions</span></div>
+            <div><strong>@Text(stats, "browsers")</strong><span>Anonymous browsers</span></div>
+            <div><strong>@Text(stats, "conversations")</strong><span>Conversations</span></div>
+            <div><strong>@Text(stats, "errors")</strong><span>Errors / interrupted</span></div>
+            <div><strong>@(Text(stats, "costCalls") == "0" ? "—" : Cost(stats))</strong><span>Reported cost</span></div>
+        </div>
+        <p class="note">Statistics cover matching questions in the selected UTC dates (up to 31 days). Refreshed @Date(refreshedAt). S3 is checked at most once a minute. Cost coverage: @Text(stats, "costCalls") / @Text(stats, "modelCalls") model calls.</p>
+        @if (truncated) { <p class="error">The selected window exceeds the viewer limit. These statistics are partial; choose fewer days to see complete results.</p> }
+        <details class="daily"><summary>Questions per day (UTC)</summary><div class="daily-counts">@foreach (var day in Array(Get(stats, "days"))) { <span>@Text(day, "date"): <strong>@Text(day, "turns")</strong></span> }</div></details>
+    }
     <div class="workspace">
         <section class="chat-list" aria-label="Saved chat turns">
             @if (!loading && items.Count == 0) { <p class="empty">No saved chats match. New questions appear here after they finish.</p> }
@@ -93,7 +113,10 @@
     private CancellationTokenSource? detailRequest;
     private static readonly JsonSerializerOptions jsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
     private List<JsonElement> items = [];
-    private JsonElement? selected;
+    private JsonElement? selected, summary;
+    private string source = "sandbox", loadedSource = "sandbox", refreshedAt = "";
+    private DateTime from = DateTime.UtcNow.Date.AddDays(-6), to = DateTime.UtcNow.Date;
+    private bool truncated;
     private string? selectedId, error;
     private string search = "", status = "";
     private int offset;
@@ -104,20 +127,23 @@
     private void Lock()
     {
         accessVersion++; detailRequest?.Cancel(); password = ""; unlocked = false; selected = null; selectedId = null;
-        items.Clear(); error = null; offset = 0;
+        items.Clear(); summary = null; error = null; offset = 0;
     }
-    private async Task Search() { offset = 0; await Load(); }
+    private async Task Search() { offset = 0; detailRequest?.Cancel(); selected = null; selectedId = null; items.Clear(); summary = null; await Load(); }
     private async Task Previous() { offset = Math.Max(0, offset - 25); await Load(); }
     private async Task Next() { offset += 25; await Load(); }
     private async Task Load()
     {
         var version = accessVersion;
+        var requestedSource = source;
         loading = true; error = null;
         try
         {
-            var page = await Client.GetAdminAsync($"?offset={offset}&search={Uri.EscapeDataString(search)}&status={Uri.EscapeDataString(status)}", lifetime.Token, password);
+            var page = await Client.GetAdminAsync($"?source={source}&from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}&offset={offset}&search={Uri.EscapeDataString(search)}&status={Uri.EscapeDataString(status)}", lifetime.Token, password);
             if (version != accessVersion) return;
-            unlocked = true;
+            unlocked = true; loadedSource = requestedSource;
+            summary = Get(page, "summary").ValueKind == JsonValueKind.Object ? Get(page, "summary") : null;
+            refreshedAt = Text(page, "refreshedAt"); truncated = Get(page, "truncated").ValueKind == JsonValueKind.True;
             items = Array(Get(page, "items")).ToList(); hasMore = Get(page, "hasMore").GetBoolean();
         }
         catch (OperationCanceledException) { }
@@ -129,7 +155,7 @@
         detailRequest?.Cancel();
         var current = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
         detailRequest = current; selectedId = id; selected = null; detailLoading = true; error = null;
-        try { var row = await Client.GetAdminAsync("/" + Uri.EscapeDataString(id), current.Token, password); if (!current.IsCancellationRequested) selected = row; }
+        try { var row = await Client.GetAdminAsync("/" + Uri.EscapeDataString(id) + "?source=" + loadedSource, current.Token, password); if (!current.IsCancellationRequested) selected = row; }
         catch (OperationCanceledException) { }
         catch (HttpRequestException ex) { if (!current.IsCancellationRequested) error = ex.Message; }
         finally { if (detailRequest == current) { detailLoading = false; detailRequest = null; } current.Dispose(); }

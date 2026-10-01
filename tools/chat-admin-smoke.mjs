@@ -1,4 +1,4 @@
-// Read-only browser check against existing local chat logs; makes no model calls.
+// Read-only browser check against saved sandbox S3 logs; makes no model calls.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
@@ -17,6 +17,10 @@ try {
   await page.getByLabel('Admin password').fill(process.env.CHAT_ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Unlock', exact: true }).click();
   await page.locator('.chat-item').first().waitFor();
+  assert.equal(await page.getByLabel('Source', { exact: true }).inputValue(), 'sandbox');
+  await page.getByLabel('Chat statistics', { exact: true }).waitFor();
+  await page.getByLabel('From (UTC)', { exact: true }).waitFor();
+  await page.getByLabel('Through (UTC)', { exact: true }).waitFor();
   await page.locator('.chat-item').first().click();
   await page.getByRole('heading', { name: 'Chat details', exact: true }).waitFor();
   await page.getByRole('heading', { name: 'Conversation sent', exact: true }).waitFor();
@@ -26,8 +30,17 @@ try {
   await page.getByLabel('Search questions and answers').fill('no-such-chat-admin-smoke-9e35c3');
   await page.getByRole('button', { name: 'Refresh', exact: true }).click();
   await page.getByText('No saved chats match.', { exact: false }).waitFor();
+  assert.equal(await page.getByLabel('Chat statistics', { exact: true }).locator('strong').first().innerText(), '0');
   await page.getByLabel('Search questions and answers').fill('');
   await page.getByRole('button', { name: 'Refresh', exact: true }).click();
+  await page.locator('.chat-item').first().waitFor();
+  await page.getByLabel('Source', { exact: true }).selectOption('local');
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click();
+  await page.waitForFunction(() => !document.querySelector('[aria-label="Chat statistics"]'));
+  await page.getByRole('button', { name: 'Refresh', exact: true }).waitFor();
+  await page.getByLabel('Source', { exact: true }).selectOption('sandbox');
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click();
+  await page.getByLabel('Chat statistics', { exact: true }).waitFor();
   await page.locator('.chat-item').first().waitFor();
   await page.setViewportSize({ width: 390, height: 844 });
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
@@ -35,5 +48,5 @@ try {
   await page.getByLabel('Admin password').waitFor();
   assert.equal(await page.locator('.chat-item').count(), 0);
   assert.deepEqual(errors, []);
-  console.log('PASS: saved chats list, detail, model usage, search/empty state and mobile layout.');
+  console.log('PASS: sandbox S3 chats, statistics, detail, model usage, search, local source, lock and mobile layout.');
 } finally { await browser.close(); }
