@@ -15,7 +15,9 @@ try {
   assert.equal(await page.locator('.chat-item').count(), 0);
   assert(process.env.CHAT_ADMIN_PASSWORD, 'Set CHAT_ADMIN_PASSWORD for admin smoke test');
   await page.getByLabel('Admin password').fill(process.env.CHAT_ADMIN_PASSWORD);
+  const listingResponse = page.waitForResponse(r => r.url().includes('/admin/chats?') && r.status() === 200);
   await page.getByRole('button', { name: 'Unlock', exact: true }).click();
+  const listing = await (await listingResponse).json();
   await page.locator('.chat-item').first().waitFor();
   assert.equal(await page.getByLabel('Source', { exact: true }).inputValue(), 'sandbox');
   await page.getByLabel('Chat statistics', { exact: true }).waitFor();
@@ -24,11 +26,22 @@ try {
   await page.locator('.chat-item').first().click();
   await page.getByRole('heading', { name: 'Saved conversation', exact: true }).waitFor();
   await page.getByLabel('Saved conversation transcript', { exact: true }).locator('.conversation-turn').first().waitFor();
+  await page.locator('.turn-details > summary').first().click();
   await page.getByRole('heading', { name: 'Chat details', exact: true }).waitFor();
   await page.getByRole('heading', { name: 'Conversation sent', exact: true }).waitFor();
   await page.getByRole('heading', { name: 'Model calls', exact: true }).waitFor();
-  await page.locator('summary').filter({ hasText: /^Call 1/ }).click();
+  await page.locator('.turn-details').first().locator('summary').filter({ hasText: /^Call 1/ }).click();
   await page.getByText('Reported cost:', { exact: false }).first().waitFor();
+  const grouped = listing.items.find(item => item.turn_count > 1);
+  if (grouped) {
+    const card = page.locator(`.chat-item[data-request-id="${grouped.request_id}"]`);
+    assert.equal(await card.count(), 1);
+    assert((await card.innerText()).includes(`${grouped.turn_count} questions`));
+    await card.click();
+    const transcript = page.getByLabel('Saved conversation transcript', { exact: true });
+    await transcript.locator('.conversation-turn').nth(grouped.turn_count - 1).waitFor();
+    assert(await transcript.locator('.conversation-turn').count() >= grouped.turn_count);
+  }
   await page.getByLabel('Search questions and answers').fill('no-such-chat-admin-smoke-9e35c3');
   await page.getByRole('button', { name: 'Refresh', exact: true }).click();
   await page.getByText('No saved chats match.', { exact: false }).waitFor();
@@ -50,5 +63,5 @@ try {
   await page.getByLabel('Admin password').waitFor();
   assert.equal(await page.locator('.chat-item').count(), 0);
   assert.deepEqual(errors, []);
-  console.log('PASS: sandbox S3 chats, statistics, detail, model usage, search, local source, lock and mobile layout.');
+  console.log('PASS: conversation grouping, full transcript, per-question details, statistics, search, local source, lock and mobile layout.');
 } finally { await browser.close(); }

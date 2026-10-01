@@ -8,7 +8,7 @@
 
 <PageTitle>Saved chats · South Fork</PageTitle>
 <div class="chat-admin">
-    <header><div><a href="/chat/southfork">← Ask South Fork</a><h1>Saved chats</h1><p>Review questions, answers, usage, and errors.</p></div><span class="local">Local admin</span></header>
+    <header><div><a href="/chat/southfork">← Ask South Fork</a><h1>Saved chats</h1><p>Review complete conversations, answers, usage, and errors.</p></div><span class="local">Local admin</span></header>
     @if (!unlocked)
     {
         <form class="unlock" @onsubmit="Load" @onsubmit:preventDefault>
@@ -43,21 +43,21 @@
             <div><strong>@Text(stats, "errors")</strong><span>Errors / interrupted</span></div>
             <div><strong>@(Text(stats, "costCalls") == "0" ? "—" : Cost(stats))</strong><span>Reported cost</span></div>
         </div>
-        <p class="note">Statistics cover matching questions in the selected UTC dates (up to 31 days). Refreshed @Date(refreshedAt). S3 is checked at most once a minute. Cost coverage: @Text(stats, "costCalls") / @Text(stats, "modelCalls") model calls.</p>
+        <p class="note">Statistics and list totals cover questions in matching conversations within the selected UTC dates (up to 31 days). Refreshed @Date(refreshedAt). S3 is checked at most once a minute. Cost coverage: @Text(stats, "costCalls") / @Text(stats, "modelCalls") model calls.</p>
         @if (truncated) { <p class="error">The selected window exceeds the viewer limit. These statistics are partial; choose fewer days to see complete results.</p> }
         <details class="daily"><summary>Questions per day (UTC)</summary><div class="daily-counts">@foreach (var day in Array(Get(stats, "days"))) { <span>@Text(day, "date"): <strong>@Text(day, "turns")</strong></span> }</div></details>
     }
     <div class="workspace">
-        <section class="chat-list" aria-label="Saved chat turns">
+        <section class="chat-list" aria-label="Saved conversations">
             @if (!loading && items.Count == 0) { <p class="empty">No saved chats match. New questions appear here after they finish.</p> }
             @foreach (var item in items)
             {
                 var id = Text(item, "request_id");
-                <button class="chat-item @(id == selectedId ? "selected" : "")" @onclick="() => Select(id)">
-                    <span class="item-meta"><time>@Date(Text(item, "started_at"))</time><span class="badge">@Text(item, "status")</span></span>
+                <button class="chat-item @(id == selectedId ? "selected" : "")" data-request-id="@id" data-conversation-id="@Text(item, "conversation_id")" @onclick="() => Select(id)">
+                    <span class="item-meta"><time title="Last activity">@Date(Text(item, "started_at"))</time><span class="badge">@Text(item, "status")</span></span>
                     <strong>@Text(item, "question")</strong>
                     <span class="model">@RegionLabel(item) · @Text(item, "model") · @Text(item, "source")</span>
-                    <span class="usage">@Seconds(item, "duration_ms")s · @Text(item, "input_tokens") in / @Text(item, "output_tokens") out</span>
+                    <span class="usage">@Text(item, "turn_count") questions@(loadedSource == "sandbox" ? " in selected dates" : "") · @Text(item, "input_tokens") in / @Text(item, "output_tokens") out</span>
                     @if (Text(item, "usage_calls") != Text(item, "model_calls")) { <small>Token usage incomplete</small> }
                 </button>
             }
@@ -67,13 +67,12 @@
             @if (detailLoading) { <p role="status">Loading chat…</p> }
             else if (selected is { } record)
             {
-                var trace = Get(record, "event");
                 <h2>Saved conversation</h2>
                 @if (Get(record, "conversation").ValueKind == JsonValueKind.Object)
                 {
                     var conversation = Get(record, "conversation");
                     var turns = Array(Get(conversation, "turns")).ToArray();
-                    <p class="note">@turns.Length saved turns · oldest first. Includes later replies and follow-up questions beyond the selected dates when indexed.</p>
+                    <p class="note">@turns.Length saved questions · oldest first. This conversation includes follow-ups outside the selected dates when available.</p>
                     @if (Get(conversation, "truncated").ValueKind == JsonValueKind.True)
                     { <p class="error">This conversation exceeds the viewer limit; the transcript below is partial.</p> }
                     @if (Get(conversation, "indexed").ValueKind != JsonValueKind.True)
@@ -81,6 +80,7 @@
                     <div class="conversation" aria-label="Saved conversation transcript">
                     @foreach (var turn in turns)
                     {
+                        var trace = turn;
                         var question = Array(Get(Get(turn, "request"), "messages")).LastOrDefault(m => Text(m, "role") == "user");
                         <article class="conversation-turn">
                             <div class="item-meta"><time>@Date(Text(turn, "startedAt"))</time><span class="badge">@Text(turn, "status")</span></div>
@@ -93,46 +93,48 @@
                             }
                             @if (Get(turn, "error").ValueKind == JsonValueKind.String)
                             { <p class="error">@Text(turn, "error")</p> }
+                            <details class="turn-details"><summary>Question details · @Text(turn, "model") · @Seconds(turn, "durationMs")s</summary>
+                                <h2>Chat details</h2>
+                                <div class="detail-meta"><strong>@RegionLabel(record)</strong><span>@Text(trace, "model")</span><span>@Text(trace, "status")</span><span>@Seconds(trace, "durationMs")s</span></div>
+                                <dl><dt>Started</dt><dd>@Date(Text(trace, "startedAt"))</dd><dt>Request</dt><dd>@Text(trace, "id")</dd><dt>Conversation</dt><dd>@Text(Get(trace, "request"), "conversationId")</dd><dt>Anonymous browser</dt><dd>@Text(Get(trace, "request"), "visitorId")</dd></dl>
+                                @if (Get(trace, "error").ValueKind == JsonValueKind.String) { <p class="error">@Text(trace, "error")</p> }
+                                <h3>Conversation sent</h3>
+                                @foreach (var message in Array(Get(Get(trace, "request"), "messages")))
+                                {
+                                    <article class="message"><span class="role">@Text(message, "role")</span><div>@Text(message, "content")</div></article>
+                                }
+                                @if (Get(trace, "response").ValueKind == JsonValueKind.Object)
+                                {
+                                    var reply = Get(trace, "response");
+                                    <h3>Answer shown</h3><div class="answer">@Text(reply, "answer")</div>
+                                    @foreach (var visual in Array(Get(reply, "visualizations")))
+                                    {
+                                        <AnalyticsResult Value="@(visual.Deserialize<AnalyticsVisualization>(jsonOptions)!)" />
+                                    }
+                                }
+                                <details><summary>SQL attempts (@Array(Get(trace, "queryAttempts")).Count())</summary>
+                                    @foreach (var attempt in Array(Get(trace, "queryAttempts")))
+                                    { <pre>@Text(attempt, "sql")</pre>@if (Get(attempt, "error").ValueKind == JsonValueKind.String) { <p class="error">@Text(attempt, "error")</p> } }
+                                </details>
+                                <h3>Model calls</h3>
+                                @foreach (var pair in Array(Get(trace, "calls")).Select((call, i) => (call, i)))
+                                {
+                                    var usage = Get(Get(pair.call, "output"), "usage");
+                                    <details><summary>Call @(pair.i + 1) · HTTP @Text(pair.call, "httpStatus") · @Seconds(pair.call, "durationMs")s</summary>
+                                        <p>@Text(usage, "prompt_tokens") input / @Text(usage, "completion_tokens") output tokens · Reported cost: @Cost(usage)</p>
+                                        <details><summary>Input</summary><pre>@Pretty(Get(pair.call, "input"))</pre></details>
+                                        <details><summary>Output and usage</summary><pre>@Pretty(Get(pair.call, "output"))</pre></details>
+                                    </details>
+                                }
+                                <p class="note">“—” means unavailable, not zero. Browser IDs are anonymous and may reset when storage is cleared.</p>
+                            </details>
                         </article>
                     }
                     </div>
                 }
-                <h2>Chat details</h2>
-                <p class="note">Diagnostics and model calls for the selected turn.</p>
-                <div class="detail-meta"><strong>@RegionLabel(record)</strong><span>@Text(trace, "model")</span><span>@Text(trace, "status")</span><span>@Seconds(trace, "durationMs")s</span></div>
-                <dl><dt>Started</dt><dd>@Date(Text(trace, "startedAt"))</dd><dt>Request</dt><dd>@Text(trace, "id")</dd><dt>Conversation</dt><dd>@Text(Get(trace, "request"), "conversationId")</dd><dt>Anonymous browser</dt><dd>@Text(Get(trace, "request"), "visitorId")</dd></dl>
-                @if (Get(trace, "error").ValueKind == JsonValueKind.String) { <p class="error">@Text(trace, "error")</p> }
-                <h3>Conversation sent</h3>
-                @foreach (var message in Array(Get(Get(trace, "request"), "messages")))
-                {
-                    <article class="message"><span class="role">@Text(message, "role")</span><div>@Text(message, "content")</div></article>
-                }
-                @if (Get(trace, "response").ValueKind == JsonValueKind.Object)
-                {
-                    var reply = Get(trace, "response");
-                    <h3>Answer shown</h3><div class="answer">@Text(reply, "answer")</div>
-                    @foreach (var visual in Array(Get(reply, "visualizations")))
-                    {
-                        <AnalyticsResult Value="@(visual.Deserialize<AnalyticsVisualization>(jsonOptions)!)" />
-                    }
-                }
-                <details><summary>SQL attempts (@Array(Get(trace, "queryAttempts")).Count())</summary>
-                    @foreach (var attempt in Array(Get(trace, "queryAttempts")))
-                    { <pre>@Text(attempt, "sql")</pre>@if (Get(attempt, "error").ValueKind == JsonValueKind.String) { <p class="error">@Text(attempt, "error")</p> } }
-                </details>
-                <h3>Model calls</h3>
-                @foreach (var pair in Array(Get(trace, "calls")).Select((call, i) => (call, i)))
-                {
-                    var usage = Get(Get(pair.call, "output"), "usage");
-                    <details><summary>Call @(pair.i + 1) · HTTP @Text(pair.call, "httpStatus") · @Seconds(pair.call, "durationMs")s</summary>
-                        <p>@Text(usage, "prompt_tokens") input / @Text(usage, "completion_tokens") output tokens · Reported cost: @Cost(usage)</p>
-                        <details><summary>Input</summary><pre>@Pretty(Get(pair.call, "input"))</pre></details>
-                        <details><summary>Output and usage</summary><pre>@Pretty(Get(pair.call, "output"))</pre></details>
-                    </details>
-                }
-                <p class="note">“—” means unavailable, not zero. Browser IDs are anonymous and may reset when storage is cleared.</p>
+
             }
-            else { <p class="empty">Select a chat to view its conversation and model calls.</p> }
+            else { <p class="empty">Select a conversation to see all its questions and answers.</p> }
         </section>
     </div>
     }
