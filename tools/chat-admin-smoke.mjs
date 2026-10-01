@@ -22,6 +22,8 @@ try {
   await page.getByLabel('From (UTC)', { exact: true }).waitFor();
   await page.getByLabel('Through (UTC)', { exact: true }).waitFor();
   await page.locator('.chat-item').first().click();
+  await page.getByRole('heading', { name: 'Saved conversation', exact: true }).waitFor();
+  await page.getByLabel('Saved conversation transcript', { exact: true }).locator('.conversation-turn').first().waitFor();
   await page.getByRole('heading', { name: 'Chat details', exact: true }).waitFor();
   await page.getByRole('heading', { name: 'Conversation sent', exact: true }).waitFor();
   await page.getByRole('heading', { name: 'Model calls', exact: true }).waitFor();

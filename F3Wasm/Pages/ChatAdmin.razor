@@ -68,7 +68,37 @@
             else if (selected is { } record)
             {
                 var trace = Get(record, "event");
+                <h2>Saved conversation</h2>
+                @if (Get(record, "conversation").ValueKind == JsonValueKind.Object)
+                {
+                    var conversation = Get(record, "conversation");
+                    var turns = Array(Get(conversation, "turns")).ToArray();
+                    <p class="note">@turns.Length saved turns · oldest first. Includes later replies and follow-up questions beyond the selected dates when indexed.</p>
+                    @if (Get(conversation, "truncated").ValueKind == JsonValueKind.True)
+                    { <p class="error">This conversation exceeds the viewer limit; the transcript below is partial.</p> }
+                    @if (Get(conversation, "indexed").ValueKind != JsonValueKind.True)
+                    { <p class="note">This older log has no conversation index. Showing available turns from the loaded date range; the selected turn’s request context appears below.</p> }
+                    <div class="conversation" aria-label="Saved conversation transcript">
+                    @foreach (var turn in turns)
+                    {
+                        var question = Array(Get(Get(turn, "request"), "messages")).LastOrDefault(m => Text(m, "role") == "user");
+                        <article class="conversation-turn">
+                            <div class="item-meta"><time>@Date(Text(turn, "startedAt"))</time><span class="badge">@Text(turn, "status")</span></div>
+                            <div class="message"><span class="role">User</span><div>@Text(question, "content")</div></div>
+                            @if (Get(turn, "response").ValueKind == JsonValueKind.Object)
+                            {
+                                <div class="message"><span class="role">Assistant</span><div>@Text(Get(turn, "response"), "answer")</div></div>
+                                @foreach (var visual in Array(Get(Get(turn, "response"), "visualizations")))
+                                { <AnalyticsResult Value="@(visual.Deserialize<AnalyticsVisualization>(jsonOptions)!)" /> }
+                            }
+                            @if (Get(turn, "error").ValueKind == JsonValueKind.String)
+                            { <p class="error">@Text(turn, "error")</p> }
+                        </article>
+                    }
+                    </div>
+                }
                 <h2>Chat details</h2>
+                <p class="note">Diagnostics and model calls for the selected turn.</p>
                 <div class="detail-meta"><strong>@RegionLabel(record)</strong><span>@Text(trace, "model")</span><span>@Text(trace, "status")</span><span>@Seconds(trace, "durationMs")s</span></div>
                 <dl><dt>Started</dt><dd>@Date(Text(trace, "startedAt"))</dd><dt>Request</dt><dd>@Text(trace, "id")</dd><dt>Conversation</dt><dd>@Text(Get(trace, "request"), "conversationId")</dd><dt>Anonymous browser</dt><dd>@Text(Get(trace, "request"), "visitorId")</dd></dl>
                 @if (Get(trace, "error").ValueKind == JsonValueKind.String) { <p class="error">@Text(trace, "error")</p> }

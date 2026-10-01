@@ -3,3 +3,5 @@
 .unlock{display:flex;flex-direction:column;gap:.7rem;max-width:340px;margin:2rem 0}.unlock button{background:#285c45;color:white}
 
 .stats{display:flex;gap:1rem;flex-wrap:wrap;margin:1rem 0}.stats>div{flex:1;min-width:130px;padding:1rem;border:1px solid #dbe6df;border-radius:10px;background:#f2f7f4}.stats strong,.stats span{display:block}.stats strong{font-size:1.65rem}.stats span{font-size:.8rem;color:#64766b}.filters{flex-wrap:wrap}.daily{margin-bottom:1rem}.daily-counts{display:flex;gap:1rem;flex-wrap:wrap;font-size:.85rem;padding:.7rem 0}
+
+.conversation{max-height:65vh;overflow:auto;margin-bottom:1.5rem;padding-right:.4rem}.conversation-turn{padding:.7rem 0;border-bottom:1px solid #dbe6df}
