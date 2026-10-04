@@ -53,8 +53,10 @@ public sealed class AnalyticsChatClient(HttpClient http)
             throw new HttpRequestException("Incorrect admin password.", null, response.StatusCode);
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException(response.StatusCode == System.Net.HttpStatusCode.Forbidden
-                ? "Chat administration is available only on the local backend."
-                : "Could not load saved chats. Check the backend and try again.");
+                ? "Chat administration is not allowed from this address."
+                : (int)response.StatusCode == 429
+                    ? "Too many password attempts. Wait one minute and try again."
+                    : "Could not load saved chats. Check the backend and try again.");
         return await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
     }
 

@@ -4,15 +4,16 @@
 @using F3Wasm.Models
 @using F3Wasm.Components.Analytics
 @inject AnalyticsChatClient Client
+@inject NavigationManager Navigation
 @implements IDisposable
 
-<PageTitle>Saved chats · South Fork</PageTitle>
+<PageTitle>Saved chats</PageTitle>
 <div class="chat-admin">
-    <header><div><a href="/chat/southfork">← Ask South Fork</a><h1>Saved chats</h1><p>Review complete conversations, answers, usage, and errors.</p></div><span class="local">Local admin</span></header>
+    <header><div><a href="/chat/southfork">← Ask South Fork</a><h1>Saved chats</h1><p>Review complete conversations, answers, usage, and errors.</p></div><span class="local">Chat admin</span></header>
     @if (!unlocked)
     {
         <form class="unlock" @onsubmit="Load" @onsubmit:preventDefault>
-            <label>Source<select aria-label="Source" @bind="source" disabled="@loading"><option value="sandbox">Sandbox (S3)</option><option value="local">Local chats</option></select></label>
+            <label>Source<select aria-label="Source" @bind="source" disabled="@loading"><option value="sandbox">Sandbox (S3)</option>@if (IsLocal) { <option value="local">Local chats</option> }</select></label>
             <label for="admin-password">Admin password</label>
             <input id="admin-password" type="password" @bind="password" autocomplete="current-password" required />
             <button disabled="@loading">@(loading ? "Checking…" : "Unlock")</button>
@@ -23,7 +24,7 @@
     {
     <button @onclick="Lock">Lock admin</button>
     <form class="filters" @onsubmit="Search" @onsubmit:preventDefault>
-        <label>Source<select aria-label="Source" @bind="source" disabled="@loading"><option value="sandbox">Sandbox (S3)</option><option value="local">Local chats</option></select></label>
+        <label>Source<select aria-label="Source" @bind="source" disabled="@loading"><option value="sandbox">Sandbox (S3)</option>@if (IsLocal) { <option value="local">Local chats</option> }</select></label>
         @if (source == "sandbox")
         {
             <label>From (UTC)<input type="date" @bind="from" /></label>
@@ -147,6 +148,8 @@
     private List<JsonElement> items = [];
     private JsonElement? selected, summary;
     private string source = "sandbox", loadedSource = "sandbox", refreshedAt = "";
+    private bool IsLocal => new Uri(Navigation.BaseUri).IsLoopback;
+    private DateTime loadedFrom, loadedTo;
     private DateTime from = DateTime.UtcNow.Date.AddDays(-6), to = DateTime.UtcNow.Date;
     private bool truncated;
     private string? selectedId, error;
@@ -168,12 +171,13 @@
     {
         var version = accessVersion;
         var requestedSource = source;
+        var requestedFrom = from; var requestedTo = to;
         loading = true; error = null;
         try
         {
             var page = await Client.GetAdminAsync($"?source={source}&from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}&offset={offset}&search={Uri.EscapeDataString(search)}&status={Uri.EscapeDataString(status)}", lifetime.Token, password);
             if (version != accessVersion) return;
-            unlocked = true; loadedSource = requestedSource;
+            unlocked = true; loadedSource = requestedSource; loadedFrom = requestedFrom; loadedTo = requestedTo;
             summary = Get(page, "summary").ValueKind == JsonValueKind.Object ? Get(page, "summary") : null;
             refreshedAt = Text(page, "refreshedAt"); truncated = Get(page, "truncated").ValueKind == JsonValueKind.True;
             items = Array(Get(page, "items")).ToList(); hasMore = Get(page, "hasMore").GetBoolean();
@@ -187,7 +191,7 @@
         detailRequest?.Cancel();
         var current = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
         detailRequest = current; selectedId = id; selected = null; detailLoading = true; error = null;
-        try { var row = await Client.GetAdminAsync("/" + Uri.EscapeDataString(id) + "?source=" + loadedSource, current.Token, password); if (!current.IsCancellationRequested) selected = row; }
+        try { var row = await Client.GetAdminAsync("/" + Uri.EscapeDataString(id) + $"?source={loadedSource}&from={loadedFrom:yyyy-MM-dd}&to={loadedTo:yyyy-MM-dd}", current.Token, password); if (!current.IsCancellationRequested) selected = row; }
         catch (OperationCanceledException) { }
         catch (HttpRequestException ex) { if (!current.IsCancellationRequested) error = ex.Message; }
         finally { if (detailRequest == current) { detailLoading = false; detailRequest = null; } current.Dispose(); }
