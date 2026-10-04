@@ -172,9 +172,9 @@ namespace F3Wasm.Data
             await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.ClearCache, Region = region });
         }
 
-        public static async Task<SectorData> GetSectorDataAsync(HttpClient client)
+        public static async Task<SectorData> GetSectorDataAsync(HttpClient client, bool thisYear = false)
         {
-            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.GetSectorDataSummaryAsync});
+            var response = await CallF3LambdaAsync(client, new FunctionInput { Action = LambdaActions.GetSectorDataSummaryAsync, ThisYear = thisYear });
 
             // Decompress the response (same as GetAllDataAsync)
             var decompressed = Decompress(response);
