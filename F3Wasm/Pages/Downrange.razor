@@ -62,7 +62,7 @@ else
     // June 10, 2024
     private DateTimeOffset minDate = new DateTimeOffset(2024, 5, 31, 0, 0, 0, TimeSpan.Zero);
     private DateTimeOffset maxDate = DateTimeOffset.Now;
-    private List<string> paxNames = new List<string>();
+    private List<string>? paxNames;
     private bool isLoading = false;
     private bool showCompleteAlert = false;
     private Autocomplete<string, string> autocompleteRef;
@@ -78,7 +78,8 @@ else
         if (!RegionInfo.SupportsDownrange)
         {
             // Redirect to the data page if the region doesn't support downrange
-            NavManager.NavigateTo($"/data/{RegionInfo.QueryStringValue}");            
+            NavManager.NavigateTo($"/data/{RegionInfo.QueryStringValue}");
+            return;
         }
 
         paxNames = await LambdaHelper.GetPaxNamesAsync(Http, Region);
